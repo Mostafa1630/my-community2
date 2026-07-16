@@ -71,7 +71,7 @@ export default function CommunitySubscribeCard({
         </p>
       )}
 
-      {role === "student" && !community.isFree && (
+      {!community.isFree && (
         <div className="mt-4 rounded-xl border border-accent-200 bg-accent-50/50 p-3.5">
           <label className="mb-1.5 flex items-center gap-1.5 text-sm font-semibold text-accent-800">
             <Tag size={14} />
