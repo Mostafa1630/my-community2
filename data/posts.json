@@ -1,0 +1,7 @@
+[
+  { "id": "post-1", "communityId": "community-1", "userId": "student-1", "content": "Finished the queues lesson and finally understand why my emails were blocking the request. Refactored my job classes today, huge difference.", "createdAt": "2026-06-28T10:12:00Z", "updatedAt": "2026-06-28T10:12:00Z" },
+  { "id": "post-2", "communityId": "community-1", "userId": "student-2", "content": "Anyone deploying to a VPS instead of Forge? Looking for a checklist before I push to production.", "createdAt": "2026-06-30T08:40:00Z", "updatedAt": "2026-06-30T08:40:00Z" },
+  { "id": "post-3", "communityId": "community-2", "userId": "student-1", "content": "The design system lesson changed how I structure components completely. Sharing my token file if anyone wants to compare notes.", "createdAt": "2026-07-01T14:20:00Z", "updatedAt": "2026-07-01T14:20:00Z" },
+  { "id": "post-4", "communityId": "community-2", "userId": "student-5", "content": "This link had spammy content and was removed by the creator to keep the feed useful for everyone.", "createdAt": "2026-07-02T09:15:00Z", "updatedAt": "2026-07-02T09:15:00Z", "removed": true },
+  { "id": "post-5", "communityId": "community-5", "userId": "student-1", "content": "Built my first forecasting model on our sales data at work using this lesson. Off by 4%, not bad for a first attempt.", "createdAt": "2026-06-25T12:05:00Z", "updatedAt": "2026-06-25T12:05:00Z" }
+]

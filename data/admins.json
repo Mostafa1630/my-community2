@@ -1,0 +1,12 @@
+[
+  {
+    "id": "admin-1",
+    "name": "Yasmine Adly",
+    "email": "yasmine.adly@marefa.dev",
+    "avatarAccent": "ink",
+    "role": "admin",
+    "status": "active",
+    "preferredLanguage": "ar",
+    "createdAt": "2022-11-01"
+  }
+]

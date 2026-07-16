@@ -1,0 +1,57 @@
+[
+  {
+    "id": "student-1",
+    "name": "Nour Hassan",
+    "email": "nour.hassan@student.marefa.dev",
+    "avatarAccent": "sand",
+    "profileImage": "/images/avatar-placeholder.jpg",
+    "role": "student",
+    "status": "active",
+    "preferredLanguage": "ar",
+    "createdAt": "2025-01-05"
+  },
+  {
+    "id": "student-2",
+    "name": "Karim Adel",
+    "email": "karim.adel@student.marefa.dev",
+    "avatarAccent": "rust",
+    "profileImage": "/images/avatar-placeholder.jpg",
+    "role": "student",
+    "status": "active",
+    "preferredLanguage": "ar",
+    "createdAt": "2025-02-18"
+  },
+  {
+    "id": "student-3",
+    "name": "Hana Mostafa",
+    "email": "hana.mostafa@student.marefa.dev",
+    "avatarAccent": "gold",
+    "profileImage": "/images/avatar-placeholder.jpg",
+    "role": "student",
+    "status": "active",
+    "preferredLanguage": "ar",
+    "createdAt": "2025-03-22"
+  },
+  {
+    "id": "student-4",
+    "name": "Ziad Samir",
+    "email": "ziad.samir@student.marefa.dev",
+    "avatarAccent": "moss",
+    "profileImage": "/images/avatar-placeholder.jpg",
+    "role": "student",
+    "status": "suspended",
+    "preferredLanguage": "ar",
+    "createdAt": "2025-04-02"
+  },
+  {
+    "id": "student-5",
+    "name": "Laila Tarek",
+    "email": "laila.tarek@student.marefa.dev",
+    "avatarAccent": "plum",
+    "profileImage": "/images/avatar-placeholder.jpg",
+    "role": "student",
+    "status": "active",
+    "preferredLanguage": "ar",
+    "createdAt": "2025-05-11"
+  }
+]
