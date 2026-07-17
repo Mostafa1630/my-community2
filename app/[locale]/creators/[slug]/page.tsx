@@ -5,6 +5,7 @@ import { BadgeCheck, BookOpen, Users2 } from "lucide-react";
 import { isLocale, locales, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/getDictionary";
 import { t } from "@/lib/i18n/t";
+import { localizedAlternates, DEFAULT_OG_IMAGE } from "@/lib/seo";
 import { creators, getCreatorBySlug, getCommunityByCreatorId, getCoursesByCommunity } from "@/lib/data";
 import { getAccent, initials } from "@/lib/accents";
 import CourseInCommunityCard from "@/components/CourseInCommunityCard";
@@ -23,10 +24,14 @@ export async function generateMetadata({
   const locale: Locale = isLocale(params.locale) ? params.locale : "ar";
   const creator = getCreatorBySlug(params.slug);
   if (!creator) return {};
+  const description = locale === "ar" ? creator.bioAr : creator.bioEn;
+  const image = creator.coverImage || creator.profileImage || DEFAULT_OG_IMAGE;
   return {
     title: creator.name,
-    description: locale === "ar" ? creator.bioAr : creator.bioEn,
-    alternates: { canonical: `/${locale}/creators/${creator.slug}` }
+    description,
+    alternates: localizedAlternates(locale, `/creators/${creator.slug}`),
+    openGraph: { title: creator.name, description, images: [image] },
+    twitter: { title: creator.name, description, images: [image] }
   };
 }
 

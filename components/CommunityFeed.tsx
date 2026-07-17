@@ -14,7 +14,6 @@ import {
   X,
   FileText,
   Download,
-  Sparkles,
   Users
 } from "lucide-react";
 import type { AccentKey, CommunityPost, Media, PostComment } from "@/lib/types";
@@ -211,114 +210,111 @@ export default function CommunityFeed({
         )}
 
         {canPost && user && (
-          <div className="relative mb-6 overflow-hidden rounded-3xl border border-primary-200/70 bg-gradient-to-br from-primary-50 via-accent-50/50 to-primary-100/40 p-5 shadow-card sm:p-6">
-            <div className="pointer-events-none absolute -end-10 -top-10 h-40 w-40 rounded-full bg-primary-200/30 blur-2xl" />
-            <div className="relative mb-4 flex items-center gap-2.5">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary-500 text-white shadow-raised">
-                <Sparkles size={18} />
-              </span>
-              <div className="min-w-0">
-                <h2 className="text-base font-bold text-ink sm:text-lg">{dict.community.composerTitle}</h2>
-                <p className="text-xs text-ink/55">{dict.community.composerSubtitle}</p>
-              </div>
-            </div>
+          <div className="mb-6 overflow-hidden rounded-2xl border border-line bg-surface shadow-card">
+            <div className="h-[3px] w-full bg-gradient-to-r from-accent-600 via-accent-400 to-accent-600" />
 
-            <div className="relative flex items-start gap-3">
-              <Avatar accent={user.avatarAccent} name={user.name} />
-              <textarea
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                placeholder={dict.community.postPlaceholder}
-                rows={2}
-                className="w-full resize-none rounded-2xl border-2 border-primary-100 bg-surface px-4 py-3 text-sm text-ink outline-none transition focus:border-primary-400"
-              />
-            </div>
+            <div className="p-5 sm:p-6">
+              <h2 className="mb-5 text-[11px] font-semibold uppercase tracking-[0.16em] text-ink/40">
+                {dict.community.composerTitle}
+              </h2>
 
-            {attachedFile && attachedPreview && (
-              <div className="relative mt-3 ms-12">
-                {attachedFile.type.startsWith("image/") ? (
-                  <div className="relative inline-block">
-                    <img src={attachedPreview} alt="" className="max-h-40 rounded-xl object-cover" />
-                    <button
-                      onClick={clearAttachment}
-                      className="absolute -top-2 -end-2 flex h-6 w-6 items-center justify-center rounded-full bg-ink text-white"
-                      aria-label="remove attachment"
-                    >
-                      <X size={12} />
-                    </button>
-                  </div>
-                ) : attachedFile.type.startsWith("video/") ? (
-                  <div className="relative inline-block">
-                    <video src={attachedPreview} className="max-h-40 rounded-xl bg-black" />
-                    <button
-                      onClick={clearAttachment}
-                      className="absolute -top-2 -end-2 flex h-6 w-6 items-center justify-center rounded-full bg-ink text-white"
-                      aria-label="remove attachment"
-                    >
-                      <X size={12} />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex max-w-xs items-center gap-2 rounded-xl border border-line bg-surface px-3 py-2">
-                    <FileText size={16} className="shrink-0 text-primary-700" />
-                    <span className="min-w-0 flex-1 truncate text-xs text-ink">{attachedFile.name}</span>
-                    <button onClick={clearAttachment} aria-label="remove attachment">
-                      <X size={14} className="text-ink/50" />
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className="relative mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-primary-200/60 pt-4">
-              <div className="flex items-center gap-1.5">
-                <input
-                  ref={imageInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => pickFile(e.target.files?.[0])}
+              <div className="flex items-start gap-3.5">
+                <Avatar accent={user.avatarAccent} name={user.name} />
+                <textarea
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  placeholder={dict.community.postPlaceholder}
+                  rows={2}
+                  className="w-full resize-none border-0 border-b border-line bg-transparent px-0.5 py-2 text-[15px] leading-7 text-ink outline-none transition placeholder:text-ink/35 focus:border-ink/30"
                 />
-                <input
-                  ref={videoInputRef}
-                  type="file"
-                  accept="video/*"
-                  className="hidden"
-                  onChange={(e) => pickFile(e.target.files?.[0])}
-                />
-                <input ref={fileInputRef} type="file" className="hidden" onChange={(e) => pickFile(e.target.files?.[0])} />
+              </div>
+
+              {attachedFile && attachedPreview && (
+                <div className="mt-3 ms-[3.25rem]">
+                  {attachedFile.type.startsWith("image/") ? (
+                    <div className="relative inline-block">
+                      <img src={attachedPreview} alt="" className="max-h-40 rounded-lg object-cover" />
+                      <button
+                        onClick={clearAttachment}
+                        className="absolute -top-2 -end-2 flex h-6 w-6 items-center justify-center rounded-full bg-ink text-white"
+                        aria-label="remove attachment"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ) : attachedFile.type.startsWith("video/") ? (
+                    <div className="relative inline-block">
+                      <video src={attachedPreview} className="max-h-40 rounded-lg bg-black" />
+                      <button
+                        onClick={clearAttachment}
+                        className="absolute -top-2 -end-2 flex h-6 w-6 items-center justify-center rounded-full bg-ink text-white"
+                        aria-label="remove attachment"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex max-w-xs items-center gap-2 rounded-lg border border-line px-3 py-2">
+                      <FileText size={16} className="shrink-0 text-ink/50" />
+                      <span className="min-w-0 flex-1 truncate text-xs text-ink">{attachedFile.name}</span>
+                      <button onClick={clearAttachment} aria-label="remove attachment">
+                        <X size={14} className="text-ink/50" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-1">
+                  <input
+                    ref={imageInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => pickFile(e.target.files?.[0])}
+                  />
+                  <input
+                    ref={videoInputRef}
+                    type="file"
+                    accept="video/*"
+                    className="hidden"
+                    onChange={(e) => pickFile(e.target.files?.[0])}
+                  />
+                  <input ref={fileInputRef} type="file" className="hidden" onChange={(e) => pickFile(e.target.files?.[0])} />
+                  <button
+                    type="button"
+                    onClick={() => imageInputRef.current?.click()}
+                    title={dict.community.attachImage}
+                    className="flex h-9 w-9 items-center justify-center rounded-full text-ink/40 transition hover:bg-paper hover:text-ink/70"
+                  >
+                    <ImageIcon size={17} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => videoInputRef.current?.click()}
+                    title={dict.community.attachVideo}
+                    className="flex h-9 w-9 items-center justify-center rounded-full text-ink/40 transition hover:bg-paper hover:text-ink/70"
+                  >
+                    <Video size={17} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    title={dict.community.attachFile}
+                    className="flex h-9 w-9 items-center justify-center rounded-full text-ink/40 transition hover:bg-paper hover:text-ink/70"
+                  >
+                    <Paperclip size={17} />
+                  </button>
+                </div>
                 <button
-                  type="button"
-                  onClick={() => imageInputRef.current?.click()}
-                  title={dict.community.attachImage}
-                  className="flex h-9 w-9 items-center justify-center rounded-full text-primary-700 hover:bg-surface"
+                  onClick={submitPost}
+                  disabled={!draft.trim() && !attachedFile}
+                  className="rounded-full bg-ink px-6 py-2 text-sm font-semibold text-white transition hover:bg-ink/85 disabled:opacity-30"
                 >
-                  <ImageIcon size={17} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => videoInputRef.current?.click()}
-                  title={dict.community.attachVideo}
-                  className="flex h-9 w-9 items-center justify-center rounded-full text-primary-700 hover:bg-surface"
-                >
-                  <Video size={17} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  title={dict.community.attachFile}
-                  className="flex h-9 w-9 items-center justify-center rounded-full text-primary-700 hover:bg-surface"
-                >
-                  <Paperclip size={17} />
+                  {dict.common.post}
                 </button>
               </div>
-              <button
-                onClick={submitPost}
-                disabled={!draft.trim() && !attachedFile}
-                className="rounded-full bg-primary-500 px-6 py-2 text-sm font-semibold text-white shadow-raised transition hover:bg-primary-600 disabled:opacity-40 disabled:shadow-none"
-              >
-                {dict.common.post}
-              </button>
             </div>
           </div>
         )}

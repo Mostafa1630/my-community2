@@ -40,7 +40,7 @@ export default function CreatorProfileView({ locale, dict }: { locale: Locale; d
         <div className="flex items-end gap-3 px-5 pb-5">
           <img
             src={user.profileImage || "/images/avatar-placeholder.jpg"}
-            alt=""
+            alt={user.name}
             className="-mt-8 h-16 w-16 rounded-full border-4 border-surface object-cover"
           />
         </div>

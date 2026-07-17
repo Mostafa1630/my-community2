@@ -37,7 +37,7 @@ export default function CommunityCard({
         {community.coverImage ? (
           <img
             src={community.coverImage}
-            alt=""
+            alt={name}
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
         ) : (

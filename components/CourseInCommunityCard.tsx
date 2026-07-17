@@ -34,7 +34,7 @@ export default function CourseInCommunityCard({
         {course.image ? (
           <img
             src={course.image}
-            alt=""
+            alt={title}
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
         ) : (

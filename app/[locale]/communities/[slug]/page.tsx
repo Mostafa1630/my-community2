@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { BadgeCheck, Users2, BookOpen } from "lucide-react";
 import { isLocale, locales, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/getDictionary";
+import { localizedAlternates, DEFAULT_OG_IMAGE } from "@/lib/seo";
 import { communities, getCommunityBySlug, getCreatorById, getCoursesByCommunity, communitySubscriptions } from "@/lib/data";
 import { getAccent, initials } from "@/lib/accents";
 import CourseInCommunityCard from "@/components/CourseInCommunityCard";
@@ -25,10 +26,13 @@ export async function generateMetadata({
   if (!community) return {};
   const name = locale === "ar" ? community.nameAr : community.nameEn;
   const description = locale === "ar" ? community.descriptionAr : community.descriptionEn;
+  const image = community.coverImage || DEFAULT_OG_IMAGE;
   return {
     title: name,
     description,
-    alternates: { canonical: `/${locale}/communities/${community.slug}` }
+    alternates: localizedAlternates(locale, `/communities/${community.slug}`),
+    openGraph: { title: name, description, images: [image] },
+    twitter: { title: name, description, images: [image] }
   };
 }
 

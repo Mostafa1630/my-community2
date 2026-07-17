@@ -33,7 +33,7 @@ export default function StudentProfileView({ locale, dict }: { locale: Locale; d
       <div className="mb-6 flex items-center gap-4">
         <img
           src={user.profileImage || "/images/avatar-placeholder.jpg"}
-          alt=""
+          alt={user.name}
           className="h-16 w-16 rounded-full border border-line object-cover"
         />
         <p className="text-sm font-medium text-ink/60">{name || user.name}</p>

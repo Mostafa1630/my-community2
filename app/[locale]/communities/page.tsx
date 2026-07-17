@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/getDictionary";
+import { localizedAlternates } from "@/lib/seo";
 import { categories, activeCommunities } from "@/lib/data";
 import CommunitiesExplorer from "@/components/CommunitiesExplorer";
 
@@ -10,7 +11,7 @@ export async function generateMetadata({ params }: { params: { locale: string } 
   return {
     title: dict.communities.title,
     description: dict.communities.subtitle,
-    alternates: { canonical: `/${locale}/communities` }
+    alternates: localizedAlternates(locale, "/communities")
   };
 }
 

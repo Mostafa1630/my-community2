@@ -5,7 +5,8 @@ import { Users, Clock } from "lucide-react";
 import { isLocale, locales, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/getDictionary";
 import { t } from "@/lib/i18n/t";
-import { courses, getCourseBySlug, getCommunityById, getAverageRating } from "@/lib/data";
+import { localizedAlternates, DEFAULT_OG_IMAGE } from "@/lib/seo";
+import { courses, getCourseBySlug, getCommunityById, getAverageRating, getReviewsByCourse } from "@/lib/data";
 import { formatNumber } from "@/lib/format";
 import { getAccent, initials } from "@/lib/accents";
 import VideoPlayer from "@/components/VideoPlayer";
@@ -32,10 +33,13 @@ export async function generateMetadata({
   if (!course) return {};
   const title = locale === "ar" ? course.titleAr : course.titleEn;
   const description = locale === "ar" ? course.descAr : course.descEn;
+  const image = course.image || DEFAULT_OG_IMAGE;
   return {
     title,
     description,
-    alternates: { canonical: `/${locale}/communities/${params.slug}/courses/${course.slug}` }
+    alternates: localizedAlternates(locale, `/communities/${params.slug}/courses/${course.slug}`),
+    openGraph: { title, description, images: [image] },
+    twitter: { title, description, images: [image] }
   };
 }
 
@@ -58,9 +62,36 @@ export default function CourseInCommunityPage({
   const communityName = locale === "ar" ? community.nameAr : community.nameEn;
   const totalMinutes = course.lessons.reduce((sum, l) => sum + l.durationMinutes, 0);
   const rating = getAverageRating(course.id);
+  const reviewCount = getReviewsByCourse(course.id).length;
+
+  const courseJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Course",
+    name: title,
+    description: description || title,
+    provider: {
+      "@type": "Organization",
+      name: communityName,
+      sameAs: `https://mujtamaaty.example/${locale}/communities/${community.slug}`
+    },
+    ...(rating > 0 && reviewCount > 0
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: rating.toFixed(1),
+            reviewCount
+          }
+        }
+      : {})
+  };
 
   return (
     <div>
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(courseJsonLd) }}
+      />
       <div className={`bg-gradient-to-b ${accent.gradient}`}>
         <div className="container-page grid gap-8 py-10 text-white lg:grid-cols-[1.6fr,1fr] lg:py-14">
           <div>

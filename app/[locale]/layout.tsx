@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans, IBM_Plex_Sans_Arabic, IBM_Plex_Mono } from "next/fon
 import "../globals.css";
 import { locales, isLocale, dir, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/getDictionary";
+import { DEFAULT_OG_IMAGE } from "@/lib/seo";
 import { AuthProvider } from "@/lib/auth-context";
 import { PlatformStoreProvider } from "@/lib/platform-store";
 import Navbar from "@/components/Navbar";
@@ -66,12 +67,14 @@ export async function generateMetadata({
       title,
       description: dict.meta.defaultDescription,
       locale: locale === "ar" ? "ar_EG" : "en_US",
-      type: "website"
+      type: "website",
+      images: [DEFAULT_OG_IMAGE]
     },
     twitter: {
       card: "summary_large_image",
       title,
-      description: dict.meta.defaultDescription
+      description: dict.meta.defaultDescription,
+      images: [DEFAULT_OG_IMAGE]
     },
     robots: {
       index: true,
@@ -90,9 +93,22 @@ export default function LocaleLayout({
   const locale: Locale = isLocale(params.locale) ? params.locale : "ar";
   const dictionary = getDictionary(locale);
 
+  const organizationJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: dictionary.meta.siteName,
+    description: dictionary.meta.defaultDescription,
+    url: `https://mujtamaaty.example/${locale}`
+  };
+
   return (
     <html lang={locale} dir={dir(locale)} className={`${jakarta.variable} ${plexSansArabic.variable} ${plexMono.variable}`}>
       <body>
+        <script
+          type="application/ld+json"
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
         <PlatformStoreProvider>
           <AuthProvider>
             <div className="flex min-h-screen flex-col">

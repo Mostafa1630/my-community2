@@ -53,7 +53,7 @@ export default function HomePage({ params }: { params: { locale: string } }) {
       {/* Drop the photo at public/images/hero-creator.jpg — this <img> already points at it. */}
       <img
         src="/images/hero-creator.jpg"
-        alt=""
+        alt={dict.home.heroImageAlt}
         className="aspect-[4/3] w-full rounded-3xl border border-line object-cover shadow-raised"
       />
       <div className="absolute -bottom-5 left-4 flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3 shadow-raised sm:left-6">
