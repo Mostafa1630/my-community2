@@ -31,7 +31,7 @@ export default function CommunityCard({
   return (
     <Link
       href={`/${locale}/communities/${community.slug}`}
-      className="hover-lift group flex flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-card hover:border-primary-200"
+      className="hover-lift group flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-card hover:border-primary-200"
     >
       <div className="relative h-36 overflow-hidden">
         {community.coverImage ? (

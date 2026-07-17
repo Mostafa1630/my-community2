@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, Lock, PlayCircle } from "lucide-react";
+import { CheckCircle2, Lock, PlayCircle, FileText, Download } from "lucide-react";
 import type { Course } from "@/lib/types";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
@@ -61,7 +61,22 @@ export default function WatchCourseView({
         <p className="mb-1 text-xs font-medium text-primary-700">{title}</p>
         {activeLesson && (
           <>
-            <VideoPlayer url={activeLesson.youtubeUrl} title={activeTitle} />
+            {activeLesson.videoUrl ? (
+              <VideoPlayer url={activeLesson.videoUrl} title={activeTitle} />
+            ) : activeLesson.resourceFileUrl ? (
+              <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 rounded-2xl border border-line bg-surface shadow-card">
+                <FileText size={32} className="text-primary-600" />
+                <p className="text-sm font-medium text-ink">{dict.courseDetails.lessonResourceTitle}</p>
+                <a
+                  href={activeLesson.resourceFileUrl}
+                  download={activeLesson.resourceFileName}
+                  className="flex items-center gap-2 rounded-full bg-primary-500 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-600"
+                >
+                  <Download size={14} />
+                  {dict.courseDetails.downloadResource}
+                </a>
+              </div>
+            ) : null}
             <h1 className="mt-5 text-xl font-bold text-ink">{activeTitle}</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-ink/70">{activeDesc}</p>
           </>

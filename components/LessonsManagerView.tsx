@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, Pencil, Trash2, Video, BookX } from "lucide-react";
+import { useRef, useState } from "react";
+import { Plus, Pencil, Trash2, Video, BookX, Link as LinkIcon, FileText, X } from "lucide-react";
 import type { Lesson } from "@/lib/types";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
@@ -9,16 +9,25 @@ import { t } from "@/lib/i18n/t";
 import { useAuth } from "@/lib/auth-context";
 import { usePlatformStore } from "@/lib/platform-store";
 import EmptyState from "./EmptyState";
+import Modal from "./motion/Modal";
+
+type VideoSource = "link" | "file";
 
 const emptyLesson = {
   titleEn: "",
   titleAr: "",
   descEn: "",
   descAr: "",
-  youtubeUrl: "",
+  videoUrl: "",
+  resourceFileName: "",
+  resourceFileUrl: "",
   durationMinutes: 15,
   isFree: false
 };
+
+function sourceOfLesson(lesson: Lesson): VideoSource {
+  return lesson.resourceFileUrl ? "file" : "link";
+}
 
 export default function LessonsManagerView({
   courseId,
@@ -36,7 +45,9 @@ export default function LessonsManagerView({
   const [editing, setEditing] = useState<Lesson | null>(null);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState(emptyLesson);
+  const [videoSource, setVideoSource] = useState<VideoSource>("link");
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  const resourceFileInputRef = useRef<HTMLInputElement>(null);
 
   if (!user || user.role !== "creator") return null;
   if (!course || course.creatorId !== user.id) {
@@ -45,8 +56,19 @@ export default function LessonsManagerView({
 
   const title = locale === "ar" ? course.titleAr : course.titleEn;
 
+  function selectSource(source: VideoSource) {
+    setVideoSource(source);
+    setForm((prev) => ({ ...prev, videoUrl: "", resourceFileName: "", resourceFileUrl: "" }));
+  }
+
+  function pickResourceFile(file: File | undefined) {
+    if (!file) return;
+    setForm((prev) => ({ ...prev, videoUrl: "", resourceFileName: file.name, resourceFileUrl: URL.createObjectURL(file) }));
+  }
+
   function openCreate() {
     setForm(emptyLesson);
+    setVideoSource("link");
     setCreating(true);
   }
 
@@ -56,16 +78,20 @@ export default function LessonsManagerView({
       titleAr: lesson.titleAr,
       descEn: lesson.descEn,
       descAr: lesson.descAr,
-      youtubeUrl: lesson.youtubeUrl,
+      videoUrl: lesson.videoUrl,
+      resourceFileName: lesson.resourceFileName ?? "",
+      resourceFileUrl: lesson.resourceFileUrl ?? "",
       durationMinutes: lesson.durationMinutes,
       isFree: lesson.isFree
     });
+    setVideoSource(sourceOfLesson(lesson));
     setEditing(lesson);
   }
 
   function closeModal() {
     setCreating(false);
     setEditing(null);
+    if (resourceFileInputRef.current) resourceFileInputRef.current.value = "";
   }
 
   function submit() {
@@ -109,7 +135,15 @@ export default function LessonsManagerView({
                 <p className="truncate text-sm font-medium text-ink">
                   {locale === "ar" ? lesson.titleAr : lesson.titleEn}
                 </p>
-                <p className="truncate text-xs text-ink/45">{lesson.youtubeUrl}</p>
+                <p className="flex items-center gap-1 truncate text-xs text-ink/45">
+                  {sourceOfLesson(lesson) === "file" ? (
+                    <>
+                      <FileText size={11} className="shrink-0" /> {lesson.resourceFileName}
+                    </>
+                  ) : (
+                    lesson.videoUrl || dict.creatorDash.noFileChosen
+                  )}
+                </p>
               </div>
               <span className="shrink-0 font-mono text-xs text-ink/40">{lesson.durationMinutes}m</span>
               <button
@@ -129,12 +163,15 @@ export default function LessonsManagerView({
         </div>
       )}
 
-      {(creating || editing) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4" role="dialog" aria-modal="true">
-          <div className="w-full max-w-lg space-y-4 rounded-2xl bg-surface p-6 shadow-raised">
-            <h3 className="text-base font-bold text-ink">
-              {creating ? dict.creatorDash.addLesson : dict.creatorDash.editLesson}
-            </h3>
+      <Modal
+        open={creating || !!editing}
+        onClose={closeModal}
+        maxWidth="max-w-lg"
+        panelClassName="max-h-[90vh] space-y-4 overflow-y-auto"
+      >
+        <h3 className="text-base font-bold text-ink">
+          {creating ? dict.creatorDash.addLesson : dict.creatorDash.editLesson}
+        </h3>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label={dict.creatorDash.fieldLessonTitleEn} value={form.titleEn} onChange={(v) => setForm({ ...form, titleEn: v })} />
               <Field label={dict.creatorDash.fieldLessonTitleAr} value={form.titleAr} onChange={(v) => setForm({ ...form, titleAr: v })} dir="rtl" />
@@ -143,7 +180,46 @@ export default function LessonsManagerView({
               <Field label={dict.creatorDash.fieldLessonDescEn} value={form.descEn} onChange={(v) => setForm({ ...form, descEn: v })} />
               <Field label={dict.creatorDash.fieldLessonDescAr} value={form.descAr} onChange={(v) => setForm({ ...form, descAr: v })} dir="rtl" />
             </div>
-            <Field label={dict.creatorDash.fieldYoutubeUrl} value={form.youtubeUrl} onChange={(v) => setForm({ ...form, youtubeUrl: v })} />
+
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-ink/60">{dict.creatorDash.videoSourceLabel}</label>
+              <div className="mb-3 flex gap-1.5 rounded-xl bg-paper p-1">
+                <SourceTab
+                  active={videoSource === "link"}
+                  icon={<LinkIcon size={14} />}
+                  label={dict.creatorDash.videoSourceYoutube}
+                  onClick={() => selectSource("link")}
+                />
+                <SourceTab
+                  active={videoSource === "file"}
+                  icon={<FileText size={14} />}
+                  label={dict.creatorDash.videoSourceFile}
+                  onClick={() => selectSource("file")}
+                />
+              </div>
+
+              {videoSource === "link" && (
+                <Field
+                  label={dict.creatorDash.fieldYoutubeUrl}
+                  value={form.videoUrl}
+                  onChange={(v) => setForm({ ...form, videoUrl: v })}
+                  dir="ltr"
+                />
+              )}
+
+              {videoSource === "file" && (
+                <FilePicker
+                  inputRef={resourceFileInputRef}
+                  accept="*"
+                  cta={dict.creatorDash.uploadFileCta}
+                  chosenLabel={form.resourceFileName || dict.creatorDash.noFileChosen}
+                  onPick={pickResourceFile}
+                  onClear={() => setForm((prev) => ({ ...prev, resourceFileName: "", resourceFileUrl: "" }))}
+                  hasFile={!!form.resourceFileUrl}
+                />
+              )}
+            </div>
+
             <Field
               label={locale === "ar" ? "مدة الدرس (دقائق)" : "Lesson duration (minutes)"}
               value={String(form.durationMinutes)}
@@ -167,30 +243,92 @@ export default function LessonsManagerView({
                 {dict.common.save}
               </button>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>
 
-      {confirmId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4" role="dialog" aria-modal="true">
-          <div className="w-full max-w-sm rounded-2xl bg-surface p-6 shadow-raised">
-            <h3 className="text-base font-bold text-ink">{dict.common.delete}?</h3>
-            <div className="mt-6 flex gap-2">
-              <button onClick={() => setConfirmId(null)} className="flex-1 rounded-full border border-line py-2.5 text-sm font-medium text-ink/70">
-                {dict.common.cancel}
-              </button>
-              <button
-                onClick={() => {
-                  deleteLesson(courseId, confirmId);
-                  setConfirmId(null);
-                }}
-                className="flex-1 rounded-full bg-danger py-2.5 text-sm font-semibold text-white"
-              >
-                {dict.common.delete}
-              </button>
-            </div>
-          </div>
+      <Modal open={!!confirmId} onClose={() => setConfirmId(null)}>
+        <h3 className="text-base font-bold text-ink">{dict.common.delete}?</h3>
+        <div className="mt-6 flex gap-2">
+          <button onClick={() => setConfirmId(null)} className="flex-1 rounded-full border border-line py-2.5 text-sm font-medium text-ink/70">
+            {dict.common.cancel}
+          </button>
+          <button
+            onClick={() => {
+              if (confirmId) deleteLesson(courseId, confirmId);
+              setConfirmId(null);
+            }}
+            className="flex-1 rounded-full bg-danger py-2.5 text-sm font-semibold text-white"
+          >
+            {dict.common.delete}
+          </button>
         </div>
+      </Modal>
+    </div>
+  );
+}
+
+function SourceTab({
+  active,
+  icon,
+  label,
+  onClick
+}: {
+  active: boolean;
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium transition ${
+        active ? "bg-surface text-primary-700 shadow-card" : "text-ink/50 hover:text-ink/75"
+      }`}
+    >
+      {icon}
+      <span className="truncate">{label}</span>
+    </button>
+  );
+}
+
+function FilePicker({
+  inputRef,
+  accept,
+  cta,
+  chosenLabel,
+  hasFile,
+  onPick,
+  onClear
+}: {
+  inputRef: React.RefObject<HTMLInputElement>;
+  accept: string;
+  cta: string;
+  chosenLabel: string;
+  hasFile: boolean;
+  onPick: (file: File | undefined) => void;
+  onClear: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-2 rounded-xl border border-dashed border-line bg-paper px-3.5 py-2.5">
+      <input
+        ref={inputRef}
+        type="file"
+        accept={accept === "*" ? undefined : accept}
+        className="hidden"
+        onChange={(e) => onPick(e.target.files?.[0])}
+      />
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        className="shrink-0 rounded-full border border-line bg-surface px-3 py-1.5 text-xs font-semibold text-ink/70 hover:border-primary-300 hover:text-primary-700"
+      >
+        {cta}
+      </button>
+      <span className="min-w-0 flex-1 truncate text-xs text-ink/55">{chosenLabel}</span>
+      {hasFile && (
+        <button type="button" onClick={onClear} aria-label="clear" className="shrink-0 text-ink/40 hover:text-ink/70">
+          <X size={14} />
+        </button>
       )}
     </div>
   );

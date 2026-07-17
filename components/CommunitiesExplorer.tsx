@@ -9,6 +9,7 @@ import { t } from "@/lib/i18n/t";
 import CommunityCard from "./CommunityCard";
 import Pagination from "./Pagination";
 import EmptyState from "./EmptyState";
+import Reveal from "./motion/Reveal";
 
 const PAGE_SIZE = 8;
 type SortKey = "newest" | "price-asc" | "price-desc";
@@ -124,8 +125,10 @@ export default function CommunitiesExplorer({
         <EmptyState icon={Search} title={dict.communities.noResults} />
       ) : (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {paged.map((community) => (
-            <CommunityCard key={community.id} community={community} locale={locale} dict={dict} />
+          {paged.map((community, i) => (
+            <Reveal key={community.id} index={i}>
+              <CommunityCard community={community} locale={locale} dict={dict} />
+            </Reveal>
           ))}
         </div>
       )}

@@ -8,6 +8,7 @@ import CommunityCard from "@/components/CommunityCard";
 import CreatorCard from "@/components/CreatorCard";
 import CategoryPill from "@/components/CategoryPill";
 import SectionHeading from "@/components/SectionHeading";
+import Reveal from "@/components/motion/Reveal";
 
 export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
   const locale: Locale = isLocale(params.locale) ? params.locale : "ar";
@@ -91,8 +92,10 @@ export default function HomePage({ params }: { params: { locale: string } }) {
       <section className="container-page py-14 sm:py-16">
         <SectionHeading title={dict.home.categoriesTitle} />
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-          {categories.map((category) => (
-            <CategoryPill key={category.id} category={category} locale={locale} />
+          {categories.map((category, i) => (
+            <Reveal key={category.id} index={i}>
+              <CategoryPill category={category} locale={locale} />
+            </Reveal>
           ))}
         </div>
       </section>
@@ -113,8 +116,10 @@ export default function HomePage({ params }: { params: { locale: string } }) {
             }
           />
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {latest.map((community) => (
-              <CommunityCard key={community.id} community={community} locale={locale} dict={dict} />
+            {latest.map((community, i) => (
+              <Reveal key={community.id} index={i}>
+                <CommunityCard community={community} locale={locale} dict={dict} />
+              </Reveal>
             ))}
           </div>
         </div>
@@ -124,8 +129,10 @@ export default function HomePage({ params }: { params: { locale: string } }) {
       <section className="container-page py-14 sm:py-16">
         <SectionHeading title={dict.home.topCreatorsTitle} subtitle={dict.home.topCreatorsSubtitle} />
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {topCreators.map((creator) => (
-            <CreatorCard key={creator.id} creator={creator} locale={locale} dict={dict} />
+          {topCreators.map((creator, i) => (
+            <Reveal key={creator.id} index={i}>
+              <CreatorCard creator={creator} locale={locale} dict={dict} />
+            </Reveal>
           ))}
         </div>
       </section>

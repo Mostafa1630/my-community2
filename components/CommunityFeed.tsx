@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Heart,
   MessageCircle,
@@ -14,7 +15,9 @@ import {
   X,
   FileText,
   Download,
-  Users
+  Users,
+  Pin,
+  PinOff
 } from "lucide-react";
 import type { AccentKey, CommunityPost, Media, PostComment } from "@/lib/types";
 import type { Locale } from "@/lib/i18n/config";
@@ -91,7 +94,10 @@ export default function CommunityFeed({
     () =>
       store.posts.all
         .filter((p) => p.communityId === communityId)
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+        .sort((a, b) => {
+          if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        }),
     [store.posts.all, communityId]
   );
 
@@ -166,6 +172,11 @@ export default function CommunityFeed({
 
   function removePost(id: string) {
     store.posts.remove(id);
+    setOpenMenuId(null);
+  }
+
+  function togglePin(post: CommunityPost) {
+    store.posts.update(post.id, { pinned: !post.pinned });
     setOpenMenuId(null);
   }
 
@@ -323,7 +334,8 @@ export default function CommunityFeed({
           <EmptyState icon={MessageCircle} title={dict.community.noPosts} />
         ) : (
           <div className="space-y-4">
-            {posts.map((post) => {
+            <AnimatePresence initial={false}>
+              {posts.map((post) => {
             const author = getUserById(post.userId);
             const canEdit = user?.id === post.userId;
             const canDelete = user?.id === post.userId || isCreatorOfThisCommunity;
@@ -336,13 +348,40 @@ export default function CommunityFeed({
             const attachment = store.media.all.find((m) => m.mediableType === "post" && m.mediableId === post.id);
 
             return (
-              <article key={post.id} className="rounded-2xl border border-line bg-surface p-4 shadow-card">
+              <motion.article
+                key={post.id}
+                layout
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.97 }}
+                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                className={`rounded-2xl border p-4 shadow-card ${
+                  post.pinned ? "border-accent-300 bg-accent-50/30" : "border-line bg-surface"
+                }`}
+              >
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     <Avatar accent={author?.avatarAccent ?? "ink"} name={author?.name ?? ""} />
                     <div>
                       <p className="text-sm font-semibold text-ink">{author?.name}</p>
-                      <p className="text-xs text-ink/45">{formatRelative(post.createdAt, locale)}</p>
+                      <div className="flex items-center gap-1.5 text-xs text-ink/45">
+                        <AnimatePresence initial={false}>
+                          {post.pinned && (
+                            <motion.span
+                              initial={{ opacity: 0, scale: 0.6, width: 0 }}
+                              animate={{ opacity: 1, scale: 1, width: "auto" }}
+                              exit={{ opacity: 0, scale: 0.6, width: 0 }}
+                              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                              className="flex items-center gap-1 overflow-hidden whitespace-nowrap font-medium text-accent-700"
+                            >
+                              <Pin size={11} className="fill-accent-700" />
+                              {dict.community.pinnedLabel}
+                              <span className="text-ink/30">·</span>
+                            </motion.span>
+                          )}
+                        </AnimatePresence>
+                        {formatRelative(post.createdAt, locale)}
+                      </div>
                     </div>
                   </div>
                   {(canEdit || canDelete) && (
@@ -355,7 +394,16 @@ export default function CommunityFeed({
                         <MoreHorizontal size={18} />
                       </button>
                       {openMenuId === post.id && (
-                        <div className="absolute end-0 top-9 z-10 w-40 rounded-xl border border-line bg-surface p-1.5 shadow-raised">
+                        <div className="absolute end-0 top-9 z-10 w-44 rounded-xl border border-line bg-surface p-1.5 shadow-raised">
+                          {isCreatorOfThisCommunity && (
+                            <button
+                              onClick={() => togglePin(post)}
+                              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-start text-sm text-ink/80 hover:bg-primary-50"
+                            >
+                              {post.pinned ? <PinOff size={14} /> : <Pin size={14} />}
+                              {post.pinned ? dict.community.unpinPost : dict.community.pinPost}
+                            </button>
+                          )}
                           {canEdit && (
                             <button
                               onClick={() => {
@@ -415,12 +463,20 @@ export default function CommunityFeed({
                 )}
 
                 <div className="mt-3 flex items-center gap-4 border-t border-line pt-3 text-xs text-ink/50">
-                  <button
+                  <motion.button
+                    whileTap={{ scale: 0.85 }}
                     onClick={() => toggleLike(post.id)}
                     className={`flex items-center gap-1.5 hover:text-danger ${liked ? "text-danger" : ""}`}
                   >
-                    <Heart size={14} className={liked ? "fill-danger" : ""} /> {reactions.length}
-                  </button>
+                    <motion.span
+                      className="flex"
+                      animate={liked ? { scale: [1, 1.35, 1] } : { scale: 1 }}
+                      transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                    >
+                      <Heart size={14} className={liked ? "fill-danger" : ""} />
+                    </motion.span>
+                    {reactions.length}
+                  </motion.button>
                   <span className="flex items-center gap-1.5">
                     <MessageCircle size={14} /> {postComments.length}
                   </span>
@@ -468,9 +524,10 @@ export default function CommunityFeed({
                     </button>
                   </div>
                 )}
-              </article>
+              </motion.article>
             );
-          })}
+              })}
+            </AnimatePresence>
           </div>
         )}
       </div>

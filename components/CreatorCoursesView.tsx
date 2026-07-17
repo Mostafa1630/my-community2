@@ -13,6 +13,7 @@ import { Table, Thead, Th, Tr, Td } from "@/components/Table";
 import Badge from "@/components/Badge";
 import EmptyState from "@/components/EmptyState";
 import DashboardPageHeader from "@/components/DashboardPageHeader";
+import Modal from "@/components/motion/Modal";
 
 export default function CreatorCoursesView({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const { user } = useAuth();
@@ -97,33 +98,29 @@ export default function CreatorCoursesView({ locale, dict }: { locale: Locale; d
         </Table>
       )}
 
-      {confirmId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4" role="dialog" aria-modal="true">
-          <div className="w-full max-w-sm rounded-2xl bg-surface p-6 shadow-raised">
-            <h3 className="text-base font-bold text-ink">{dict.common.delete}?</h3>
-            <p className="mt-2 text-sm text-ink/60">
-              {locale === "ar" ? "الإجراء ده مش هيترجع." : "This action cannot be undone."}
-            </p>
-            <div className="mt-6 flex gap-2">
-              <button
-                onClick={() => setConfirmId(null)}
-                className="flex-1 rounded-full border border-line py-2.5 text-sm font-medium text-ink/70"
-              >
-                {dict.common.cancel}
-              </button>
-              <button
-                onClick={() => {
-                  store.courses.remove(confirmId);
-                  setConfirmId(null);
-                }}
-                className="flex-1 rounded-full bg-danger py-2.5 text-sm font-semibold text-white"
-              >
-                {dict.common.delete}
-              </button>
-            </div>
-          </div>
+      <Modal open={!!confirmId} onClose={() => setConfirmId(null)}>
+        <h3 className="text-base font-bold text-ink">{dict.common.delete}?</h3>
+        <p className="mt-2 text-sm text-ink/60">
+          {locale === "ar" ? "الإجراء ده مش هيترجع." : "This action cannot be undone."}
+        </p>
+        <div className="mt-6 flex gap-2">
+          <button
+            onClick={() => setConfirmId(null)}
+            className="flex-1 rounded-full border border-line py-2.5 text-sm font-medium text-ink/70"
+          >
+            {dict.common.cancel}
+          </button>
+          <button
+            onClick={() => {
+              if (confirmId) store.courses.remove(confirmId);
+              setConfirmId(null);
+            }}
+            className="flex-1 rounded-full bg-danger py-2.5 text-sm font-semibold text-white"
+          >
+            {dict.common.delete}
+          </button>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

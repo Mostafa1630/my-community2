@@ -11,6 +11,7 @@ import { useAuth } from "@/lib/auth-context";
 import { usePlatformStore } from "@/lib/platform-store";
 import { resolveCommunityPrice } from "@/lib/data";
 import { formatPrice, formatNumber } from "@/lib/format";
+import Modal from "./motion/Modal";
 
 function subscriptionDurationLabel(days: number, locale: Locale, dict: Dictionary) {
   if (days === 30) return dict.communityDetails.durationMonth;
@@ -129,35 +130,31 @@ export default function CommunitySubscribeCard({
         <li className="flex items-center gap-2"><Sparkles size={14} className="text-primary-500" />{dict.courseDetails.get4}</li>
       </ul>
 
-      {confirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4" role="dialog" aria-modal="true">
-          <div className="w-full max-w-sm rounded-2xl bg-surface p-6 shadow-raised">
-            <span className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-primary-50 text-primary-700">
-              <Lock size={18} />
-            </span>
-            <h3 className="text-lg font-bold text-ink">{dict.communityDetails.subscribeConfirmTitle}</h3>
-            <p className="mt-2 text-sm leading-6 text-ink/60">{dict.communityDetails.subscribeConfirmBody}</p>
-            <div className="mt-3 flex items-center gap-1.5 text-xs text-ink/45">
-              <ShieldCheck size={13} />
-              {community.isFree ? dict.common.free : formatPrice(quote.amount, locale)}
-            </div>
-            <div className="mt-6 flex gap-2">
-              <button
-                onClick={() => setConfirmOpen(false)}
-                className="flex-1 rounded-full border border-line py-2.5 text-sm font-medium text-ink/70"
-              >
-                {dict.common.cancel}
-              </button>
-              <button
-                onClick={confirmSubscribe}
-                className="flex-1 rounded-full bg-primary-500 py-2.5 text-sm font-semibold text-white"
-              >
-                {dict.communityDetails.confirmSubscribe}
-              </button>
-            </div>
-          </div>
+      <Modal open={confirmOpen} onClose={() => setConfirmOpen(false)}>
+        <span className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-primary-50 text-primary-700">
+          <Lock size={18} />
+        </span>
+        <h3 className="text-lg font-bold text-ink">{dict.communityDetails.subscribeConfirmTitle}</h3>
+        <p className="mt-2 text-sm leading-6 text-ink/60">{dict.communityDetails.subscribeConfirmBody}</p>
+        <div className="mt-3 flex items-center gap-1.5 text-xs text-ink/45">
+          <ShieldCheck size={13} />
+          {community.isFree ? dict.common.free : formatPrice(quote.amount, locale)}
         </div>
-      )}
+        <div className="mt-6 flex gap-2">
+          <button
+            onClick={() => setConfirmOpen(false)}
+            className="flex-1 rounded-full border border-line py-2.5 text-sm font-medium text-ink/70"
+          >
+            {dict.common.cancel}
+          </button>
+          <button
+            onClick={confirmSubscribe}
+            className="flex-1 rounded-full bg-primary-500 py-2.5 text-sm font-semibold text-white"
+          >
+            {dict.communityDetails.confirmSubscribe}
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }

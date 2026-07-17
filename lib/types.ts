@@ -64,7 +64,13 @@ export interface Lesson {
   titleAr: string;
   descEn: string;
   descAr: string;
-  youtubeUrl: string;
+  // Either a YouTube embed link or an uploaded video's object URL (session-only —
+  // object URLs don't survive a page refresh, same known limitation as post media).
+  videoUrl: string;
+  // A lesson can instead (or additionally) ship a downloadable resource — e.g. slides,
+  // starter code — uploaded the same session-only way.
+  resourceFileName?: string;
+  resourceFileUrl?: string;
   durationMinutes: number;
   isFree: boolean;
 }
@@ -114,6 +120,7 @@ export interface CommunityPost {
   createdAt: string;
   updatedAt: string;
   removed?: boolean;
+  pinned?: boolean;
 }
 
 export interface PostComment {

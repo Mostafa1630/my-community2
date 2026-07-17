@@ -22,7 +22,7 @@ export default function CreatorCard({
   return (
     <Link
       href={`/${locale}/creators/${creator.slug}`}
-      className="hover-lift group flex flex-col items-center rounded-2xl border border-line bg-surface p-6 text-center shadow-card hover:border-primary-200"
+      className="hover-lift group flex h-full flex-col items-center rounded-2xl border border-line bg-surface p-6 text-center shadow-card hover:border-primary-200"
     >
       <span
         className={`flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br text-lg font-bold text-white transition-transform duration-300 group-hover:scale-105 ${accent.gradient}`}

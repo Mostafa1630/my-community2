@@ -11,6 +11,7 @@ import CourseInCommunityCard from "@/components/CourseInCommunityCard";
 import CommunitySubscribeCard from "@/components/CommunitySubscribeCard";
 import CommunityReviews from "@/components/CommunityReviews";
 import EmptyState from "@/components/EmptyState";
+import Reveal from "@/components/motion/Reveal";
 
 export function generateStaticParams() {
   return locales.flatMap((locale) => communities.map((c) => ({ locale, slug: c.slug })));
@@ -86,8 +87,10 @@ export default function CommunityDetailsPage({ params }: { params: { locale: str
             <EmptyState icon={BookOpen} title={dict.common.empty} />
           ) : (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-              {courses.map((course) => (
-                <CourseInCommunityCard key={course.id} course={course} community={community} locale={locale} dict={dict} />
+              {courses.map((course, i) => (
+                <Reveal key={course.id} index={i}>
+                  <CourseInCommunityCard course={course} community={community} locale={locale} dict={dict} />
+                </Reveal>
               ))}
             </div>
           )}

@@ -10,6 +10,7 @@ import { getCourseById, getCommunityById } from "@/lib/data";
 import CommunityCard from "./CommunityCard";
 import CourseInCommunityCard from "./CourseInCommunityCard";
 import EmptyState from "./EmptyState";
+import Reveal from "./motion/Reveal";
 
 type Tab = "communities" | "courses";
 
@@ -52,12 +53,16 @@ export default function FavoritesView({ locale, dict }: { locale: Locale; dict: 
         <EmptyState icon={Heart} title={dict.favorites.empty} />
       ) : (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {active.map((fav) => {
+          {active.map((fav, i) => {
             if (fav.favoritableType === "community") {
               const community =
                 store.communities.all.find((c) => c.id === fav.favoritableId) ?? getCommunityById(fav.favoritableId);
               if (!community) return null;
-              return <CommunityCard key={fav.id} community={community} locale={locale} dict={dict} />;
+              return (
+                <Reveal key={fav.id} index={i}>
+                  <CommunityCard community={community} locale={locale} dict={dict} />
+                </Reveal>
+              );
             }
 
             const course = store.courses.all.find((c) => c.id === fav.favoritableId) ?? getCourseById(fav.favoritableId);
@@ -65,7 +70,11 @@ export default function FavoritesView({ locale, dict }: { locale: Locale; dict: 
             const community = course.communityId
               ? store.communities.all.find((c) => c.id === course.communityId) ?? getCommunityById(course.communityId)
               : undefined;
-            return <CourseInCommunityCard key={fav.id} course={course} community={community} locale={locale} dict={dict} />;
+            return (
+              <Reveal key={fav.id} index={i}>
+                <CourseInCommunityCard course={course} community={community} locale={locale} dict={dict} />
+              </Reveal>
+            );
           })}
         </div>
       )}

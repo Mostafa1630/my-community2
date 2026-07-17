@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { Heart } from "lucide-react";
 import type { FavoritableType } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";
@@ -19,8 +20,9 @@ export default function FavoriteButton({
   const active = isFavorited(favoritableType, favoritableId);
 
   return (
-    <button
+    <motion.button
       type="button"
+      whileTap={{ scale: 0.85 }}
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -33,7 +35,13 @@ export default function FavoriteButton({
         `flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur transition hover:bg-black/55`
       }
     >
-      <Heart size={15} className={active ? "fill-danger text-danger" : ""} />
-    </button>
+      <motion.span
+        className="flex"
+        animate={active ? { scale: [1, 1.35, 1] } : { scale: 1 }}
+        transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+      >
+        <Heart size={15} className={active ? "fill-danger text-danger" : ""} />
+      </motion.span>
+    </motion.button>
   );
 }

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Menu,
   X,
@@ -106,8 +107,13 @@ export default function Navbar({ locale, dict }: { locale: Locale; dict: Diction
               {user ? user.name.split(" ")[0] : dict.nav.demoRole}
               <ChevronDown size={14} />
             </button>
+            <AnimatePresence>
             {roleMenuOpen && (
-              <div
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96, y: -4 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.96, y: -4 }}
+                transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
                 className="absolute end-0 top-11 w-64 rounded-xl border border-line bg-surface p-2 shadow-raised"
                 onMouseLeave={() => setRoleMenuOpen(false)}
               >
@@ -160,8 +166,9 @@ export default function Navbar({ locale, dict }: { locale: Locale; dict: Diction
                     </Link>
                   </div>
                 )}
-              </div>
+              </motion.div>
             )}
+            </AnimatePresence>
           </div>
 
           <button
@@ -174,8 +181,15 @@ export default function Navbar({ locale, dict }: { locale: Locale; dict: Diction
         </div>
       </div>
 
+      <AnimatePresence>
       {mobileOpen && (
-        <div className="absolute inset-x-0 top-full max-h-[calc(100vh-4rem)] overflow-y-auto border-t border-line bg-surface shadow-raised lg:hidden">
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+          className="absolute inset-x-0 top-full max-h-[calc(100vh-4rem)] overflow-y-auto border-t border-line bg-surface shadow-raised lg:hidden"
+        >
           <div className="container-page flex flex-col gap-1 py-3">
             {navLinks.map((link) => (
               <Link
@@ -224,8 +238,9 @@ export default function Navbar({ locale, dict }: { locale: Locale; dict: Diction
               </button>
             )}
           </div>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </header>
   );
 }

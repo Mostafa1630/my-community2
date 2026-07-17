@@ -11,6 +11,7 @@ import { getAccent, initials } from "@/lib/accents";
 import CourseInCommunityCard from "@/components/CourseInCommunityCard";
 import CreatorCommunityGate from "@/components/CreatorCommunityGate";
 import EmptyState from "@/components/EmptyState";
+import Reveal from "@/components/motion/Reveal";
 
 export function generateStaticParams() {
   return locales.flatMap((locale) => creators.map((c) => ({ locale, slug: c.slug })));
@@ -78,8 +79,10 @@ export default function CreatorProfilePage({ params }: { params: { locale: strin
           <EmptyState icon={BookOpen} title={dict.common.empty} />
         ) : (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {communityCourses.map((course) => (
-              <CourseInCommunityCard key={course.id} course={course} community={community} locale={locale} dict={dict} />
+            {communityCourses.map((course, i) => (
+              <Reveal key={course.id} index={i}>
+                <CourseInCommunityCard course={course} community={community} locale={locale} dict={dict} />
+              </Reveal>
             ))}
           </div>
         )}

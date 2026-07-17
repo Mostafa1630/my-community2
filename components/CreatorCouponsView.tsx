@@ -12,6 +12,7 @@ import { Table, Thead, Th, Tr, Td } from "./Table";
 import Badge from "./Badge";
 import EmptyState from "./EmptyState";
 import DashboardPageHeader from "./DashboardPageHeader";
+import Modal from "./motion/Modal";
 
 export default function CreatorCouponsView({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const { user } = useAuth();
@@ -104,70 +105,62 @@ export default function CreatorCouponsView({ locale, dict }: { locale: Locale; d
         </Table>
       )}
 
-      {creating && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4" role="dialog" aria-modal="true">
-          <div className="w-full max-w-sm space-y-4 rounded-2xl bg-surface p-6 shadow-raised">
-            <h3 className="text-base font-bold text-ink">{dict.creatorDash.newCoupon}</h3>
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-ink/60">{dict.creatorDash.fieldCouponCode}</label>
-              <input
-                value={code}
-                onChange={(e) => setCode(e.target.value.toUpperCase())}
-                dir="ltr"
-                className="w-full rounded-xl border border-line bg-paper px-3.5 py-2.5 text-sm font-mono outline-none focus:border-primary-400"
-              />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-ink/60">{dict.creatorDash.fieldCouponDiscount}</label>
-              <input
-                type="number"
-                value={discountPercentage}
-                onChange={(e) => setDiscountPercentage(Number(e.target.value) || 0)}
-                className="w-full rounded-xl border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus:border-primary-400"
-              />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-ink/60">{dict.creatorDash.fieldCouponExpiry}</label>
-              <input
-                type="date"
-                value={expiresAt}
-                onChange={(e) => setExpiresAt(e.target.value)}
-                className="w-full rounded-xl border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus:border-primary-400"
-              />
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <button onClick={() => setCreating(false)} className="rounded-full border border-line px-4 py-2.5 text-sm font-medium text-ink/70">
-                {dict.common.cancel}
-              </button>
-              <button onClick={submit} className="rounded-full bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white">
-                {dict.common.save}
-              </button>
-            </div>
-          </div>
+      <Modal open={creating} onClose={() => setCreating(false)} panelClassName="space-y-4">
+        <h3 className="text-base font-bold text-ink">{dict.creatorDash.newCoupon}</h3>
+        <div>
+          <label className="mb-1.5 block text-xs font-medium text-ink/60">{dict.creatorDash.fieldCouponCode}</label>
+          <input
+            value={code}
+            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            dir="ltr"
+            className="w-full rounded-xl border border-line bg-paper px-3.5 py-2.5 text-sm font-mono outline-none focus:border-primary-400"
+          />
         </div>
-      )}
+        <div>
+          <label className="mb-1.5 block text-xs font-medium text-ink/60">{dict.creatorDash.fieldCouponDiscount}</label>
+          <input
+            type="number"
+            value={discountPercentage}
+            onChange={(e) => setDiscountPercentage(Number(e.target.value) || 0)}
+            className="w-full rounded-xl border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus:border-primary-400"
+          />
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs font-medium text-ink/60">{dict.creatorDash.fieldCouponExpiry}</label>
+          <input
+            type="date"
+            value={expiresAt}
+            onChange={(e) => setExpiresAt(e.target.value)}
+            className="w-full rounded-xl border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus:border-primary-400"
+          />
+        </div>
+        <div className="flex justify-end gap-2 pt-2">
+          <button onClick={() => setCreating(false)} className="rounded-full border border-line px-4 py-2.5 text-sm font-medium text-ink/70">
+            {dict.common.cancel}
+          </button>
+          <button onClick={submit} className="rounded-full bg-primary-500 px-4 py-2.5 text-sm font-semibold text-white">
+            {dict.common.save}
+          </button>
+        </div>
+      </Modal>
 
-      {confirmId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4" role="dialog" aria-modal="true">
-          <div className="w-full max-w-sm rounded-2xl bg-surface p-6 shadow-raised">
-            <h3 className="text-base font-bold text-ink">{dict.common.delete}?</h3>
-            <div className="mt-6 flex gap-2">
-              <button onClick={() => setConfirmId(null)} className="flex-1 rounded-full border border-line py-2.5 text-sm font-medium text-ink/70">
-                {dict.common.cancel}
-              </button>
-              <button
-                onClick={() => {
-                  store.coupons.remove(confirmId);
-                  setConfirmId(null);
-                }}
-                className="flex-1 rounded-full bg-danger py-2.5 text-sm font-semibold text-white"
-              >
-                {dict.common.delete}
-              </button>
-            </div>
-          </div>
+      <Modal open={!!confirmId} onClose={() => setConfirmId(null)}>
+        <h3 className="text-base font-bold text-ink">{dict.common.delete}?</h3>
+        <div className="mt-6 flex gap-2">
+          <button onClick={() => setConfirmId(null)} className="flex-1 rounded-full border border-line py-2.5 text-sm font-medium text-ink/70">
+            {dict.common.cancel}
+          </button>
+          <button
+            onClick={() => {
+              if (confirmId) store.coupons.remove(confirmId);
+              setConfirmId(null);
+            }}
+            className="flex-1 rounded-full bg-danger py-2.5 text-sm font-semibold text-white"
+          >
+            {dict.common.delete}
+          </button>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

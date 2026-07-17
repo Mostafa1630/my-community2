@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
 
 export interface SidebarItem {
@@ -65,10 +66,24 @@ export default function DashboardSidebar({ title, items }: { title: string; item
         </button>
       </div>
 
+      <AnimatePresence>
       {open && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-ink/40" onClick={() => setOpen(false)} />
-          <aside className="absolute top-0 start-0 flex h-full w-72 max-w-[85%] flex-col gap-4 overflow-y-auto bg-gradient-to-br from-primary-500 to-primary-700 p-4 shadow-raised">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            className="absolute inset-0 bg-ink/40"
+            onClick={() => setOpen(false)}
+          />
+          <motion.aside
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.96 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute top-0 start-0 flex h-full w-72 max-w-[85%] flex-col gap-4 overflow-y-auto bg-gradient-to-br from-primary-500 to-primary-700 p-4 shadow-raised"
+          >
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold uppercase tracking-wide text-white/60">{title}</p>
               <button
@@ -80,9 +95,10 @@ export default function DashboardSidebar({ title, items }: { title: string; item
               </button>
             </div>
             {navList(() => setOpen(false))}
-          </aside>
+          </motion.aside>
         </div>
       )}
+      </AnimatePresence>
 
       {/* Desktop: pinned in place within the normal page column (so it stays aligned with the
           site's centered container/logo), stays put while the page content scrolls. */}

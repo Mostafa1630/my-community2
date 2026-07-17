@@ -12,6 +12,7 @@ import { Table, Thead, Th, Tr, Td } from "./Table";
 import Badge from "./Badge";
 import EmptyState from "./EmptyState";
 import DashboardPageHeader from "./DashboardPageHeader";
+import Modal from "./motion/Modal";
 
 export default function CreatorWithdrawalsView({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const { user } = useAuth();
@@ -89,58 +90,54 @@ export default function CreatorWithdrawalsView({ locale, dict }: { locale: Local
         </Table>
       )}
 
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4" role="dialog" aria-modal="true">
-          <div className="w-full max-w-sm rounded-2xl bg-surface p-6 shadow-raised">
-            <h3 className="text-base font-bold text-ink">{dict.creatorDash.newWithdrawal}</h3>
-            <p className="mt-2 text-xs text-ink/50">
-              {dict.creatorDash.earningsAvailable}: {formatPrice(user.balance, locale)}
-            </p>
-            <input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="0"
-              className="mt-4 w-full rounded-xl border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus:border-primary-400"
-            />
-            <label className="mb-1.5 mt-4 block text-xs font-medium text-ink/60">{dict.creatorDash.fieldPayoutMethod}</label>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setPayoutMethod("vodafone_cash")}
-                className={`flex-1 rounded-full border px-3 py-2 text-xs font-medium ${
-                  payoutMethod === "vodafone_cash" ? "border-primary-500 bg-primary-50 text-primary-700" : "border-line text-ink/60"
-                }`}
-              >
-                {dict.creatorDash.payoutVodafoneCash}
-              </button>
-              <button
-                type="button"
-                onClick={() => setPayoutMethod("instapay")}
-                className={`flex-1 rounded-full border px-3 py-2 text-xs font-medium ${
-                  payoutMethod === "instapay" ? "border-primary-500 bg-primary-50 text-primary-700" : "border-line text-ink/60"
-                }`}
-              >
-                {dict.creatorDash.payoutInstapay}
-              </button>
-            </div>
-            <label className="mb-1.5 mt-4 block text-xs font-medium text-ink/60">{dict.creatorDash.fieldPayoutAccount}</label>
-            <input
-              value={payoutAccountNumber}
-              onChange={(e) => setPayoutAccountNumber(e.target.value)}
-              className="w-full rounded-xl border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus:border-primary-400"
-            />
-            <div className="mt-6 flex gap-2">
-              <button onClick={() => setOpen(false)} className="flex-1 rounded-full border border-line py-2.5 text-sm font-medium text-ink/70">
-                {dict.common.cancel}
-              </button>
-              <button onClick={submit} className="flex-1 rounded-full bg-primary-500 py-2.5 text-sm font-semibold text-white">
-                {dict.common.requestWithdrawal}
-              </button>
-            </div>
-          </div>
+      <Modal open={open} onClose={() => setOpen(false)}>
+        <h3 className="text-base font-bold text-ink">{dict.creatorDash.newWithdrawal}</h3>
+        <p className="mt-2 text-xs text-ink/50">
+          {dict.creatorDash.earningsAvailable}: {formatPrice(user.balance, locale)}
+        </p>
+        <input
+          type="number"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          placeholder="0"
+          className="mt-4 w-full rounded-xl border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus:border-primary-400"
+        />
+        <label className="mb-1.5 mt-4 block text-xs font-medium text-ink/60">{dict.creatorDash.fieldPayoutMethod}</label>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setPayoutMethod("vodafone_cash")}
+            className={`flex-1 rounded-full border px-3 py-2 text-xs font-medium ${
+              payoutMethod === "vodafone_cash" ? "border-primary-500 bg-primary-50 text-primary-700" : "border-line text-ink/60"
+            }`}
+          >
+            {dict.creatorDash.payoutVodafoneCash}
+          </button>
+          <button
+            type="button"
+            onClick={() => setPayoutMethod("instapay")}
+            className={`flex-1 rounded-full border px-3 py-2 text-xs font-medium ${
+              payoutMethod === "instapay" ? "border-primary-500 bg-primary-50 text-primary-700" : "border-line text-ink/60"
+            }`}
+          >
+            {dict.creatorDash.payoutInstapay}
+          </button>
         </div>
-      )}
+        <label className="mb-1.5 mt-4 block text-xs font-medium text-ink/60">{dict.creatorDash.fieldPayoutAccount}</label>
+        <input
+          value={payoutAccountNumber}
+          onChange={(e) => setPayoutAccountNumber(e.target.value)}
+          className="w-full rounded-xl border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus:border-primary-400"
+        />
+        <div className="mt-6 flex gap-2">
+          <button onClick={() => setOpen(false)} className="flex-1 rounded-full border border-line py-2.5 text-sm font-medium text-ink/70">
+            {dict.common.cancel}
+          </button>
+          <button onClick={submit} className="flex-1 rounded-full bg-primary-500 py-2.5 text-sm font-semibold text-white">
+            {dict.common.requestWithdrawal}
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -9,17 +9,26 @@ function toEmbeddableUrl(url: string) {
   return `${withPrivacyDomain}${separator}modestbranding=1&rel=0&iv_load_policy=3&fs=1`;
 }
 
+function isYoutubeEmbed(url: string) {
+  return /youtube(-nocookie)?\.com\/embed\//.test(url);
+}
+
 export default function VideoPlayer({ url, title }: { url: string; title: string }) {
   return (
     <div className="aspect-video w-full overflow-hidden rounded-2xl border border-line bg-ink shadow-card">
-      <iframe
-        src={toEmbeddableUrl(url)}
-        title={title}
-        className="h-full w-full"
-        loading="lazy"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        allowFullScreen
-      />
+      {isYoutubeEmbed(url) ? (
+        <iframe
+          src={toEmbeddableUrl(url)}
+          title={title}
+          className="h-full w-full"
+          loading="lazy"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        />
+      ) : (
+        // eslint-disable-next-line jsx-a11y/media-has-caption
+        <video src={url} title={title} controls className="h-full w-full" />
+      )}
     </div>
   );
 }
