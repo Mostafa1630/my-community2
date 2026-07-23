@@ -11,6 +11,8 @@ import SectionHeading from "@/components/SectionHeading";
 import Slider from "@/components/motion/Slider";
 import SpinReveal from "@/components/motion/SpinReveal";
 import HeroImageReveal from "@/components/motion/HeroImageReveal";
+import HeroButtons from "@/components/motion/HeroButtons";
+import CountUp from "@/components/motion/CountUp";
 
 export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
   const locale: Locale = isLocale(params.locale) ? params.locale : "ar";
@@ -34,20 +36,24 @@ export default function HomePage({ params }: { params: { locale: string } }) {
         {dict.home.heroTitle}
       </h1>
       <p className="mt-5 max-w-lg text-sm leading-7 text-ink/60">{dict.home.heroSubtitle}</p>
-      <div className="mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
-        <Link
-          href={`/${locale}/communities`}
-          className="flex items-center gap-2 rounded-full bg-primary-500 px-6 py-3 text-sm font-semibold text-white shadow-raised transition hover:bg-primary-600"
-        >
-          {dict.home.heroCtaPrimary}
-        </Link>
-        <Link
-          href={`/${locale}/register`}
-          className="rounded-full border border-line bg-surface px-6 py-3 text-sm font-semibold text-ink transition hover:border-primary-300"
-        >
-          {dict.home.heroCtaSecondary}
-        </Link>
-      </div>
+      <HeroButtons
+        primary={
+          <Link
+            href={`/${locale}/communities`}
+            className="flex items-center gap-2 rounded-full bg-primary-500 px-6 py-3 text-sm font-semibold text-white shadow-raised transition hover:bg-primary-600"
+          >
+            {dict.home.heroCtaPrimary}
+          </Link>
+        }
+        secondary={
+          <Link
+            href={`/${locale}/register`}
+            className="rounded-full border border-line bg-surface px-6 py-3 text-sm font-semibold text-ink transition hover:border-primary-300"
+          >
+            {dict.home.heroCtaSecondary}
+          </Link>
+        }
+      />
     </div>
   );
 
@@ -67,7 +73,9 @@ export default function HomePage({ params }: { params: { locale: string } }) {
             <GraduationCap size={18} />
           </span>
           <div className="whitespace-nowrap">
-            <p className="font-mono text-base font-bold text-ink">10,000+</p>
+            <p className="font-mono text-base font-bold text-ink">
+              <CountUp from={100} to={10000} suffix="+" />
+            </p>
             <p className="text-xs text-ink/55">{dict.home.heroStat}</p>
           </div>
         </div>
@@ -121,7 +129,7 @@ export default function HomePage({ params }: { params: { locale: string } }) {
                 <CreatorCard key={`${creator.id}-${rep}`} creator={creator} locale={locale} dict={dict} />
               ))
             )}
-            itemClassName="w-[46%] sm:w-[31%] lg:w-[23%]"
+            itemClassName="w-[calc((100%_-_1rem)/1.5)] sm:w-[calc((100%_-_2rem)/3)] lg:w-[calc((100%_-_3rem)/4)]"
           />
         </div>
       </section>
@@ -149,7 +157,7 @@ export default function HomePage({ params }: { params: { locale: string } }) {
                 <CommunityCard key={`${community.id}-${rep}`} community={community} locale={locale} dict={dict} />
               ))
             )}
-            itemClassName="w-[46%] sm:w-[31%] lg:w-[23%]"
+            itemClassName="w-[calc((100%_-_1rem)/1.5)] sm:w-[calc((100%_-_2rem)/3)] lg:w-[calc((100%_-_3rem)/4)]"
           />
         </div>
       </section>
@@ -194,7 +202,6 @@ export default function HomePage({ params }: { params: { locale: string } }) {
           icon={<ScrollText size={20} />}
           title={dict.home.termsTitle}
           body={dict.home.termsBody}
-          reverse
         />
       </section>
     </div>

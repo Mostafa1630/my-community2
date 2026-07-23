@@ -3,43 +3,30 @@
 import { motion } from "framer-motion";
 import type { ReactNode } from "react";
 
-// A photo that fades + scales into place once (when it scrolls into view), then keeps
-// doing one full, smooth rotation on a loop forever — a spin, a 5s pause, a spin again
-// — per the client's explicit ask for continuous motion, not a one-time reveal. Rotating
-// to 360 (rather than a keyframe array) and letting `repeat: Infinity` restart from the
-// 0 initial value works because 0deg and 360deg are visually identical, so the loop
-// restart is invisible; only the fade/scale are one-shot (`once: true` on the viewport).
+// A photo that fades and scales up gently into place once, as it scrolls into view —
+// deliberately simple, no rotation (rotation was tried and explicitly rejected by the
+// client for every image in the app).
 export default function SpinReveal({
   image,
   alt,
   title,
   body,
-  icon,
-  reverse = false
+  icon
 }: {
   image: string;
   alt: string;
   title: string;
   body: string;
   icon: ReactNode;
-  reverse?: boolean;
 }) {
   return (
-    <div
-      className={`container-page flex flex-col items-center gap-8 sm:gap-10 ${
-        reverse ? "sm:flex-row-reverse" : "sm:flex-row"
-      }`}
-    >
+    <div className="container-page flex flex-col items-center gap-8 sm:flex-row sm:gap-10">
       <motion.div
         className="w-full max-w-[240px] shrink-0 sm:max-w-[260px]"
-        initial={{ opacity: 0, rotate: 0, scale: 0.7 }}
-        whileInView={{ opacity: 1, rotate: 360, scale: 1 }}
+        initial={{ opacity: 0, scale: 0.85 }}
+        whileInView={{ opacity: 1, scale: 1 }}
         viewport={{ once: true, margin: "-60px" }}
-        transition={{
-          opacity: { duration: 1, ease: [0.16, 1, 0.3, 1] },
-          scale: { duration: 1, ease: [0.16, 1, 0.3, 1] },
-          rotate: { duration: 1.4, repeat: Infinity, repeatDelay: 5, ease: "easeInOut" }
-        }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
       >
         <img
           src={image}

@@ -74,7 +74,7 @@ export default function CommunityCard({
           </div>
         )}
 
-        <div className="mt-4 flex flex-col gap-1.5 text-xs text-ink/60 sm:flex-row sm:items-center sm:gap-3">
+        <div className="mt-4 flex items-center gap-3 text-xs text-ink/60">
           <span className="flex items-center gap-1">
             <BookOpen size={13} />
             {courseCount} {dict.common.courses}
@@ -85,7 +85,7 @@ export default function CommunityCard({
           </span>
         </div>
 
-        <div className="mt-5 flex flex-col items-stretch gap-2 border-t border-line pt-3.5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-5 flex items-center justify-between border-t border-line pt-3.5">
           <span className="font-mono text-xs font-bold tracking-wide text-accent-600">
             {community.isFree ? dict.communities.freeBadge : formatPrice(community.subscriptionPrice, locale)}
           </span>

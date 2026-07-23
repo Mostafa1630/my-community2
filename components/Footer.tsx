@@ -21,7 +21,7 @@ const paymentBadges = [
 export default function Footer({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const year = new Date().getFullYear();
   return (
-    <footer className="border-t border-line bg-surface">
+    <footer className="bg-surface">
       <div className="container-page grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <div className="mb-3 flex items-center gap-2">
@@ -56,45 +56,43 @@ export default function Footer({ locale, dict }: { locale: Locale; dict: Diction
         </div>
       </div>
 
-      <div className="border-t border-line">
-        <div className="container-page flex flex-col items-center gap-6 py-8 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="mb-3 text-center text-xs font-semibold uppercase tracking-wide text-ink/40 sm:text-start">
-              {dict.footer.securePayments}
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
-              {paymentBadges.map((brand) => (
-                <span
-                  key={brand.name}
-                  className="flex h-9 w-14 items-center justify-center overflow-hidden rounded-md border border-line"
-                >
-                  <img src={brand.image} alt={brand.name} loading="lazy" decoding="async" className="h-full w-full object-cover" />
-                </span>
-              ))}
-            </div>
+      <div className="container-page flex flex-col items-center gap-6 py-8 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="mb-3 text-center text-xs font-semibold uppercase tracking-wide text-ink/40 sm:text-start">
+            {dict.footer.securePayments}
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+            {paymentBadges.map((brand) => (
+              <span
+                key={brand.name}
+                className="flex h-9 w-14 items-center justify-center overflow-hidden rounded-md border border-line"
+              >
+                <img src={brand.image} alt={brand.name} loading="lazy" decoding="async" className="h-full w-full object-cover" />
+              </span>
+            ))}
           </div>
+        </div>
 
-          <div>
-            <p className="mb-3 text-center text-xs font-semibold uppercase tracking-wide text-ink/40 sm:text-end">
-              {dict.footer.followUs}
-            </p>
-            <div className="flex items-center justify-center gap-2.5">
-              {socialLinks.map(({ icon: Icon, label, href }) => (
-                <a
-                  key={label}
-                  href={href}
-                  aria-label={label}
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-500 text-white transition hover:bg-primary-600"
-                >
-                  <Icon size={16} />
-                </a>
-              ))}
-            </div>
+        <div>
+          <p className="mb-3 text-center text-xs font-semibold uppercase tracking-wide text-ink/40 sm:text-end">
+            {dict.footer.followUs}
+          </p>
+          <div className="flex items-center justify-center gap-2.5">
+            {socialLinks.map(({ icon: Icon, label, href }) => (
+              <a
+                key={label}
+                href={href}
+                aria-label={label}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-500 text-white transition hover:bg-primary-600"
+              >
+                <Icon size={16} />
+              </a>
+            ))}
           </div>
         </div>
       </div>
 
-      <div className="border-t border-line py-5">
+      <div className="py-5">
         <p className="container-page text-center text-xs text-ink/45">
           © {year} {dict.meta.siteName}. {dict.footer.rights}
         </p>

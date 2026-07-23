@@ -10,6 +10,7 @@ import CommunityCard from "./CommunityCard";
 import Pagination from "./Pagination";
 import EmptyState from "./EmptyState";
 import Reveal from "./motion/Reveal";
+import Slider from "./motion/Slider";
 
 const PAGE_SIZE = 8;
 type SortKey = "newest" | "price-asc" | "price-desc";
@@ -133,13 +134,26 @@ export default function CommunitiesExplorer({
       {paged.length === 0 ? (
         <EmptyState icon={Search} title={dict.communities.noResults} />
       ) : (
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {paged.map(({ community, key }, i) => (
-            <Reveal key={key} index={i}>
-              <CommunityCard community={community} locale={locale} dict={dict} />
-            </Reveal>
-          ))}
-        </div>
+        <>
+          {/* Mobile: horizontal slider (one-and-a-half cards, arrows hidden — same
+              behavior as the home page's sliders). Desktop: the original grid,
+              unchanged. Both render the same `paged` page of results. */}
+          <div className="sm:hidden">
+            <Slider
+              items={paged.map(({ community, key }) => (
+                <CommunityCard key={key} community={community} locale={locale} dict={dict} />
+              ))}
+              itemClassName="w-[calc((100%_-_1rem)/1.5)]"
+            />
+          </div>
+          <div className="hidden sm:grid sm:grid-cols-2 gap-5 lg:grid-cols-4">
+            {paged.map(({ community, key }, i) => (
+              <Reveal key={key} index={i}>
+                <CommunityCard community={community} locale={locale} dict={dict} />
+              </Reveal>
+            ))}
+          </div>
+        </>
       )}
 
       <Pagination page={page} totalPages={totalPages} onChange={setPage} dict={dict} />

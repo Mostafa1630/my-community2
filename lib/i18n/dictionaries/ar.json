@@ -164,7 +164,8 @@
     "coursesBy": "كورسات {name}",
     "communityLocked": "اشترك في مجتمع منشئ المحتوى ده عشان تفتح البوستات.",
     "communityTitle": "المجتمع",
-    "visitCommunity": "زيارة المجتمع"
+    "visitCommunity": "زيارة المجتمع",
+    "viewProfile": "عرض الملف الشخصي"
   },
   "auth": {
     "loginTitle": "أهلاً بيك تاني",
