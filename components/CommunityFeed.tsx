@@ -38,7 +38,15 @@ function formatFileSize(bytes: number) {
 
 function PostAttachment({ media }: { media: Media }) {
   if (media.mimeType.startsWith("image/")) {
-    return <img src={media.filePath} alt={media.fileName} className="mt-3 max-h-96 w-full rounded-xl object-cover" />;
+    return (
+      <img
+        src={media.filePath}
+        alt={media.fileName}
+        loading="lazy"
+        decoding="async"
+        className="mt-3 max-h-96 w-full rounded-xl object-cover"
+      />
+    );
   }
   if (media.mimeType.startsWith("video/")) {
     // eslint-disable-next-line jsx-a11y/media-has-caption

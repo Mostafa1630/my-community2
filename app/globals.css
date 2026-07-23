@@ -78,6 +78,17 @@
   .hover-lift:hover {
     @apply -translate-y-1 shadow-raised;
   }
+
+  /* Hides the scrollbar on horizontally-scrolling sliders (category/community
+     carousels) while keeping the element natively scrollable/swipeable — the
+     custom prev/next arrow buttons are the intended way to navigate on desktop. */
+  .scrollbar-hide {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

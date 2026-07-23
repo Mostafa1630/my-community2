@@ -18,10 +18,20 @@ export default function CategoryPill({ category, locale }: { category: Category;
   return (
     <Link
       href={`/${locale}/communities?category=${category.slug}`}
-      className="hover-lift group flex h-full flex-col items-center justify-center gap-3 rounded-2xl border border-line bg-surface p-5 text-center shadow-card hover:border-primary-300"
+      className="hover-lift group flex h-full flex-col items-center gap-2.5 text-center"
     >
-      <span className="flex h-11 w-11 items-center justify-center rounded-full bg-primary-50 text-primary-700 transition-all duration-200 group-hover:scale-110 group-hover:bg-primary-500 group-hover:text-white">
-        <Icon size={20} />
+      <span className="relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-2xl border border-line bg-gradient-to-br from-primary-50 to-accent-50 shadow-card">
+        {category.image ? (
+          <img
+            src={category.image}
+            alt={name}
+            loading="lazy"
+            decoding="async"
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
+          />
+        ) : (
+          <Icon size={30} className="text-primary-600 transition-transform duration-300 group-hover:scale-110" />
+        )}
       </span>
       <span className="text-sm font-medium text-ink">{name}</span>
     </Link>

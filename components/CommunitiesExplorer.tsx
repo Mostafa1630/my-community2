@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Search, SlidersHorizontal, ChevronDown } from "lucide-react";
 import type { Community, Category } from "@/lib/types";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
@@ -34,30 +34,38 @@ export default function CommunitiesExplorer({
 
   const categoryMap = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
 
+  // The seed catalog is too small to ever fill a second page — repeated here (display
+  // only, not the underlying data) purely so pagination has something to paginate
+  // through. Drop this once there are enough real communities.
+  const displayEntries = useMemo(() => {
+    const reps = communities.length > PAGE_SIZE ? [0] : [0, 1, 2];
+    return reps.flatMap((rep) => communities.map((community) => ({ community, key: `${community.id}-${rep}` })));
+  }, [communities]);
+
   const filtered = useMemo(() => {
-    let list = communities.filter((c) => c.status === "active");
+    let list = displayEntries.filter((e) => e.community.status === "active");
 
     if (category !== "all") {
-      list = list.filter((c) => categoryMap.get(c.categoryId)?.slug === category);
+      list = list.filter((e) => categoryMap.get(e.community.categoryId)?.slug === category);
     }
 
     if (query.trim()) {
       const q = query.trim().toLowerCase();
-      list = list.filter((c) =>
-        [c.nameEn, c.nameAr, c.descriptionEn ?? "", c.descriptionAr ?? ""].some((field) =>
-          field.toLowerCase().includes(q)
+      list = list.filter((e) =>
+        [e.community.nameEn, e.community.nameAr, e.community.descriptionEn ?? "", e.community.descriptionAr ?? ""].some(
+          (field) => field.toLowerCase().includes(q)
         )
       );
     }
 
     list = [...list].sort((a, b) => {
-      if (sort === "price-asc") return a.subscriptionPrice - b.subscriptionPrice;
-      if (sort === "price-desc") return b.subscriptionPrice - a.subscriptionPrice;
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      if (sort === "price-asc") return a.community.subscriptionPrice - b.community.subscriptionPrice;
+      if (sort === "price-desc") return b.community.subscriptionPrice - a.community.subscriptionPrice;
+      return new Date(b.community.createdAt).getTime() - new Date(a.community.createdAt).getTime();
     });
 
     return list;
-  }, [communities, category, query, sort, categoryMap]);
+  }, [displayEntries, category, query, sort, categoryMap]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -79,17 +87,18 @@ export default function CommunitiesExplorer({
             className="w-full rounded-full border border-line bg-surface py-3 text-sm outline-none focus:border-primary-400 ps-10 pe-4"
           />
         </div>
-        <div className="flex items-center gap-2">
-          <SlidersHorizontal size={15} className="text-ink/40" />
+        <div className="relative flex items-center">
+          <SlidersHorizontal size={15} className="pointer-events-none absolute text-primary-600 start-4" />
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value as SortKey)}
-            className="rounded-full border border-line bg-surface px-3 py-3 text-sm text-ink/70 outline-none focus:border-primary-400"
+            className="appearance-none rounded-full border border-line bg-surface py-3 text-sm font-medium text-ink shadow-card outline-none transition hover:border-primary-300 focus:border-primary-400 ps-10 pe-9"
           >
             <option value="newest">{dict.communities.sortNewest}</option>
             <option value="price-asc">{dict.communities.sortPriceAsc}</option>
             <option value="price-desc">{dict.communities.sortPriceDesc}</option>
           </select>
+          <ChevronDown size={15} className="pointer-events-none absolute text-ink/40 end-3.5" />
         </div>
       </div>
 
@@ -125,15 +134,15 @@ export default function CommunitiesExplorer({
         <EmptyState icon={Search} title={dict.communities.noResults} />
       ) : (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {paged.map((community, i) => (
-            <Reveal key={community.id} index={i}>
+          {paged.map(({ community, key }, i) => (
+            <Reveal key={key} index={i}>
               <CommunityCard community={community} locale={locale} dict={dict} />
             </Reveal>
           ))}
         </div>
       )}
 
-      <Pagination page={page} totalPages={totalPages} onChange={setPage} />
+      <Pagination page={page} totalPages={totalPages} onChange={setPage} dict={dict} />
     </div>
   );
 }

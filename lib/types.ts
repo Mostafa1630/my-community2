@@ -52,6 +52,7 @@ export interface Category {
   nameEn: string;
   nameAr: string;
   icon: string;
+  image?: string;
   status: "active" | "inactive";
   createdAt: string;
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, IBM_Plex_Sans_Arabic, IBM_Plex_Mono } from "next/font/google";
+import { MotionConfig } from "framer-motion";
 import "../globals.css";
 import { locales, isLocale, dir, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/getDictionary";
@@ -109,16 +110,23 @@ export default function LocaleLayout({
           // eslint-disable-next-line react/no-danger
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
         />
-        <PlatformStoreProvider>
-          <AuthProvider>
-            <div className="flex min-h-screen flex-col">
-              <Navbar locale={locale} dict={dictionary} />
-              <main className="flex-1">{children}</main>
-              <Footer locale={locale} dict={dictionary} />
-              <ScrollToTopButton />
-            </div>
-          </AuthProvider>
-        </PlatformStoreProvider>
+        {/* reducedMotion="user" makes every framer-motion animation in the app (Slider,
+            Reveal, SpinReveal, HeroImageReveal, Navbar's menus, etc.) automatically
+            collapse to instant opacity-only transitions for anyone with the OS-level
+            "reduce motion" preference on — the CSS prefers-reduced-motion block in
+            globals.css only covers plain CSS transitions/animations, not these. */}
+        <MotionConfig reducedMotion="user">
+          <PlatformStoreProvider>
+            <AuthProvider>
+              <div className="flex min-h-screen flex-col">
+                <Navbar locale={locale} dict={dictionary} />
+                <main className="flex-1">{children}</main>
+                <Footer locale={locale} dict={dictionary} />
+                <ScrollToTopButton />
+              </div>
+            </AuthProvider>
+          </PlatformStoreProvider>
+        </MotionConfig>
       </body>
     </html>
   );

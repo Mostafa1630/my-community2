@@ -114,7 +114,7 @@ export default function Navbar({ locale, dict }: { locale: Locale; dict: Diction
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.96, y: -4 }}
                 transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
-                className="absolute end-0 top-11 w-64 rounded-xl border border-line bg-surface p-2 shadow-raised"
+                className="absolute end-0 top-11 w-72 rounded-xl border border-line bg-surface p-2 shadow-raised"
                 onMouseLeave={() => setRoleMenuOpen(false)}
               >
                 <p className="px-2 pb-1 pt-1 text-xs font-semibold uppercase tracking-wide text-ink/40">
@@ -152,14 +152,14 @@ export default function Navbar({ locale, dict }: { locale: Locale; dict: Diction
                   <div className="flex gap-2 px-2 pt-1">
                     <Link
                       href={`/${locale}/login`}
-                      className="flex-1 rounded-lg bg-primary-500 px-2 py-2 text-center text-sm font-medium text-white"
+                      className="flex-1 whitespace-nowrap rounded-lg bg-primary-500 px-1.5 py-2 text-center text-sm font-medium text-white"
                       onClick={() => setRoleMenuOpen(false)}
                     >
                       {dict.nav.login}
                     </Link>
                     <Link
                       href={`/${locale}/register`}
-                      className="flex-1 rounded-lg border border-line px-2 py-2 text-center text-sm font-medium text-ink"
+                      className="flex-1 whitespace-nowrap rounded-lg border border-line px-1.5 py-2 text-center text-sm font-medium text-ink"
                       onClick={() => setRoleMenuOpen(false)}
                     >
                       {dict.nav.register}

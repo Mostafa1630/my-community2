@@ -8,7 +8,9 @@ import CommunityCard from "@/components/CommunityCard";
 import CreatorCard from "@/components/CreatorCard";
 import CategoryPill from "@/components/CategoryPill";
 import SectionHeading from "@/components/SectionHeading";
-import Reveal from "@/components/motion/Reveal";
+import Slider from "@/components/motion/Slider";
+import SpinReveal from "@/components/motion/SpinReveal";
+import HeroImageReveal from "@/components/motion/HeroImageReveal";
 
 export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
   const locale: Locale = isLocale(params.locale) ? params.locale : "ar";
@@ -50,29 +52,33 @@ export default function HomePage({ params }: { params: { locale: string } }) {
   );
 
   const heroImage = (
-    <div className="relative mx-auto w-full max-w-md lg:max-w-none">
-      {/* Drop the photo at public/images/hero-creator.jpg — this <img> already points at it. */}
-      <img
-        src="/images/hero-creator.jpg"
-        alt={dict.home.heroImageAlt}
-        className="aspect-[4/3] w-full rounded-3xl border border-line object-cover shadow-raised"
-      />
-      <div className="absolute -bottom-5 left-4 flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3 shadow-raised sm:left-6">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-500 text-white">
-          <GraduationCap size={18} />
-        </span>
-        <div className="whitespace-nowrap">
-          <p className="font-mono text-base font-bold text-ink">10,000+</p>
-          <p className="text-xs text-ink/55">{dict.home.heroStat}</p>
+    <HeroImageReveal>
+      <div className="relative mx-auto w-full max-w-md lg:max-w-none">
+        {/* Drop the photo at public/images/hero-creator.jpg — this <img> already points at it. */}
+        <img
+          src="/images/hero-creator.jpg"
+          alt={dict.home.heroImageAlt}
+          loading="eager"
+          fetchPriority="high"
+          className="aspect-[4/3] w-full rounded-3xl border border-line object-cover shadow-raised"
+        />
+        <div className="absolute -bottom-5 left-4 flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3 shadow-raised sm:left-6">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-500 text-white">
+            <GraduationCap size={18} />
+          </span>
+          <div className="whitespace-nowrap">
+            <p className="font-mono text-base font-bold text-ink">10,000+</p>
+            <p className="text-xs text-ink/55">{dict.home.heroStat}</p>
+          </div>
         </div>
       </div>
-    </div>
+    </HeroImageReveal>
   );
 
   return (
     <div>
       {/* Hero */}
-      <section className="bg-ink/[0.02]">
+      <section className="bg-surface">
         <div className="container-page grid gap-12 py-14 sm:py-16 lg:grid-cols-2 lg:items-center lg:gap-10 lg:py-24">
           {locale === "ar" ? (
             <>
@@ -91,17 +97,37 @@ export default function HomePage({ params }: { params: { locale: string } }) {
       {/* Categories */}
       <section className="container-page py-14 sm:py-16">
         <SectionHeading title={dict.home.categoriesTitle} />
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-          {categories.map((category, i) => (
-            <Reveal key={category.id} index={i}>
-              <CategoryPill category={category} locale={locale} />
-            </Reveal>
-          ))}
+        {/* Repeated 3x so the slider has enough items to actually scroll with — the
+            live catalog will outgrow this on its own; remove the repeat once it does. */}
+        <Slider
+          items={[0, 1, 2].flatMap((rep) =>
+            categories.map((category) => (
+              <CategoryPill key={`${category.id}-${rep}`} category={category} locale={locale} />
+            ))
+          )}
+          itemClassName="w-[46%] sm:w-[31%] lg:w-[15.5%]"
+        />
+      </section>
+
+      {/* Top content creators */}
+      <section className="bg-surface py-14 sm:py-16">
+        <div className="container-page">
+          <SectionHeading title={dict.home.topCreatorsTitle} subtitle={dict.home.topCreatorsSubtitle} />
+          {/* Repeated 3x so the slider has enough items to actually scroll with — the
+              live catalog will outgrow this on its own; remove the repeat once it does. */}
+          <Slider
+            items={[0, 1, 2].flatMap((rep) =>
+              topCreators.map((creator) => (
+                <CreatorCard key={`${creator.id}-${rep}`} creator={creator} locale={locale} dict={dict} />
+              ))
+            )}
+            itemClassName="w-[46%] sm:w-[31%] lg:w-[23%]"
+          />
         </div>
       </section>
 
       {/* Latest communities */}
-      <section className="bg-surface/60 py-14 sm:py-16">
+      <section className="py-14 sm:py-16">
         <div className="container-page">
           <SectionHeading
             title={dict.home.latestTitle}
@@ -115,25 +141,16 @@ export default function HomePage({ params }: { params: { locale: string } }) {
               </Link>
             }
           />
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {latest.map((community, i) => (
-              <Reveal key={community.id} index={i}>
-                <CommunityCard community={community} locale={locale} dict={dict} />
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Top content creators */}
-      <section className="container-page py-14 sm:py-16">
-        <SectionHeading title={dict.home.topCreatorsTitle} subtitle={dict.home.topCreatorsSubtitle} />
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {topCreators.map((creator, i) => (
-            <Reveal key={creator.id} index={i}>
-              <CreatorCard creator={creator} locale={locale} dict={dict} />
-            </Reveal>
-          ))}
+          {/* Repeated 3x so the slider has enough items to actually scroll with — the
+              live catalog will outgrow this on its own; remove the repeat once it does. */}
+          <Slider
+            items={[0, 1, 2].flatMap((rep) =>
+              latest.map((community) => (
+                <CommunityCard key={`${community.id}-${rep}`} community={community} locale={locale} dict={dict} />
+              ))
+            )}
+            itemClassName="w-[46%] sm:w-[31%] lg:w-[23%]"
+          />
         </div>
       </section>
 
@@ -157,29 +174,28 @@ export default function HomePage({ params }: { params: { locale: string } }) {
       </section>
 
       {/* Privacy policy */}
-      <section className="py-14 sm:py-16">
-        <div className="container-page flex flex-col items-start gap-4 sm:flex-row sm:gap-6">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary-50 text-primary-700">
-            <ShieldCheck size={20} />
-          </span>
-          <div>
-            <h2 className="text-lg font-bold text-ink sm:text-xl">{dict.home.privacyTitle}</h2>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-ink/60">{dict.home.privacyBody}</p>
-          </div>
-        </div>
+      <section className="bg-surface py-14 sm:py-16">
+        {/* Drop the photo at public/images/privacy-security.jpg — this <img> already points at it. */}
+        <SpinReveal
+          image="/images/privacy-security.jpg"
+          alt={dict.home.privacyImageAlt}
+          icon={<ShieldCheck size={20} />}
+          title={dict.home.privacyTitle}
+          body={dict.home.privacyBody}
+        />
       </section>
 
       {/* Terms of use */}
-      <section className="bg-accent-50/40 py-14 sm:py-16">
-        <div className="container-page flex flex-col items-start gap-4 sm:flex-row sm:gap-6">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent-100 text-accent-700">
-            <ScrollText size={20} />
-          </span>
-          <div>
-            <h2 className="text-lg font-bold text-ink sm:text-xl">{dict.home.termsTitle}</h2>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-ink/60">{dict.home.termsBody}</p>
-          </div>
-        </div>
+      <section className="py-14 sm:py-16">
+        {/* Drop the photo at public/images/terms-agreement.jpg — this <img> already points at it. */}
+        <SpinReveal
+          image="/images/terms-agreement.jpg"
+          alt={dict.home.termsImageAlt}
+          icon={<ScrollText size={20} />}
+          title={dict.home.termsTitle}
+          body={dict.home.termsBody}
+          reverse
+        />
       </section>
     </div>
   );

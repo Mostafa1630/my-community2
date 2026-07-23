@@ -1,17 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BadgeCheck, Users2, BookOpen } from "lucide-react";
+import { BadgeCheck, Users2 } from "lucide-react";
 import { isLocale, locales, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/getDictionary";
 import { localizedAlternates, DEFAULT_OG_IMAGE } from "@/lib/seo";
 import { communities, getCommunityBySlug, getCreatorById, getCoursesByCommunity, communitySubscriptions } from "@/lib/data";
 import { getAccent, initials } from "@/lib/accents";
-import CourseInCommunityCard from "@/components/CourseInCommunityCard";
 import CommunitySubscribeCard from "@/components/CommunitySubscribeCard";
 import CommunityReviews from "@/components/CommunityReviews";
-import EmptyState from "@/components/EmptyState";
-import Reveal from "@/components/motion/Reveal";
+import CommunityCoursesGrid from "@/components/CommunityCoursesGrid";
 
 export function generateStaticParams() {
   return locales.flatMap((locale) => communities.map((c) => ({ locale, slug: c.slug })));
@@ -83,17 +81,7 @@ export default function CommunityDetailsPage({ params }: { params: { locale: str
           <CommunityReviews communityId={community.id} locale={locale} dict={dict} />
 
           <h2 className="mb-3 mt-10 text-lg font-bold text-ink">{dict.communityDetails.coursesInCommunity}</h2>
-          {courses.length === 0 ? (
-            <EmptyState icon={BookOpen} title={dict.common.empty} />
-          ) : (
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-              {courses.map((course, i) => (
-                <Reveal key={course.id} index={i}>
-                  <CourseInCommunityCard course={course} community={community} locale={locale} dict={dict} />
-                </Reveal>
-              ))}
-            </div>
-          )}
+          <CommunityCoursesGrid courses={courses} community={community} locale={locale} dict={dict} />
         </div>
 
         <div>

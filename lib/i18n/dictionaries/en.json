@@ -8,6 +8,8 @@
     "search": "Search",
     "searchPlaceholder": "Search communities, topics, content creators...",
     "viewDetails": "View details",
+    "previous": "Previous",
+    "next": "Next",
     "buyNow": "Buy now",
     "continueLearning": "Continue learning",
     "students": "students",
@@ -91,7 +93,9 @@
     "privacyTitle": "Privacy Policy",
     "privacyBody": "Your data is stored and used only to provide the platform's services — signing in, managing your community subscriptions, and tracking your course progress. We don't share your data with third parties except where required by law or to complete an actual payment. You can request to update or delete your data at any time from your profile page.",
     "termsTitle": "Terms of Use",
-    "termsBody": "By using the platform, you agree to use its content for personal learning only, without republishing or reselling any course or educational material. Subscribing to a community grants access for the specified subscription period only, and each content creator is responsible for the quality and accuracy of the content they publish. The platform reserves the right to suspend any account that violates these rules."
+    "termsBody": "By using the platform, you agree to use its content for personal learning only, without republishing or reselling any course or educational material. Subscribing to a community grants access for the specified subscription period only, and each content creator is responsible for the quality and accuracy of the content they publish. The platform reserves the right to suspend any account that violates these rules.",
+    "privacyImageAlt": "A digital lock symbolizing protection of user data",
+    "termsImageAlt": "An agreement document symbolizing the platform's terms of use"
   },
   "communities": {
     "title": "All communities",
@@ -318,6 +322,8 @@
     "contact": "Contact",
     "terms": "Terms of service",
     "privacy": "Privacy policy",
-    "rights": "All rights reserved."
+    "rights": "All rights reserved.",
+    "followUs": "Follow us",
+    "securePayments": "Secure payments"
   }
 }
