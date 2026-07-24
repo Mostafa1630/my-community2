@@ -3,12 +3,12 @@ import { PlayCircle } from "lucide-react";
 import type { Metadata } from "next";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/getDictionary";
-import { categories, getLatestCommunities, getTopCreators } from "@/lib/data";
-import CommunityCard from "@/components/CommunityCard";
+import { categories, activeCommunities, getTopCreators } from "@/lib/data";
 import CreatorCard from "@/components/CreatorCard";
 import CategoryPill from "@/components/CategoryPill";
 import SectionHeading from "@/components/SectionHeading";
 import Slider from "@/components/motion/Slider";
+import CommunitiesExplorer from "@/components/CommunitiesExplorer";
 
 export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
   const locale: Locale = isLocale(params.locale) ? params.locale : "ar";
@@ -23,7 +23,6 @@ export default function HomePage({ params }: { params: { locale: string } }) {
   const locale: Locale = isLocale(params.locale) ? params.locale : "ar";
   const dict = getDictionary(locale);
 
-  const latest = getLatestCommunities(8);
   const topCreators = getTopCreators(4);
 
   return (
@@ -60,31 +59,12 @@ export default function HomePage({ params }: { params: { locale: string } }) {
         </div>
       </section>
 
-      {/* Latest communities */}
+      {/* Newest communities — the full browse/search/filter/pagination experience lives
+          here now, not on a separate /communities page (there isn't one anymore). */}
       <section className="py-14 sm:py-16">
         <div className="container-page">
-          <SectionHeading
-            title={dict.home.latestTitle}
-            subtitle={dict.home.latestSubtitle}
-            action={
-              <Link
-                href={`/${locale}/communities`}
-                className="link-underline text-sm font-semibold text-primary-700"
-              >
-                {dict.common.seeAll}
-              </Link>
-            }
-          />
-          {/* Repeated 3x so the slider has enough items to actually scroll with — the
-              live catalog will outgrow this on its own; remove the repeat once it does. */}
-          <Slider
-            items={[0, 1, 2].flatMap((rep) =>
-              latest.map((community) => (
-                <CommunityCard key={`${community.id}-${rep}`} community={community} locale={locale} dict={dict} />
-              ))
-            )}
-            itemClassName="w-[calc((100%_-_1rem)/1.5)] sm:w-[calc((100%_-_2rem)/3)] lg:w-[calc((100%_-_3rem)/4)]"
-          />
+          <SectionHeading title={dict.home.latestTitle} subtitle={dict.home.latestSubtitle} />
+          <CommunitiesExplorer communities={activeCommunities} categories={categories} locale={locale} dict={dict} />
         </div>
       </section>
 

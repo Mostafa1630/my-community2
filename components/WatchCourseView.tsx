@@ -32,7 +32,7 @@ export default function WatchCourseView({
     const community = course.communityId ? getCommunityById(course.communityId) : undefined;
     const backHref = community
       ? `/${locale}/communities/${community.slug}/courses/${course.slug}`
-      : `/${locale}/communities`;
+      : `/${locale}`;
     return (
       <div className="container-page py-16">
         <EmptyState

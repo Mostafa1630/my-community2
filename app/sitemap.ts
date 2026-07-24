@@ -5,7 +5,7 @@ import { activeCommunities, getCoursesByCommunity, creators } from "@/lib/data";
 const BASE_URL = "https://mujtamaaty.example";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const staticPaths = ["", "/communities", "/login", "/register"];
+  const staticPaths = ["", "/creators", "/login", "/register"];
   const lastModified = new Date();
 
   const entries: MetadataRoute.Sitemap = [];

@@ -28,7 +28,6 @@
     "category": "Category",
     "all": "All",
     "loadMore": "Load more",
-    "seeAll": "See all",
     "language": "Language",
     "currency": "EGP",
     "backHome": "Back to home",
@@ -58,6 +57,7 @@
   "nav": {
     "home": "Home",
     "communities": "Communities",
+    "creators": "Creators",
     "myCommunities": "My communities",
     "favorites": "Favorites",
     "creatorPanel": "Content creator panel",
@@ -87,8 +87,6 @@
     "ctaBannerButton": "Start creating"
   },
   "communities": {
-    "title": "All communities",
-    "subtitle": "Filter by category or search for exactly what you need",
     "resultsCount": "{count} communities",
     "sortLabel": "Sort",
     "sortNewest": "Newest",
@@ -97,6 +95,12 @@
     "noResults": "No communities match your filters",
     "freeBadge": "Free to join",
     "subscribersLabel": "subscribers"
+  },
+  "creatorsPage": {
+    "title": "Content creators",
+    "subtitle": "Browse every content creator building a community on the platform",
+    "resultsCount": "{count} creators",
+    "noResults": "No creators match your filters"
   },
   "communityDetails": {
     "aboutCommunity": "About this community",
@@ -110,7 +114,7 @@
     "subscribeConfirmTitle": "Confirm subscription",
     "subscribeConfirmBody": "This is a UI-only demo against local mock data — no real payment is processed.",
     "confirmSubscribe": "Confirm subscription",
-    "subscribeSuccess": "Subscribed! The community was added to My communities.",
+    "subscribeSuccess": "Subscribed! You now have full access to this community.",
     "backToCommunity": "Back to community details",
     "goToFeed": "Community feed",
     "reviewsTitle": "Reviews",

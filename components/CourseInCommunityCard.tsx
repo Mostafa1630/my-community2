@@ -23,7 +23,7 @@ export default function CourseInCommunityCard({
   const description = locale === "ar" ? course.descAr : course.descEn;
   const href = community
     ? `/${locale}/communities/${community.slug}/courses/${course.slug}`
-    : `/${locale}/communities`;
+    : `/${locale}`;
 
   return (
     <Link

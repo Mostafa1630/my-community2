@@ -59,7 +59,7 @@ export default function CommunityCard({
       </div>
 
       <div className="flex flex-1 flex-col p-4">
-        <h3 className="line-clamp-2 text-base font-semibold leading-snug text-ink transition-colors group-hover:text-primary-700">
+        <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-ink transition-colors group-hover:text-primary-700 sm:text-base">
           {name}
         </h3>
 

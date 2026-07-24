@@ -28,7 +28,6 @@
     "category": "التصنيف",
     "all": "الكل",
     "loadMore": "عرض المزيد",
-    "seeAll": "عرض الكل",
     "language": "اللغة",
     "currency": "ج.م",
     "backHome": "العودة للرئيسية",
@@ -58,6 +57,7 @@
   "nav": {
     "home": "الرئيسية",
     "communities": "المجتمعات",
+    "creators": "منشئو المحتوى",
     "myCommunities": "مجتمعاتي",
     "favorites": "المفضلة",
     "creatorPanel": "لوحة منشئ المحتوى",
@@ -87,8 +87,6 @@
     "ctaBannerButton": "ابدأ النشر"
   },
   "communities": {
-    "title": "كل المجتمعات",
-    "subtitle": "فلتر حسب التصنيف أو دور على المجتمع اللي محتاجه بالظبط",
     "resultsCount": "{count} مجتمع",
     "sortLabel": "ترتيب",
     "sortNewest": "الأحدث",
@@ -97,6 +95,12 @@
     "noResults": "مفيش مجتمعات مطابقة للفلتر",
     "freeBadge": "اشتراك مجاني",
     "subscribersLabel": "مشترك"
+  },
+  "creatorsPage": {
+    "title": "منشئو المحتوى",
+    "subtitle": "تصفّح كل منشئ محتوى بيبني مجتمعه على المنصة",
+    "resultsCount": "{count} منشئ محتوى",
+    "noResults": "مفيش منشئي محتوى مطابقين للفلتر"
   },
   "communityDetails": {
     "aboutCommunity": "عن المجتمع",
@@ -110,7 +114,7 @@
     "subscribeConfirmTitle": "تأكيد الاشتراك",
     "subscribeConfirmBody": "ده عرض تجريبي على بيانات محلية فقط — مفيش أي عملية دفع حقيقية بتتم.",
     "confirmSubscribe": "تأكيد الاشتراك",
-    "subscribeSuccess": "تم الاشتراك بنجاح! المجتمع اتضاف لمجتمعاتي.",
+    "subscribeSuccess": "تم الاشتراك بنجاح! بقى عندك وصول كامل للمجتمع ده.",
     "backToCommunity": "الرجوع لتفاصيل المجتمع",
     "goToFeed": "بوستات المجتمع",
     "reviewsTitle": "التقييمات",

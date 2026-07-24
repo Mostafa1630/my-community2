@@ -16,11 +16,7 @@ export function middleware(request: NextRequest) {
   // browser's Accept-Language — the client wants English as the site's first
   // impression; visitors can still switch manually via the navbar language toggle.
   const url = request.nextUrl.clone();
-  // The bare root specifically lands on the communities browse page, not the
-  // marketing home page — the client's explicit ask for the site's landing
-  // experience. The home page itself still exists and is reachable via the navbar
-  // logo (`/{locale}`) — only the true entry point ("/") changes destination.
-  url.pathname = pathname === "/" ? `/${defaultLocale}/communities` : `/${defaultLocale}${pathname}`;
+  url.pathname = `/${defaultLocale}${pathname === "/" ? "" : pathname}`;
   return NextResponse.redirect(url);
 }
 

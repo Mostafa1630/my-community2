@@ -39,7 +39,7 @@ export default function Navbar({ locale, dict }: { locale: Locale; dict: Diction
 
   const navLinks = [
     { href: `/${locale}`, label: dict.nav.home },
-    { href: `/${locale}/communities`, label: dict.nav.communities }
+    { href: `/${locale}/creators`, label: dict.nav.creators }
   ];
   if (role === "student") {
     navLinks.push({ href: `/${locale}/my-communities`, label: dict.nav.myCommunities });

@@ -34,7 +34,8 @@ export default function Footer({ locale, dict }: { locale: Locale; dict: Diction
         <div>
           <h3 className="mb-3 text-sm font-semibold text-ink">{dict.footer.explore}</h3>
           <ul className="space-y-2 text-sm text-ink/60">
-            <li><Link href={`/${locale}/communities`} className="link-underline transition-colors hover:text-primary-700">{dict.nav.communities}</Link></li>
+            <li><Link href={`/${locale}`} className="link-underline transition-colors hover:text-primary-700">{dict.nav.communities}</Link></li>
+            <li><Link href={`/${locale}/creators`} className="link-underline transition-colors hover:text-primary-700">{dict.nav.creators}</Link></li>
             <li><Link href={`/${locale}/register`} className="link-underline transition-colors hover:text-primary-700">{dict.footer.becomeCreator}</Link></li>
           </ul>
         </div>
