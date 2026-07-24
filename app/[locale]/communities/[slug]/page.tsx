@@ -52,10 +52,26 @@ export default function CommunityDetailsPage({ params }: { params: { locale: str
 
   return (
     <div>
-      <div className={`bg-gradient-to-br ${accent.gradient}`}>
-        <div className="container-page flex flex-col items-center gap-4 py-14 text-center text-white">
-          <span className="seal-ring h-20 w-20 border-white/50 bg-white/10 text-2xl font-bold">
-            {initials(name)}
+      <div className={`relative overflow-hidden bg-gradient-to-br ${accent.gradient}`}>
+        {community.coverImage && (
+          <>
+            <img
+              src={community.coverImage}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-black/20" />
+          </>
+        )}
+        <div className="container-page relative flex flex-col items-center gap-4 py-14 text-center text-white">
+          <span className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full border-2 border-dashed border-white/50 bg-white/10">
+            {creator?.profileImage ? (
+              <img src={creator.profileImage} alt={creator.name} className="h-full w-full object-cover" />
+            ) : (
+              <span className="flex h-full w-full items-center justify-center text-2xl font-bold">
+                {initials(name)}
+              </span>
+            )}
           </span>
           <h1 className="text-2xl font-bold">{name}</h1>
           {creator && (

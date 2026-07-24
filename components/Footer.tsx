@@ -22,7 +22,7 @@ export default function Footer({ locale, dict }: { locale: Locale; dict: Diction
   const year = new Date().getFullYear();
   return (
     <footer className="bg-surface">
-      <div className="container-page grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="container-page grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-3">
         <div>
           <div className="mb-3 flex items-center gap-2">
             <Seal size={32} label={dict.meta.siteName[0]} />
@@ -44,14 +44,6 @@ export default function Footer({ locale, dict }: { locale: Locale; dict: Diction
           <ul className="space-y-2 text-sm text-ink/60">
             <li><span className="cursor-default">{dict.footer.aboutUs}</span></li>
             <li><span className="cursor-default">{dict.footer.contact}</span></li>
-          </ul>
-        </div>
-
-        <div>
-          <h3 className="mb-3 text-sm font-semibold text-ink">{dict.footer.legal}</h3>
-          <ul className="space-y-2 text-sm text-ink/60">
-            <li><span className="cursor-default">{dict.footer.terms}</span></li>
-            <li><span className="cursor-default">{dict.footer.privacy}</span></li>
           </ul>
         </div>
       </div>

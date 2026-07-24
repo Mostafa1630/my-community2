@@ -74,22 +74,22 @@ export default function CommunityCard({
           </div>
         )}
 
-        <div className="mt-4 flex items-center gap-3 text-xs text-ink/60">
-          <span className="flex items-center gap-1">
-            <BookOpen size={13} />
+        <div className="mt-4 flex items-center gap-3 text-[11px] text-ink/60 sm:text-xs">
+          <span className="flex shrink-0 items-center gap-1 whitespace-nowrap">
+            <BookOpen size={12} className="shrink-0" />
             {courseCount} {dict.common.courses}
           </span>
-          <span className="flex items-center gap-1">
-            <Users2 size={13} />
+          <span className="flex shrink-0 items-center gap-1 whitespace-nowrap">
+            <Users2 size={12} className="shrink-0" />
             {subscribersCount} {dict.communities.subscribersLabel}
           </span>
         </div>
 
-        <div className="mt-5 flex items-center justify-between border-t border-line pt-3.5">
-          <span className="font-mono text-xs font-bold tracking-wide text-accent-600">
+        <div className="mt-5 flex items-center justify-between gap-2 border-t border-line pt-3.5">
+          <span className="whitespace-nowrap font-mono text-[11px] font-bold tracking-wide text-accent-600 sm:text-xs">
             {community.isFree ? dict.communities.freeBadge : formatPrice(community.subscriptionPrice, locale)}
           </span>
-          <span className="rounded-full border border-primary-200 px-3 py-1 text-center text-xs font-medium text-primary-800 transition-colors duration-200 group-hover:border-primary-300 group-hover:bg-primary-50">
+          <span className="shrink-0 whitespace-nowrap rounded-full border border-primary-200 px-2.5 py-1 text-center text-[11px] font-medium text-primary-800 transition-colors duration-200 group-hover:border-primary-300 group-hover:bg-primary-50 sm:px-3 sm:text-xs">
             {dict.common.viewDetails}
           </span>
         </div>

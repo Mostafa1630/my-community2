@@ -111,10 +111,10 @@ export default function LocaleLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
         />
         {/* reducedMotion="user" makes every framer-motion animation in the app (Slider,
-            Reveal, SpinReveal, HeroImageReveal, Navbar's menus, etc.) automatically
-            collapse to instant opacity-only transitions for anyone with the OS-level
-            "reduce motion" preference on — the CSS prefers-reduced-motion block in
-            globals.css only covers plain CSS transitions/animations, not these. */}
+            Reveal, Navbar's menus, etc.) automatically collapse to instant opacity-only
+            transitions for anyone with the OS-level "reduce motion" preference on — the
+            CSS prefers-reduced-motion block in globals.css only covers plain CSS
+            transitions/animations, not these. */}
         <MotionConfig reducedMotion="user">
           <PlatformStoreProvider>
             <AuthProvider>

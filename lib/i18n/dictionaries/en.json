@@ -74,11 +74,6 @@
   },
   "home": {
     "heroTitle": "Join a content creator's community, unlock every course inside, and learn alongside people building the same thing",
-    "heroSubtitle": "Mujtamaaty connects content creators who build real products with students who want to learn by doing — in Arabic and English, side by side.",
-    "heroCtaPrimary": "Browse communities",
-    "heroCtaSecondary": "Join as a content creator",
-    "heroImageAlt": "A content creator recording a lesson for their students",
-    "heroStat": "students learning now",
     "statsCourses": "Live courses",
     "statsStudents": "Students learning",
     "statsCreators": "Verified content creators",
@@ -89,13 +84,7 @@
     "topCreatorsSubtitle": "The people teaching what they actually build",
     "ctaBannerTitle": "Have something worth teaching?",
     "ctaBannerSubtitle": "Build your community, publish courses inside it, and get paid for every subscriber.",
-    "ctaBannerButton": "Start creating",
-    "privacyTitle": "Privacy Policy",
-    "privacyBody": "Your data is stored and used only to provide the platform's services — signing in, managing your community subscriptions, and tracking your course progress. We don't share your data with third parties except where required by law or to complete an actual payment. You can request to update or delete your data at any time from your profile page.",
-    "termsTitle": "Terms of Use",
-    "termsBody": "By using the platform, you agree to use its content for personal learning only, without republishing or reselling any course or educational material. Subscribing to a community grants access for the specified subscription period only, and each content creator is responsible for the quality and accuracy of the content they publish. The platform reserves the right to suspend any account that violates these rules.",
-    "privacyImageAlt": "A digital lock symbolizing protection of user data",
-    "termsImageAlt": "An agreement document symbolizing the platform's terms of use"
+    "ctaBannerButton": "Start creating"
   },
   "communities": {
     "title": "All communities",
@@ -138,7 +127,7 @@
     "durationMonth": "a month",
     "durationYear": "a year",
     "durationDays": "{days} days",
-    "subscriptionExpired": "Your subscription has expired",
+    "subscriptionExpired": "Expired",
     "expiresOn": "Expires on {date}",
     "renewSubscription": "Renew subscription"
   },
@@ -317,12 +306,9 @@
     "about": "Mujtamaaty is a demo concept for a community-first learning platform, where content creators build a community and publish courses inside it.",
     "explore": "Explore",
     "company": "Company",
-    "legal": "Legal",
     "aboutUs": "About us",
     "becomeCreator": "Become a content creator",
     "contact": "Contact",
-    "terms": "Terms of service",
-    "privacy": "Privacy policy",
     "rights": "All rights reserved.",
     "followUs": "Follow us",
     "securePayments": "Secure payments"
