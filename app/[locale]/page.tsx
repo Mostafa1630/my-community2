@@ -5,7 +5,6 @@ import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/getDictionary";
 import { categories, activeCommunities, getTopCreators } from "@/lib/data";
 import CreatorCard from "@/components/CreatorCard";
-import CategoryPill from "@/components/CategoryPill";
 import SectionHeading from "@/components/SectionHeading";
 import Slider from "@/components/motion/Slider";
 import CommunitiesExplorer from "@/components/CommunitiesExplorer";
@@ -27,25 +26,10 @@ export default function HomePage({ params }: { params: { locale: string } }) {
 
   return (
     <div>
-      {/* Categories */}
-      <section className="container-page py-14 sm:py-16">
-        <SectionHeading as="h1" title={dict.home.categoriesTitle} />
-        {/* Repeated 3x so the slider has enough items to actually scroll with — the
-            live catalog will outgrow this on its own; remove the repeat once it does. */}
-        <Slider
-          items={[0, 1, 2].flatMap((rep) =>
-            categories.map((category) => (
-              <CategoryPill key={`${category.id}-${rep}`} category={category} locale={locale} />
-            ))
-          )}
-          itemClassName="w-[46%] sm:w-[31%] lg:w-[15.5%]"
-        />
-      </section>
-
       {/* Top content creators */}
       <section className="bg-surface py-14 sm:py-16">
         <div className="container-page">
-          <SectionHeading title={dict.home.topCreatorsTitle} subtitle={dict.home.topCreatorsSubtitle} />
+          <SectionHeading as="h1" title={dict.home.topCreatorsTitle} subtitle={dict.home.topCreatorsSubtitle} />
           {/* Repeated 3x so the slider has enough items to actually scroll with — the
               live catalog will outgrow this on its own; remove the repeat once it does. */}
           <Slider
