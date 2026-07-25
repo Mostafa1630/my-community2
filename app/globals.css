@@ -5,11 +5,23 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    /* Reveal/Slider entrance animations translateX() cards in from off-screen
+       (±48px) before they've scrolled into view. That's fine as paint, but an
+       element sitting at its pre-animation, still-invisible (opacity: 0) position
+       below the fold still contributes to the page's scrollable bounding box,
+       which was making the whole page horizontally scrollable by ~28-48px on
+       first load — invisible itself, but it let the visible header/banner shift
+       and expose a blank strip at the edge when anything nudged horizontal
+       scroll. `overflow-x: hidden` has to live on `html`, not just `body` — the
+       root scrolling container is `<html>`, so a `scrollWidth` check against it
+       ignores an `overflow-x` set only on `body`. */
+    overflow-x: hidden;
   }
 
   body {
     @apply bg-paper text-ink font-body antialiased;
     font-feature-settings: "kern" 1, "liga" 1;
+    overflow-x: hidden;
   }
 
   h1, h2, h3, h4 {
