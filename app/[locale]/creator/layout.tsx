@@ -6,6 +6,7 @@ import {
   Users2,
   MessageSquare,
   Tag,
+  Star,
   UserRound
 } from "lucide-react";
 import { isLocale, type Locale } from "@/lib/i18n/config";
@@ -35,6 +36,7 @@ export default function CreatorLayout({
     { href: `${base}/earnings`, label: dict.creatorDash.earnings, icon: <Wallet size={16} /> },
     { href: `${base}/withdrawals`, label: dict.creatorDash.withdrawals, icon: <Landmark size={16} /> },
     { href: `${base}/coupons`, label: dict.creatorDash.couponsTitle, icon: <Tag size={16} /> },
+    { href: `${base}/reviews`, label: dict.creatorDash.reviewsTitle, icon: <Star size={16} /> },
     { href: `${base}/community/feed`, label: dict.creatorDash.communityFeed, icon: <MessageSquare size={16} /> },
     { href: `${base}/profile`, label: dict.creatorDash.profile, icon: <UserRound size={16} /> }
   ];

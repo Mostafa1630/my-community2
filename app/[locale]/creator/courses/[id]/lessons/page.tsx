@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/getDictionary";
 import { t } from "@/lib/i18n/t";
-import { getCourseById } from "@/lib/data";
+import { getCourseDetails } from "@/lib/api-content";
 import LessonsManagerView from "@/components/LessonsManagerView";
 
 export async function generateMetadata({
@@ -12,10 +12,8 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const locale: Locale = isLocale(params.locale) ? params.locale : "ar";
   const dict = getDictionary(locale);
-  const course = getCourseById(params.id);
-  const title = course
-    ? t(dict.creatorDash.lessonsOf, { title: locale === "ar" ? course.titleAr : course.titleEn })
-    : dict.creatorDash.lessons;
+  const course = await getCourseDetails(params.id, locale);
+  const title = course ? t(dict.creatorDash.lessonsOf, { title: course.title }) : dict.creatorDash.lessons;
   return { title, robots: { index: false } };
 }
 

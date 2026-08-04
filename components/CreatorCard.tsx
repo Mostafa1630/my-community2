@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { BadgeCheck, UserRound } from "lucide-react";
-import type { Creator } from "@/lib/types";
+import { UserRound } from "lucide-react";
+import type { CreatorSummary } from "@/lib/api-types";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import { getAccent, initials } from "@/lib/accents";
@@ -10,16 +10,15 @@ export default function CreatorCard({
   locale,
   dict
 }: {
-  creator: Creator;
+  creator: CreatorSummary;
   locale: Locale;
   dict: Dictionary;
 }) {
-  const accent = getAccent(creator.avatarAccent);
-  const bio = locale === "ar" ? creator.bioAr : creator.bioEn;
+  const accent = getAccent(creator.accent);
 
   return (
     <Link
-      href={`/${locale}/creators/${creator.slug}`}
+      href={`/${locale}/creators/${creator.id}`}
       className="hover-lift group flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-card hover:border-primary-200"
     >
       <div className="relative h-16 w-full overflow-hidden">
@@ -40,11 +39,8 @@ export default function CreatorCard({
             </span>
           )}
         </span>
-        <div className="flex items-center gap-1.5">
-          <h3 className="text-base font-semibold text-ink transition-colors group-hover:text-primary-700">{creator.name}</h3>
-          {creator.verified && <BadgeCheck size={16} className="text-primary-500" />}
-        </div>
-        <p className="mt-2 line-clamp-2 text-sm leading-5 text-ink/70">{bio}</p>
+        <h3 className="text-base font-semibold text-ink transition-colors group-hover:text-primary-700">{creator.name}</h3>
+        <p className="mt-2 line-clamp-2 text-sm leading-5 text-ink/70">{creator.bio}</p>
         <span className="mt-4 flex items-center gap-1.5 rounded-full bg-primary-50 px-3 py-1 text-xs font-medium text-primary-700">
           <UserRound size={13} />
           {dict.creator.viewProfile}

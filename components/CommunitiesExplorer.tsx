@@ -1,80 +1,83 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search, SlidersHorizontal, ChevronDown } from "lucide-react";
-import type { Community, Category } from "@/lib/types";
+import type { Category } from "@/lib/types";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import { t } from "@/lib/i18n/t";
-import CommunityCard from "./CommunityCard";
+import { getCommunities, type CommunitiesPage } from "@/lib/api-content";
+import RealCommunityCard from "./RealCommunityCard";
 import Pagination from "./Pagination";
 import EmptyState from "./EmptyState";
 import Reveal from "./motion/Reveal";
 import Slider from "./motion/Slider";
 
-const PAGE_SIZE = 8;
+// "newest" leaves the API's own order alone (there's no created_at on the
+// community summary to re-sort by client-side); price-asc/desc genuinely
+// re-sort whichever page is currently loaded.
 type SortKey = "newest" | "price-asc" | "price-desc";
 
 export default function CommunitiesExplorer({
-  communities,
+  initialCommunities,
   categories,
   locale,
-  dict,
-  initialCategory
+  dict
 }: {
-  communities: Community[];
+  initialCommunities: CommunitiesPage;
   categories: Category[];
   locale: Locale;
   dict: Dictionary;
-  initialCategory?: string;
 }) {
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState(initialCategory ?? "all");
   const [sort, setSort] = useState<SortKey>("newest");
-  const [page, setPage] = useState(1);
+  const [category, setCategory] = useState("all");
+  const [communitiesPage, setCommunitiesPage] = useState(initialCommunities);
+  const [page, setPage] = useState(initialCommunities.currentPage);
+  const [loading, setLoading] = useState(false);
 
-  const categoryMap = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
-
-  // The seed catalog is too small to ever fill a second page — repeated here (display
-  // only, not the underlying data) purely so pagination has something to paginate
-  // through. Drop this once there are enough real communities.
-  const displayEntries = useMemo(() => {
-    const reps = communities.length > PAGE_SIZE ? [0] : [0, 1, 2];
-    return reps.flatMap((rep) => communities.map((community) => ({ community, key: `${community.id}-${rep}` })));
-  }, [communities]);
-
-  const filtered = useMemo(() => {
-    let list = displayEntries.filter((e) => e.community.status === "active");
-
-    if (category !== "all") {
-      list = list.filter((e) => categoryMap.get(e.community.categoryId)?.slug === category);
+  // GET /communities takes `page` and an optional `category_id` — both are
+  // real, server-side filters, unlike creators (which had neither). Search
+  // and price-sort stay client-side over whichever page is loaded, since
+  // there's no search/sort query param documented.
+  useEffect(() => {
+    if (page === initialCommunities.currentPage && category === "all") {
+      setCommunitiesPage(initialCommunities);
+      return;
     }
-
-    if (query.trim()) {
-      const q = query.trim().toLowerCase();
-      list = list.filter((e) =>
-        [e.community.nameEn, e.community.nameAr, e.community.descriptionEn ?? "", e.community.descriptionAr ?? ""].some(
-          (field) => field.toLowerCase().includes(q)
-        )
-      );
-    }
-
-    list = [...list].sort((a, b) => {
-      if (sort === "price-asc") return a.community.subscriptionPrice - b.community.subscriptionPrice;
-      if (sort === "price-desc") return b.community.subscriptionPrice - a.community.subscriptionPrice;
-      return new Date(b.community.createdAt).getTime() - new Date(a.community.createdAt).getTime();
+    let cancelled = false;
+    setLoading(true);
+    getCommunities(locale, { page, categoryId: category === "all" ? undefined : category }).then((result) => {
+      if (!cancelled) {
+        setCommunitiesPage(result);
+        setLoading(false);
+      }
     });
-
-    return list;
-  }, [displayEntries, category, query, sort, categoryMap]);
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, category, locale]);
 
   function updateFilter(fn: () => void) {
     fn();
     setPage(1);
   }
+
+  const filtered = useMemo(() => {
+    let list = communitiesPage.items;
+
+    if (query.trim()) {
+      const q = query.trim().toLowerCase();
+      list = list.filter((c) => [c.name, c.creator.name, c.categoryName].some((field) => field.toLowerCase().includes(q)));
+    }
+
+    if (sort !== "newest") {
+      list = [...list].sort((a, b) => (sort === "price-asc" ? a.finalPrice - b.finalPrice : b.finalPrice - a.finalPrice));
+    }
+
+    return list;
+  }, [communitiesPage.items, query, sort]);
 
   return (
     <div>
@@ -83,7 +86,7 @@ export default function CommunitiesExplorer({
           <Search size={16} className="absolute top-1/2 -translate-y-1/2 text-ink/35 start-3.5" />
           <input
             value={query}
-            onChange={(e) => updateFilter(() => setQuery(e.target.value))}
+            onChange={(e) => setQuery(e.target.value)}
             placeholder={dict.common.searchPlaceholder}
             className="w-full rounded-full border border-line bg-surface py-3 text-sm outline-none focus:border-primary-400 ps-10 pe-4"
           />
@@ -117,9 +120,9 @@ export default function CommunitiesExplorer({
         {categories.map((c) => (
           <button
             key={c.id}
-            onClick={() => updateFilter(() => setCategory(c.slug))}
+            onClick={() => updateFilter(() => setCategory(c.id))}
             className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${
-              category === c.slug
+              category === c.id
                 ? "border-primary-500 bg-primary-500 text-white"
                 : "border-line text-ink/60 hover:border-primary-300"
             }`}
@@ -129,34 +132,31 @@ export default function CommunitiesExplorer({
         ))}
       </div>
 
-      <p className="mb-5 text-sm text-ink/50">{t(dict.communities.resultsCount, { count: filtered.length })}</p>
+      <p className="mb-5 text-sm text-ink/50">{t(dict.communities.resultsCount, { count: communitiesPage.total })}</p>
 
-      {paged.length === 0 ? (
+      {filtered.length === 0 ? (
         <EmptyState icon={Search} title={dict.communities.noResults} />
       ) : (
-        <>
-          {/* Mobile: horizontal slider (one-and-a-half cards, arrows hidden — same
-              behavior as the home page's sliders). Desktop: the original grid,
-              unchanged. Both render the same `paged` page of results. */}
+        <div className={loading ? "opacity-60 transition-opacity" : "transition-opacity"}>
           <div className="sm:hidden">
             <Slider
-              items={paged.map(({ community, key }) => (
-                <CommunityCard key={key} community={community} locale={locale} dict={dict} />
+              items={filtered.map((community) => (
+                <RealCommunityCard key={community.id} community={community} locale={locale} dict={dict} />
               ))}
               itemClassName="w-[calc((100%_-_1rem)/1.5)]"
             />
           </div>
           <div className="hidden sm:grid sm:grid-cols-2 gap-5 lg:grid-cols-4">
-            {paged.map(({ community, key }, i) => (
-              <Reveal key={key} index={i}>
-                <CommunityCard community={community} locale={locale} dict={dict} />
+            {filtered.map((community, i) => (
+              <Reveal key={community.id} index={i}>
+                <RealCommunityCard community={community} locale={locale} dict={dict} />
               </Reveal>
             ))}
           </div>
-        </>
+        </div>
       )}
 
-      <Pagination page={page} totalPages={totalPages} onChange={setPage} dict={dict} />
+      <Pagination page={page} totalPages={communitiesPage.lastPage} onChange={setPage} dict={dict} />
     </div>
   );
 }

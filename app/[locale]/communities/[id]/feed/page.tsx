@@ -9,19 +9,19 @@ import CreatorCommunityGate from "@/components/CreatorCommunityGate";
 export async function generateMetadata({
   params
 }: {
-  params: { locale: string; slug: string };
+  params: { locale: string; id: string };
 }): Promise<Metadata> {
-  const community = getCommunityBySlug(params.slug);
+  const community = getCommunityBySlug(params.id);
   if (!community) return {};
   const locale: Locale = isLocale(params.locale) ? params.locale : "ar";
   const name = locale === "ar" ? community.nameAr : community.nameEn;
   return { title: name, robots: { index: false } };
 }
 
-export default function CommunityFeedPage({ params }: { params: { locale: string; slug: string } }) {
+export default function CommunityFeedPage({ params }: { params: { locale: string; id: string } }) {
   const locale: Locale = isLocale(params.locale) ? params.locale : "ar";
   const dict = getDictionary(locale);
-  const community = getCommunityBySlug(params.slug);
+  const community = getCommunityBySlug(params.id);
   if (!community) notFound();
   const name = locale === "ar" ? community.nameAr : community.nameEn;
 

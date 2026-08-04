@@ -53,7 +53,7 @@ export default function CommunityCard({
           </span>
         )}
         <div className="absolute top-3 end-3 flex flex-col items-end gap-1.5">
-          <FavoriteButton favoritableType="community" favoritableId={community.id} />
+          <FavoriteButton favoritableType="community" favoritableId={community.id} locale={locale} />
           {community.status === "inactive" && <Badge tone="pending">{dict.common.inactive}</Badge>}
         </div>
       </div>

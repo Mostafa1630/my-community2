@@ -117,7 +117,7 @@ export default function LocaleLayout({
             transitions/animations, not these. */}
         <MotionConfig reducedMotion="user">
           <PlatformStoreProvider>
-            <AuthProvider>
+            <AuthProvider locale={locale}>
               <div className="flex min-h-screen flex-col">
                 <Navbar locale={locale} dict={dictionary} />
                 <main className="flex-1">{children}</main>

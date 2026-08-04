@@ -1,126 +1,111 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Search, SlidersHorizontal, ChevronDown } from "lucide-react";
-import type { Creator, Category } from "@/lib/types";
+import { useEffect, useMemo, useState } from "react";
+import { Search } from "lucide-react";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import { t } from "@/lib/i18n/t";
-import { getCommunityByCreatorId, getCategoryById } from "@/lib/data";
+import { getCreators, type CreatorsPage } from "@/lib/api-content";
 import CreatorCard from "./CreatorCard";
 import Pagination from "./Pagination";
 import EmptyState from "./EmptyState";
 import Reveal from "./motion/Reveal";
 import Slider from "./motion/Slider";
 
-const PAGE_SIZE = 8;
-
+// No `categories` prop here on purpose — GET /creators and /creators/top
+// return name/bio/images only, with no category or community association at
+// all, so a category filter has nothing to filter *by* client-side. Showing
+// one anyway would just be a dropdown that silently does nothing when
+// changed. If the backend later adds a category/community field to these
+// responses (or a query param), that's the point to bring the filter back.
 export default function CreatorsExplorer({
-  creators,
-  categories,
+  initialCreators,
   locale,
   dict
 }: {
-  creators: Creator[];
-  categories: Category[];
+  initialCreators: CreatorsPage;
   locale: Locale;
   dict: Dictionary;
 }) {
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState("all");
-  const [page, setPage] = useState(1);
+  const [creatorsPage, setCreatorsPage] = useState(initialCreators);
+  const [page, setPage] = useState(initialCreators.currentPage);
+  const [loading, setLoading] = useState(false);
 
-  // The seed catalog is too small to ever fill a second page — repeated here (display
-  // only, not the underlying data) purely so pagination has something to paginate
-  // through. Drop this once there are enough real creators.
-  const displayEntries = useMemo(() => {
-    const reps = creators.length > PAGE_SIZE ? [0] : [0, 1, 2];
-    return reps.flatMap((rep) => creators.map((creator) => ({ creator, key: `${creator.id}-${rep}` })));
-  }, [creators]);
+  // GET /creators only takes a `page` param (no documented search/category
+  // query params) — page navigation hits the real API for that page's items;
+  // search and category are refined client-side over whatever page is
+  // currently loaded, not the full catalog. If the backend adds filter
+  // params later, this is the one spot that needs to pass them through.
+  useEffect(() => {
+    if (page === initialCreators.currentPage) {
+      setCreatorsPage(initialCreators);
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    getCreators(locale, page).then((result) => {
+      if (!cancelled) {
+        setCreatorsPage(result);
+        setLoading(false);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, locale]);
 
   const filtered = useMemo(() => {
-    let list = displayEntries.filter((e) => e.creator.status === "active");
-
-    if (category !== "all") {
-      list = list.filter((e) => {
-        const community = getCommunityByCreatorId(e.creator.id);
-        return community ? getCategoryById(community.categoryId)?.slug === category : false;
-      });
-    }
+    let list = creatorsPage.items;
 
     if (query.trim()) {
       const q = query.trim().toLowerCase();
-      list = list.filter((e) =>
-        [e.creator.name, e.creator.bioEn, e.creator.bioAr].some((field) => field.toLowerCase().includes(q))
-      );
+      list = list.filter((c) => [c.name, c.bio].some((field) => field.toLowerCase().includes(q)));
     }
 
     return list;
-  }, [displayEntries, category, query]);
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
-  function updateFilter(fn: () => void) {
-    fn();
-    setPage(1);
-  }
+  }, [creatorsPage.items, query]);
 
   return (
     <div>
-      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
+      <div className="mb-8">
+        <div className="relative">
           <Search size={16} className="absolute top-1/2 -translate-y-1/2 text-ink/35 start-3.5" />
           <input
             value={query}
-            onChange={(e) => updateFilter(() => setQuery(e.target.value))}
+            onChange={(e) => setQuery(e.target.value)}
             placeholder={dict.common.searchPlaceholder}
             className="w-full rounded-full border border-line bg-surface py-3 text-sm outline-none focus:border-primary-400 ps-10 pe-4"
           />
         </div>
-        <div className="relative flex items-center">
-          <SlidersHorizontal size={15} className="pointer-events-none absolute text-primary-600 start-4" />
-          <select
-            value={category}
-            onChange={(e) => updateFilter(() => setCategory(e.target.value))}
-            className="appearance-none rounded-full border border-line bg-surface py-3 text-sm font-medium text-ink shadow-card outline-none transition hover:border-primary-300 focus:border-primary-400 ps-10 pe-9"
-          >
-            <option value="all">{dict.common.all}</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.slug}>
-                {locale === "ar" ? c.nameAr : c.nameEn}
-              </option>
-            ))}
-          </select>
-          <ChevronDown size={15} className="pointer-events-none absolute text-ink/40 end-3.5" />
-        </div>
       </div>
 
-      <p className="mb-5 text-sm text-ink/50">{t(dict.creatorsPage.resultsCount, { count: filtered.length })}</p>
+      <p className="mb-5 text-sm text-ink/50">{t(dict.creatorsPage.resultsCount, { count: creatorsPage.total })}</p>
 
-      {paged.length === 0 ? (
+      {filtered.length === 0 ? (
         <EmptyState icon={Search} title={dict.creatorsPage.noResults} />
       ) : (
-        <>
+        <div className={loading ? "opacity-60 transition-opacity" : "transition-opacity"}>
           <div className="sm:hidden">
             <Slider
-              items={paged.map(({ creator, key }) => (
-                <CreatorCard key={key} creator={creator} locale={locale} dict={dict} />
+              items={filtered.map((creator) => (
+                <CreatorCard key={creator.id} creator={creator} locale={locale} dict={dict} />
               ))}
               itemClassName="w-[calc((100%_-_1rem)/1.5)]"
             />
           </div>
           <div className="hidden sm:grid sm:grid-cols-2 gap-5 lg:grid-cols-4">
-            {paged.map(({ creator, key }, i) => (
-              <Reveal key={key} index={i}>
+            {filtered.map((creator, i) => (
+              <Reveal key={creator.id} index={i}>
                 <CreatorCard creator={creator} locale={locale} dict={dict} />
               </Reveal>
             ))}
           </div>
-        </>
+        </div>
       )}
 
-      <Pagination page={page} totalPages={totalPages} onChange={setPage} dict={dict} />
+      <Pagination page={page} totalPages={creatorsPage.lastPage} onChange={setPage} dict={dict} />
     </div>
   );
 }

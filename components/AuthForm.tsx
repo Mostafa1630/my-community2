@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { AlertCircle, GraduationCap, Users } from "lucide-react";
+import { AlertCircle, CheckCircle2, GraduationCap, Loader2, Users } from "lucide-react";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import { useAuth } from "@/lib/auth-context";
+import { ApiError } from "@/lib/api-client";
+import { loginSchema, registerSchema } from "@/lib/validation/auth";
 import Seal from "./Seal";
 
 export default function AuthForm({
@@ -19,52 +21,92 @@ export default function AuthForm({
   dict: Dictionary;
 }) {
   const router = useRouter();
-  const { loginWithEmail, register } = useAuth();
+  const searchParams = useSearchParams();
+  const justRegistered = searchParams.get("registered") === "1";
+  const { login, register } = useAuth();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [accountType, setAccountType] = useState<"student" | "creator">("student");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   function redirectFor(role: "student" | "creator" | "admin") {
     if (role === "creator") router.push(`/${locale}/creator/dashboard`);
     else router.push(`/${locale}/my-communities`);
   }
 
-  function handleLogin(e: React.FormEvent) {
+  const messages = {
+    required: dict.changePassword.requiredError,
+    invalidEmail: dict.auth.invalidEmailError,
+    minLength: dict.changePassword.minLengthError,
+    mismatch: dict.changePassword.mismatchError
+  };
+
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (!email || !password) {
-      setError(locale === "ar" ? "من فضلك أدخل البريد وكلمة المرور" : "Please enter your email and password");
+    const result = loginSchema(messages).safeParse({ email, password });
+    if (!result.success) {
+      setFieldErrors(collectIssues(result.error.issues));
       return;
     }
-    const found = loginWithEmail(email);
-    if (!found) {
-      setError(
-        locale === "ar"
-          ? "الحساب ده مش موجود. جرّب nour.hassan@student.marefa.dev أو ahmed.nabil@marefa.dev"
-          : "No account found. Try nour.hassan@student.marefa.dev or ahmed.nabil@marefa.dev"
-      );
-      return;
+    setFieldErrors({});
+    setSubmitting(true);
+    try {
+      const found = await login(result.data.email, result.data.password, locale);
+      redirectFor(found.role);
+    } catch (err) {
+      if (err instanceof ApiError && Object.keys(err.fieldErrors).length > 0) {
+        setFieldErrors(mapApiErrors(err));
+      } else {
+        setError(err instanceof ApiError ? err.message : dict.auth.genericError);
+      }
+    } finally {
+      setSubmitting(false);
     }
-    redirectFor(found.role);
   }
 
-  function handleRegister(e: React.FormEvent) {
+  async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (!name || !email || !password || !confirmPassword) {
-      setError(locale === "ar" ? "من فضلك املأ كل الحقول" : "Please fill in all fields");
+    const result = registerSchema(messages).safeParse({
+      name,
+      email,
+      password,
+      passwordConfirmation: confirmPassword,
+      type: accountType
+    });
+    if (!result.success) {
+      setFieldErrors(collectIssues(result.error.issues));
       return;
     }
-    if (password !== confirmPassword) {
-      setError(locale === "ar" ? "كلمتا المرور غير متطابقتين" : "Passwords don't match");
-      return;
+    setFieldErrors({});
+    setSubmitting(true);
+    try {
+      await register(
+        {
+          name: result.data.name,
+          email: result.data.email,
+          password: result.data.password,
+          passwordConfirmation: result.data.passwordConfirmation,
+          type: result.data.type
+        },
+        locale
+      );
+      router.push(`/${locale}/login?registered=1`);
+    } catch (err) {
+      if (err instanceof ApiError && Object.keys(err.fieldErrors).length > 0) {
+        setFieldErrors(mapApiErrors(err));
+      } else {
+        setError(err instanceof ApiError ? err.message : dict.auth.genericError);
+      }
+    } finally {
+      setSubmitting(false);
     }
-    const newUser = register({ name, email, role: accountType });
-    redirectFor(newUser.role as "student" | "creator");
   }
 
   const isLogin = mode === "login";
@@ -82,9 +124,16 @@ export default function AuthForm({
           </p>
         </div>
 
+        {isLogin && justRegistered && (
+          <p className="mb-4 flex items-start gap-2 rounded-xl bg-success/10 px-3 py-2.5 text-xs text-success">
+            <CheckCircle2 size={14} className="mt-0.5 shrink-0" />
+            {dict.auth.registerSuccessLoginPrompt}
+          </p>
+        )}
+
         <form onSubmit={isLogin ? handleLogin : handleRegister} className="space-y-4">
           {!isLogin && (
-            <Field label={dict.auth.fullName}>
+            <Field label={dict.auth.fullName} error={fieldErrors.name}>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -94,7 +143,7 @@ export default function AuthForm({
             </Field>
           )}
 
-          <Field label={dict.auth.email}>
+          <Field label={dict.auth.email} error={fieldErrors.email}>
             <input
               type="email"
               value={email}
@@ -104,19 +153,29 @@ export default function AuthForm({
             />
           </Field>
 
-          <Field label={dict.auth.password}>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={inputClass}
-              placeholder="••••••••"
-            />
-          </Field>
+          <div>
+            <Field label={dict.auth.password} error={fieldErrors.password}>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={inputClass}
+                placeholder="••••••••"
+              />
+            </Field>
+            {isLogin && (
+              <Link
+                href={`/${locale}/forgot-password`}
+                className="link-underline mt-1.5 inline-block text-xs font-medium text-primary-700"
+              >
+                {dict.auth.forgotPassword}
+              </Link>
+            )}
+          </div>
 
           {!isLogin && (
             <>
-              <Field label={dict.auth.confirmPassword}>
+              <Field label={dict.auth.confirmPassword} error={fieldErrors.passwordConfirmation}>
                 <input
                   type="password"
                   value={confirmPassword}
@@ -154,6 +213,9 @@ export default function AuthForm({
                     {dict.auth.accountTypeCreator}
                   </button>
                 </div>
+                {fieldErrors.accountType && (
+                  <p className="mt-1 text-xs text-danger">{fieldErrors.accountType}</p>
+                )}
               </div>
             </>
           )}
@@ -167,9 +229,15 @@ export default function AuthForm({
 
           <button
             type="submit"
-            className="w-full rounded-full bg-primary-500 py-3 text-sm font-semibold text-white transition hover:bg-primary-600"
+            disabled={submitting}
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-primary-500 py-3 text-sm font-semibold text-white transition hover:bg-primary-600 disabled:opacity-80"
           >
-            {isLogin ? dict.auth.loginButton : dict.auth.registerButton}
+            {submitting && <Loader2 size={16} className="animate-spin" />}
+            {submitting
+              ? dict.auth.submitting
+              : isLogin
+                ? dict.auth.loginButton
+                : dict.auth.registerButton}
           </button>
         </form>
 
@@ -190,12 +258,40 @@ export default function AuthForm({
 const inputClass =
   "w-full rounded-xl border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus:border-primary-400";
 
+function collectIssues(issues: { path: PropertyKey[]; message: string }[]) {
+  const errors: Record<string, string> = {};
+  for (const issue of issues) {
+    const key = issue.path[0];
+    if (typeof key === "string" && !errors[key]) errors[key] = issue.message;
+  }
+  return errors;
+}
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+// Maps the backend's snake_case field names (password_confirmation, ...) back
+// onto this form's camelCase state keys so ApiError.fieldErrors can be shown
+// under the right input.
+function mapApiErrors(err: ApiError) {
+  const errors: Record<string, string> = {};
+  const map: Record<string, string> = {
+    name: "name",
+    email: "email",
+    password: "password",
+    password_confirmation: "passwordConfirmation",
+    type: "accountType"
+  };
+  for (const [apiField, formField] of Object.entries(map)) {
+    const message = err.fieldError(apiField);
+    if (message) errors[formField] = message;
+  }
+  return errors;
+}
+
+function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
     <div>
       <label className="mb-1.5 block text-xs font-medium text-ink/60">{label}</label>
       {children}
+      {error && <p className="mt-1 text-xs text-danger">{error}</p>}
     </div>
   );
 }

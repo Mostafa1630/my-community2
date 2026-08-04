@@ -11,7 +11,8 @@ import {
   ChevronDown,
   GraduationCap,
   LayoutDashboard,
-  LogOut
+  LogOut,
+  UserRound
 } from "lucide-react";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
@@ -22,7 +23,7 @@ import Seal from "./Seal";
 export default function Navbar({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, role, loginAs, logout } = useAuth();
+  const { user, role, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
 
@@ -36,6 +37,7 @@ export default function Navbar({ locale, dict }: { locale: Locale; dict: Diction
   const otherLocale: Locale = locale === "ar" ? "en" : "ar";
   const pathWithoutLocale = pathname.replace(/^\/(ar|en)/, "") || "/";
   const switchHref = `/${otherLocale}${pathWithoutLocale}`;
+  const profileHref = role === "creator" ? `/${locale}/creator/profile` : `/${locale}/profile`;
 
   const navLinks = [
     { href: `/${locale}`, label: dict.nav.home },
@@ -47,11 +49,6 @@ export default function Navbar({ locale, dict }: { locale: Locale; dict: Diction
   if (role === "student" || role === "creator") {
     navLinks.push({ href: `/${locale}/favorites`, label: dict.nav.favorites });
   }
-
-  const demoAccounts: { id: string; role: "student" | "creator"; label: string }[] = [
-    { id: "student-1", role: "student", label: `${dict.roles.student} — Nour Hassan` },
-    { id: "creator-1", role: "creator", label: `${dict.roles.creator} — Ahmed Nabil` }
-  ];
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-paper/90 backdrop-blur">
@@ -98,13 +95,17 @@ export default function Navbar({ locale, dict }: { locale: Locale; dict: Diction
               className="flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-sm font-medium text-ink/70 hover:border-primary-300 hover:text-primary-700"
             >
               {user ? (
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary-500 text-[10px] font-bold text-white">
-                  {initials(user.name)}
-                </span>
+                user.profileImage ? (
+                  <img src={user.profileImage} alt="" className="h-5 w-5 rounded-full object-cover" />
+                ) : (
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary-500 text-[10px] font-bold text-white">
+                    {initials(user.name)}
+                  </span>
+                )
               ) : (
                 <GraduationCap size={15} />
               )}
-              {user ? user.name.split(" ")[0] : dict.nav.demoRole}
+              {user ? user.name.split(" ")[0] : dict.nav.account}
               <ChevronDown size={14} />
             </button>
             <AnimatePresence>
@@ -117,37 +118,28 @@ export default function Navbar({ locale, dict }: { locale: Locale; dict: Diction
                 className="absolute end-0 top-11 w-72 rounded-xl border border-line bg-surface p-2 shadow-raised"
                 onMouseLeave={() => setRoleMenuOpen(false)}
               >
-                <p className="px-2 pb-1 pt-1 text-xs font-semibold uppercase tracking-wide text-ink/40">
-                  {dict.nav.demoRole}
-                </p>
-                {demoAccounts.map((acc) => (
-                  <button
-                    key={acc.id}
-                    onClick={() => {
-                      loginAs(acc.id, acc.role);
-                      setRoleMenuOpen(false);
-                      router.push(
-                        acc.role === "creator" ? `/${locale}/creator/dashboard` : `/${locale}/my-communities`
-                      );
-                    }}
-                    className="block w-full rounded-lg px-2 py-2 text-start text-sm text-ink/80 hover:bg-primary-50 hover:text-primary-700"
-                  >
-                    {acc.label}
-                  </button>
-                ))}
-                <div className="my-1 border-t border-line" />
                 {user ? (
-                  <button
-                    onClick={() => {
-                      logout();
-                      setRoleMenuOpen(false);
-                      router.push(`/${locale}`);
-                    }}
-                    className="flex w-full items-center gap-1.5 rounded-lg px-2 py-2 text-start text-sm text-danger hover:bg-danger/10"
-                  >
-                    <LogOut size={14} />
-                    {dict.nav.logout}
-                  </button>
+                  <>
+                    <Link
+                      href={profileHref}
+                      onClick={() => setRoleMenuOpen(false)}
+                      className="flex w-full items-center gap-1.5 rounded-lg px-2 py-2 text-start text-sm text-ink/80 hover:bg-primary-50 hover:text-primary-700"
+                    >
+                      <UserRound size={14} />
+                      {dict.nav.profile}
+                    </Link>
+                    <button
+                      onClick={() => {
+                        logout(locale);
+                        setRoleMenuOpen(false);
+                        router.push(`/${locale}`);
+                      }}
+                      className="flex w-full items-center gap-1.5 rounded-lg px-2 py-2 text-start text-sm text-danger hover:bg-danger/10"
+                    >
+                      <LogOut size={14} />
+                      {dict.nav.logout}
+                    </button>
+                  </>
                 ) : (
                   <div className="flex gap-2 px-2 pt-1">
                     <Link
@@ -211,31 +203,42 @@ export default function Navbar({ locale, dict }: { locale: Locale; dict: Diction
               </Link>
             )}
             <div className="my-1 border-t border-line" />
-            <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-ink/40">
-              {dict.nav.demoRole}
-            </p>
-            {demoAccounts.map((acc) => (
-              <button
-                key={acc.id}
-                onClick={() => {
-                  loginAs(acc.id, acc.role);
-                  setMobileOpen(false);
-                }}
-                className="rounded-lg px-3 py-2 text-start text-sm text-ink/80 hover:bg-primary-50"
-              >
-                {acc.label}
-              </button>
-            ))}
-            {user && (
-              <button
-                onClick={() => {
-                  logout();
-                  setMobileOpen(false);
-                }}
-                className="rounded-lg px-3 py-2 text-start text-sm text-danger hover:bg-danger/10"
-              >
-                {dict.nav.logout}
-              </button>
+            {user ? (
+              <>
+                <Link
+                  href={profileHref}
+                  onClick={() => setMobileOpen(false)}
+                  className="rounded-lg px-3 py-2 text-sm font-medium text-ink/80 hover:bg-primary-50"
+                >
+                  {dict.nav.profile}
+                </Link>
+                <button
+                  onClick={() => {
+                    logout(locale);
+                    setMobileOpen(false);
+                  }}
+                  className="rounded-lg px-3 py-2 text-start text-sm text-danger hover:bg-danger/10"
+                >
+                  {dict.nav.logout}
+                </button>
+              </>
+            ) : (
+              <div className="flex gap-2 px-3 pt-1">
+                <Link
+                  href={`/${locale}/login`}
+                  onClick={() => setMobileOpen(false)}
+                  className="flex-1 whitespace-nowrap rounded-lg bg-primary-500 px-1.5 py-2 text-center text-sm font-medium text-white"
+                >
+                  {dict.nav.login}
+                </Link>
+                <Link
+                  href={`/${locale}/register`}
+                  onClick={() => setMobileOpen(false)}
+                  className="flex-1 whitespace-nowrap rounded-lg border border-line px-1.5 py-2 text-center text-sm font-medium text-ink"
+                >
+                  {dict.nav.register}
+                </Link>
+              </div>
             )}
           </div>
         </motion.div>

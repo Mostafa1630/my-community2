@@ -1,31 +1,29 @@
 "use client";
 
 import { useState } from "react";
-import { Heart } from "lucide-react";
+import Link from "next/link";
+import { Heart, Loader2 } from "lucide-react";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import { useAuth } from "@/lib/auth-context";
-import { usePlatformStore } from "@/lib/platform-store";
-import { getCourseById, getCommunityById } from "@/lib/data";
-import CommunityCard from "./CommunityCard";
-import CourseInCommunityCard from "./CourseInCommunityCard";
+import { formatPrice } from "@/lib/format";
+import { t } from "@/lib/i18n/t";
+import FavoriteButton from "./FavoriteButton";
 import EmptyState from "./EmptyState";
 import Reveal from "./motion/Reveal";
 
 type Tab = "communities" | "courses";
 
 export default function FavoritesView({ locale, dict }: { locale: Locale; dict: Dictionary }) {
-  const { user } = useAuth();
-  const store = usePlatformStore();
+  const { user, favorites, favoritesLoading } = useAuth();
   const [tab, setTab] = useState<Tab>("communities");
 
   if (!user) {
     return <EmptyState icon={Heart} title={dict.common.empty} />;
   }
 
-  const myFavorites = store.favorites.all.filter((f) => f.userId === user.id);
-  const communityFavorites = myFavorites.filter((f) => f.favoritableType === "community");
-  const courseFavorites = myFavorites.filter((f) => f.favoritableType === "course");
+  const communityFavorites = favorites.filter((f) => f.type === "community");
+  const courseFavorites = favorites.filter((f) => f.type === "course");
   const active = tab === "communities" ? communityFavorites : courseFavorites;
 
   return (
@@ -49,33 +47,86 @@ export default function FavoritesView({ locale, dict }: { locale: Locale; dict: 
         </button>
       </div>
 
-      {active.length === 0 ? (
+      {favoritesLoading ? (
+        <div className="flex items-center gap-2 py-10 text-sm text-ink/50">
+          <Loader2 size={16} className="animate-spin" />
+          {dict.common.empty}
+        </div>
+      ) : active.length === 0 ? (
         <EmptyState icon={Heart} title={dict.favorites.empty} />
       ) : (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {active.map((fav, i) => {
-            if (fav.favoritableType === "community") {
-              const community =
-                store.communities.all.find((c) => c.id === fav.favoritableId) ?? getCommunityById(fav.favoritableId);
-              if (!community) return null;
-              return (
-                <Reveal key={fav.id} index={i}>
-                  <CommunityCard community={community} locale={locale} dict={dict} />
-                </Reveal>
-              );
-            }
-
-            const course = store.courses.all.find((c) => c.id === fav.favoritableId) ?? getCourseById(fav.favoritableId);
-            if (!course) return null;
-            const community = course.communityId
-              ? store.communities.all.find((c) => c.id === course.communityId) ?? getCommunityById(course.communityId)
-              : undefined;
-            return (
-              <Reveal key={fav.id} index={i}>
-                <CourseInCommunityCard course={course} community={community} locale={locale} dict={dict} />
-              </Reveal>
-            );
-          })}
+          {active.map((fav, i) => (
+            <Reveal key={fav.favoriteId} index={i}>
+              {fav.type === "community" ? (
+                <Link
+                  href={`/${locale}/communities/${fav.id}`}
+                  className="hover-lift group flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-card hover:border-primary-200"
+                >
+                  <div className="relative h-32 overflow-hidden bg-ink/5">
+                    {fav.coverImage && (
+                      <img
+                        src={fav.coverImage}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                    )}
+                    <span className="absolute top-3 start-3 rounded-full bg-black/40 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur">
+                      {fav.categoryName}
+                    </span>
+                    <div className="absolute top-3 end-3">
+                      <FavoriteButton favoritableType="community" favoritableId={fav.id} locale={locale} />
+                    </div>
+                  </div>
+                  <div className="flex flex-1 flex-col p-4">
+                    <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-ink transition-colors group-hover:text-primary-700">
+                      {fav.name}
+                    </h3>
+                    <p className="mt-1.5 text-sm text-ink/60">{fav.creator.name}</p>
+                    <div className="mt-5 flex items-center justify-between gap-2 border-t border-line pt-3.5">
+                      <span className="whitespace-nowrap font-mono text-[11px] font-bold tracking-wide text-accent-600 sm:text-xs">
+                        {fav.isFree ? dict.common.free : formatPrice(fav.finalPrice, locale)}
+                      </span>
+                      <span className="shrink-0 rounded-full border border-primary-200 px-2.5 py-1 text-[11px] font-medium text-primary-800 sm:text-xs">
+                        {dict.common.viewDetails}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              ) : (
+                <Link
+                  href={`/${locale}/courses/${fav.id}`}
+                  className="hover-lift group flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-card hover:border-primary-200"
+                >
+                  <div className="relative h-32 overflow-hidden bg-ink/5">
+                    {fav.image && (
+                      <img
+                        src={fav.image}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                    )}
+                    <div className="absolute top-3 end-3">
+                      <FavoriteButton favoritableType="course" favoritableId={fav.id} locale={locale} />
+                    </div>
+                  </div>
+                  <div className="flex flex-1 flex-col gap-1.5 p-4">
+                    <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-ink transition-colors group-hover:text-primary-700">
+                      {fav.title}
+                    </h3>
+                    <p className="line-clamp-2 text-xs leading-5 text-ink/70">{fav.description}</p>
+                    <p className="mt-auto pt-2 text-sm font-medium text-primary-700">
+                      {t(dict.communityDetails.lessonsCount, { count: fav.lessonsCount })}
+                    </p>
+                  </div>
+                </Link>
+              )}
+            </Reveal>
+          ))}
         </div>
       )}
     </div>

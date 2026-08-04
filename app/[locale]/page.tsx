@@ -3,7 +3,7 @@ import { PlayCircle } from "lucide-react";
 import type { Metadata } from "next";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/getDictionary";
-import { categories, activeCommunities, getTopCreators } from "@/lib/data";
+import { getCategories, getTopCreatorsApi, getCommunities } from "@/lib/api-content";
 import CreatorCard from "@/components/CreatorCard";
 import SectionHeading from "@/components/SectionHeading";
 import Slider from "@/components/motion/Slider";
@@ -18,11 +18,13 @@ export async function generateMetadata({ params }: { params: { locale: string } 
   };
 }
 
-export default function HomePage({ params }: { params: { locale: string } }) {
+export default async function HomePage({ params }: { params: { locale: string } }) {
   const locale: Locale = isLocale(params.locale) ? params.locale : "ar";
   const dict = getDictionary(locale);
 
-  const topCreators = getTopCreators(4);
+  const topCreators = await getTopCreatorsApi(locale);
+  const categories = await getCategories(locale);
+  const initialCommunities = await getCommunities(locale);
 
   return (
     <div>
@@ -48,7 +50,7 @@ export default function HomePage({ params }: { params: { locale: string } }) {
       <section className="py-14 sm:py-16">
         <div className="container-page">
           <SectionHeading title={dict.home.latestTitle} subtitle={dict.home.latestSubtitle} />
-          <CommunitiesExplorer communities={activeCommunities} categories={categories} locale={locale} dict={dict} />
+          <CommunitiesExplorer initialCommunities={initialCommunities} categories={categories} locale={locale} dict={dict} />
         </div>
       </section>
 

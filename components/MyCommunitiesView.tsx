@@ -8,8 +8,9 @@ import type { Dictionary } from "@/lib/i18n/getDictionary";
 import { t } from "@/lib/i18n/t";
 import { useAuth } from "@/lib/auth-context";
 import { usePlatformStore } from "@/lib/platform-store";
-import { categories, getCommunityById, getCategoryById } from "@/lib/data";
+import { getCommunityById, getCategoryById } from "@/lib/data";
 import { formatDate } from "@/lib/format";
+import type { Category } from "@/lib/types";
 import Badge from "./Badge";
 import CommunityCard from "./CommunityCard";
 import Pagination from "./Pagination";
@@ -17,7 +18,15 @@ import EmptyState from "./EmptyState";
 
 const PAGE_SIZE = 6;
 
-export default function MyCommunitiesView({ locale, dict }: { locale: Locale; dict: Dictionary }) {
+export default function MyCommunitiesView({
+  locale,
+  dict,
+  categories
+}: {
+  locale: Locale;
+  dict: Dictionary;
+  categories: Category[];
+}) {
   const { user, role, subscribeToCommunity } = useAuth();
   const store = usePlatformStore();
 

@@ -1,20 +1,25 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Heart } from "lucide-react";
 import type { FavoritableType } from "@/lib/types";
+import type { Locale } from "@/lib/i18n/config";
 import { useAuth } from "@/lib/auth-context";
 
 export default function FavoriteButton({
   favoritableType,
   favoritableId,
+  locale,
   className
 }: {
   favoritableType: FavoritableType;
   favoritableId: string;
+  locale: Locale;
   className?: string;
 }) {
   const { user, isFavorited, toggleFavorite } = useAuth();
+  const [pending, setPending] = useState(false);
   if (!user) return null;
 
   const active = isFavorited(favoritableType, favoritableId);
@@ -23,10 +28,16 @@ export default function FavoriteButton({
     <motion.button
       type="button"
       whileTap={{ scale: 0.85 }}
-      onClick={(e) => {
+      disabled={pending}
+      onClick={async (e) => {
         e.preventDefault();
         e.stopPropagation();
-        toggleFavorite(favoritableType, favoritableId);
+        setPending(true);
+        try {
+          await toggleFavorite(favoritableType, favoritableId, locale);
+        } finally {
+          setPending(false);
+        }
       }}
       aria-label="favorite"
       aria-pressed={active}
