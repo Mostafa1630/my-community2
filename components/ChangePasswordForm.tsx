@@ -81,13 +81,13 @@ export default function ChangePasswordForm({ locale, dict }: { locale: Locale; d
     >
       <div>
         <h2 className="text-sm font-semibold text-ink">{dict.changePassword.title}</h2>
-        <p className="mt-0.5 text-xs text-ink/50">{dict.changePassword.subtitle}</p>
+        <p className="mt-0.5 text-xs text-ink/65">{dict.changePassword.subtitle}</p>
       </div>
 
-      <div>
-        <label className="mb-1.5 block text-xs font-medium text-ink/60">
+      <label className="block">
+        <span className="mb-1.5 block text-xs font-medium text-ink/65">
           {dict.changePassword.currentPasswordLabel}
-        </label>
+        </span>
         <input
           type="password"
           value={oldPassword}
@@ -96,12 +96,12 @@ export default function ChangePasswordForm({ locale, dict }: { locale: Locale; d
           className={inputClass}
         />
         {fieldErrors.oldPassword && <p className="mt-1 text-xs text-danger">{fieldErrors.oldPassword}</p>}
-      </div>
+      </label>
 
-      <div>
-        <label className="mb-1.5 block text-xs font-medium text-ink/60">
+      <label className="block">
+        <span className="mb-1.5 block text-xs font-medium text-ink/65">
           {dict.changePassword.newPasswordLabel}
-        </label>
+        </span>
         <input
           type="password"
           value={newPassword}
@@ -110,12 +110,12 @@ export default function ChangePasswordForm({ locale, dict }: { locale: Locale; d
           className={inputClass}
         />
         {fieldErrors.newPassword && <p className="mt-1 text-xs text-danger">{fieldErrors.newPassword}</p>}
-      </div>
+      </label>
 
-      <div>
-        <label className="mb-1.5 block text-xs font-medium text-ink/60">
+      <label className="block">
+        <span className="mb-1.5 block text-xs font-medium text-ink/65">
           {dict.changePassword.confirmPasswordLabel}
-        </label>
+        </span>
         <input
           type="password"
           value={newPasswordConfirmation}
@@ -126,7 +126,7 @@ export default function ChangePasswordForm({ locale, dict }: { locale: Locale; d
         {fieldErrors.newPasswordConfirmation && (
           <p className="mt-1 text-xs text-danger">{fieldErrors.newPasswordConfirmation}</p>
         )}
-      </div>
+      </label>
 
       {formError && (
         <p className="flex items-start gap-2 rounded-xl bg-danger/10 px-3 py-2.5 text-xs text-danger">

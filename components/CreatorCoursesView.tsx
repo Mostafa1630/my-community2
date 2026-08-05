@@ -85,7 +85,7 @@ export default function CreatorCoursesView({ locale, dict }: { locale: Locale; d
       />
 
       {loading ? (
-        <div className="flex items-center gap-2 py-10 text-sm text-ink/50">
+        <div className="flex items-center gap-2 py-10 text-sm text-ink/65">
           <Loader2 size={16} className="animate-spin" />
           {dict.creatorDash.coursesLoading}
         </div>
@@ -117,21 +117,21 @@ export default function CreatorCoursesView({ locale, dict }: { locale: Locale; d
                   <div className="flex items-center gap-1.5">
                     <Link
                       href={`${base}/courses/${course.id}/lessons`}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-ink/50 hover:bg-primary-50 hover:text-primary-700"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-ink/65 hover:bg-primary-50 hover:text-primary-700"
                       title={dict.creatorDash.lessons}
                     >
                       <ListVideo size={15} />
                     </Link>
                     <Link
                       href={`${base}/courses/${course.id}/edit`}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-ink/50 hover:bg-primary-50 hover:text-primary-700"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-ink/65 hover:bg-primary-50 hover:text-primary-700"
                       title={dict.common.edit}
                     >
                       <Pencil size={15} />
                     </Link>
                     <button
                       onClick={() => setConfirmId(course.id)}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-ink/50 hover:bg-danger/10 hover:text-danger"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-ink/65 hover:bg-danger/10 hover:text-danger"
                       title={dict.common.delete}
                     >
                       <Trash2 size={15} />
@@ -152,7 +152,7 @@ export default function CreatorCoursesView({ locale, dict }: { locale: Locale; d
         }}
       >
         <h3 className="text-base font-bold text-ink">{dict.common.delete}?</h3>
-        <p className="mt-2 text-sm text-ink/60">
+        <p className="mt-2 text-sm text-ink/65">
           {locale === "ar" ? "الإجراء ده مش هيترجع." : "This action cannot be undone."}
         </p>
         {deleteError && <p className="mt-2 text-sm font-medium text-danger">{deleteError}</p>}

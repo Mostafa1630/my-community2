@@ -11,7 +11,7 @@ export function Table({ children }: { children: ReactNode }) {
 export function Thead({ children }: { children: ReactNode }) {
   return (
     <thead>
-      <tr className="border-b border-line bg-ink/[0.02] text-start text-xs uppercase tracking-wide text-ink/45">
+      <tr className="border-b border-line bg-ink/[0.02] text-start text-xs uppercase tracking-wide text-ink/65">
         {children}
       </tr>
     </thead>

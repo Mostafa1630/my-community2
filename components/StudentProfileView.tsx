@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AlertCircle, CheckCircle2, UserRound } from "lucide-react";
+import { AlertCircle, CheckCircle2, Pencil, UserRound } from "lucide-react";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import { useAuth } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api-client";
 import EmptyState from "./EmptyState";
-import ChangePasswordForm from "./ChangePasswordForm";
 
 export default function StudentProfileView({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const { user, role, updateProfile } = useAuth();
@@ -59,13 +58,14 @@ export default function StudentProfileView({ locale, dict }: { locale: Locale; d
           className="h-16 w-16 rounded-full border border-line object-cover"
         />
         <div>
-          <p className="text-sm font-medium text-ink/60">{name || user.name}</p>
+          <p className="text-lg font-bold text-ink">{name || user.name}</p>
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="link-underline text-xs font-medium text-primary-700"
+            className="link-underline mt-0.5 flex items-center gap-1 text-sm font-semibold text-primary-700"
           >
             {dict.common.changePhoto}
+            <Pencil size={12} />
           </button>
           <input
             ref={fileInputRef}
@@ -82,31 +82,31 @@ export default function StudentProfileView({ locale, dict }: { locale: Locale; d
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border border-line bg-surface p-6 shadow-card">
-        <div>
-          <label className="mb-1.5 block text-xs font-medium text-ink/60">{dict.common.name}</label>
+        <label className="block">
+          <span className="mb-1.5 block text-xs font-medium text-ink/65">{dict.common.name}</span>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="w-full rounded-xl border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus:border-primary-400"
           />
-        </div>
-        <div>
-          <label className="mb-1.5 block text-xs font-medium text-ink/60">{dict.common.email}</label>
+        </label>
+        <label className="block">
+          <span className="mb-1.5 block text-xs font-medium text-ink/65">{dict.common.email}</span>
           <input
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="w-full rounded-xl border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus:border-primary-400"
           />
-        </div>
-        <div>
-          <label className="mb-1.5 block text-xs font-medium text-ink/60">{dict.common.phoneNumber}</label>
+        </label>
+        <label className="block">
+          <span className="mb-1.5 block text-xs font-medium text-ink/65">{dict.common.phoneNumber}</span>
           <input
             value={phoneNumber}
             onChange={(e) => setPhoneNumber(e.target.value)}
             placeholder="+20 100 000 0000"
             className="w-full rounded-xl border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus:border-primary-400"
           />
-        </div>
+        </label>
 
         {error && (
           <p className="flex items-start gap-2 rounded-xl bg-danger/10 px-3 py-2.5 text-xs text-danger">
@@ -131,10 +131,6 @@ export default function StudentProfileView({ locale, dict }: { locale: Locale; d
           )}
         </div>
       </form>
-
-      <div className="mt-6">
-        <ChangePasswordForm locale={locale} dict={dict} />
-      </div>
     </div>
   );
 }

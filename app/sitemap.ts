@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { locales } from "@/lib/i18n/config";
 import { getCreators, getCommunities } from "@/lib/api-content";
 
-const BASE_URL = "https://mujtamaaty.example";
+const BASE_URL = "https://nadi-community.com";
 
 // Creator and community routes are both keyed by real numeric id now
 // (/creators/{id}, /communities/{id} — neither uses a local slug anymore),

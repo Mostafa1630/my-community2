@@ -76,7 +76,7 @@ export default function NewCourseView({
 
   if (checkingCommunity) {
     return (
-      <div className="flex items-center gap-2 py-10 text-sm text-ink/50">
+      <div className="flex items-center gap-2 py-10 text-sm text-ink/65">
         <Loader2 size={16} className="animate-spin" />
         {dict.creatorDash.communityLoading}
       </div>
@@ -208,15 +208,15 @@ export default function NewCourseView({
         </select>
       </FormField>
 
-      <div>
-        <label className="mb-1.5 block text-xs font-medium text-ink/60">{dict.creatorDash.fieldCourseImage}</label>
+      <label className="block">
+        <span className="mb-1.5 block text-xs font-medium text-ink/65">{dict.creatorDash.fieldCourseImage}</span>
         <input
           type="file"
           accept="image/*"
           onChange={(e) => setImage(e.target.files?.[0] ?? null)}
           className="w-full text-sm text-ink/70"
         />
-      </div>
+      </label>
 
       <label className="flex items-center gap-2 text-sm text-ink/70">
         <input

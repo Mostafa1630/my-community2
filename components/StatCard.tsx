@@ -20,7 +20,7 @@ export default function StatCard({
         </span>
       </div>
       <p className="mt-4 font-mono text-2xl font-semibold text-ink">{value}</p>
-      <p className="mt-1 text-sm text-ink/55">{label}</p>
+      <p className="mt-1 text-sm text-ink/65">{label}</p>
     </div>
   );
 }

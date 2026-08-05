@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Pencil } from "lucide-react";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import { useAuth } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api-client";
 import DashboardPageHeader from "./DashboardPageHeader";
-import ChangePasswordForm from "./ChangePasswordForm";
 
 export default function CreatorProfileView({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const { user, updateProfile } = useAuth();
@@ -103,9 +102,10 @@ export default function CreatorProfileView({ locale, dict }: { locale: Locale; d
           <button
             type="button"
             onClick={() => avatarInputRef.current?.click()}
-            className="link-underline text-xs font-medium text-primary-700"
+            className="link-underline flex items-center gap-1 text-sm font-semibold text-primary-700"
           >
             {dict.common.changePhoto}
+            <Pencil size={12} />
           </button>
           <input
             ref={avatarInputRef}
@@ -123,37 +123,37 @@ export default function CreatorProfileView({ locale, dict }: { locale: Locale; d
 
       <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border border-line bg-surface p-6 shadow-card">
         <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-ink/60">{dict.common.name}</label>
+          <label className="block">
+            <span className="mb-1.5 block text-xs font-medium text-ink/65">{dict.common.name}</span>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full rounded-xl border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus:border-primary-400"
             />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-ink/60">{dict.common.phoneNumber}</label>
+          </label>
+          <label className="block">
+            <span className="mb-1.5 block text-xs font-medium text-ink/65">{dict.common.phoneNumber}</span>
             <input
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
               placeholder="+20 100 000 0000"
               className="w-full rounded-xl border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus:border-primary-400"
             />
-          </div>
+          </label>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-ink/60">{locale === "ar" ? "السيرة الذاتية (إنجليزي)" : "Bio (English)"}</label>
+          <label className="block">
+            <span className="mb-1.5 block text-xs font-medium text-ink/65">{locale === "ar" ? "السيرة الذاتية (إنجليزي)" : "Bio (English)"}</span>
             <textarea
               rows={4}
               value={bioEn}
               onChange={(e) => setBioEn(e.target.value)}
               className="w-full resize-none rounded-xl border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus:border-primary-400"
             />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-ink/60">{locale === "ar" ? "السيرة الذاتية (عربي)" : "Bio (Arabic)"}</label>
+          </label>
+          <label className="block">
+            <span className="mb-1.5 block text-xs font-medium text-ink/65">{locale === "ar" ? "السيرة الذاتية (عربي)" : "Bio (Arabic)"}</span>
             <textarea
               dir="rtl"
               rows={4}
@@ -161,7 +161,7 @@ export default function CreatorProfileView({ locale, dict }: { locale: Locale; d
               onChange={(e) => setBioAr(e.target.value)}
               className="w-full resize-none rounded-xl border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus:border-primary-400"
             />
-          </div>
+          </label>
         </div>
 
         {error && (
@@ -187,10 +187,6 @@ export default function CreatorProfileView({ locale, dict }: { locale: Locale; d
           )}
         </div>
       </form>
-
-      <div className="mt-6">
-        <ChangePasswordForm locale={locale} dict={dict} />
-      </div>
     </div>
   );
 }

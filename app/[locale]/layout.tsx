@@ -51,7 +51,7 @@ export async function generateMetadata({
   const title = `${dict.meta.siteName} — ${dict.meta.tagline}`;
 
   return {
-    metadataBase: new URL("https://mujtamaaty.example"),
+    metadataBase: new URL("https://nadi-community.com"),
     title: {
       default: title,
       template: `%s · ${dict.meta.siteName}`
@@ -99,7 +99,7 @@ export default function LocaleLayout({
     "@type": "Organization",
     name: dictionary.meta.siteName,
     description: dictionary.meta.defaultDescription,
-    url: `https://mujtamaaty.example/${locale}`
+    url: `https://nadi-community.com/${locale}`
   };
 
   return (

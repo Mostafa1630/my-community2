@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { AlertCircle, CheckCircle2, Loader2, Sparkles, Tag } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, Tag } from "lucide-react";
 import type { CommunityDetails } from "@/lib/api-types";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
@@ -24,12 +24,16 @@ export default function RealCommunitySubscribeCard({
   const [checking, setChecking] = useState(false);
   const [couponResult, setCouponResult] = useState<{ discountPercentage: number } | null>(null);
   const [couponError, setCouponError] = useState("");
-  const [notConnectedNotice, setNotConnectedNotice] = useState(false);
 
-  const showOldPrice = !community.isFree && community.discountPercentage > 0;
+  const hasCommunityDiscount = !community.isFree && community.discountPercentage > 0;
+  // The community's own discount is already baked into `finalPrice` by the
+  // API; a coupon stacks on top of that already-discounted price, not the
+  // raw subscription price, so both discounts show up in the same final
+  // number rather than the coupon silently overriding the community's own.
   const finalWithCoupon = couponResult
-    ? community.subscriptionPrice * (1 - couponResult.discountPercentage / 100)
+    ? community.finalPrice * (1 - couponResult.discountPercentage / 100)
     : community.finalPrice;
+  const showOldPrice = !community.isFree && (hasCommunityDiscount || !!couponResult);
 
   async function handleCheckCoupon() {
     if (!couponCode.trim()) return;
@@ -49,18 +53,23 @@ export default function RealCommunitySubscribeCard({
   return (
     <div className="rounded-2xl border border-line bg-surface p-5 shadow-card">
       <div className="flex flex-wrap items-baseline gap-2">
-        <p className="font-mono text-3xl font-bold text-ink">
+        <p className="font-mono text-2xl font-bold text-ink">
           {community.isFree ? dict.common.free : formatPrice(finalWithCoupon, locale)}
         </p>
         {showOldPrice && (
-          <>
-            <p className="font-mono text-base text-ink/40 line-through">
-              {formatPrice(community.subscriptionPrice, locale)}
-            </p>
-            <span className="rounded-full bg-danger/10 px-2 py-0.5 text-[11px] font-bold text-danger">
-              -{community.discountPercentage}%
-            </span>
-          </>
+          <p className="font-mono text-sm text-ink/65 line-through">
+            {formatPrice(community.subscriptionPrice, locale)}
+          </p>
+        )}
+        {hasCommunityDiscount && (
+          <span className="rounded-full bg-danger/10 px-2 py-0.5 text-[11px] font-bold text-danger">
+            -{community.discountPercentage}%
+          </span>
+        )}
+        {couponResult && (
+          <span className="rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-bold text-success">
+            -{couponResult.discountPercentage}%
+          </span>
         )}
       </div>
 
@@ -70,7 +79,7 @@ export default function RealCommunitySubscribeCard({
             <Tag size={14} />
             {dict.communityDetails.couponLabel}
           </label>
-          <p className="mb-2 text-xs text-ink/55">{dict.communityDetails.couponHint}</p>
+          <p className="mb-2 text-xs text-ink/65">{dict.communityDetails.couponHint}</p>
           <div className="flex gap-2">
             <input
               value={couponCode}
@@ -108,18 +117,13 @@ export default function RealCommunitySubscribeCard({
         </div>
       )}
 
-      {notConnectedNotice ? (
-        <p className="mt-4 flex items-start gap-2 rounded-xl bg-accent-50 px-3 py-2.5 text-xs text-accent-800">
-          <AlertCircle size={14} className="mt-0.5 shrink-0" />
-          {dict.communityDetails.subscribeNotConnected}
-        </p>
-      ) : role === "student" ? (
-        <button
-          onClick={() => setNotConnectedNotice(true)}
+      {role === "student" ? (
+        <Link
+          href={`/${locale}/communities/${community.id}/checkout${couponResult ? `?coupon=${encodeURIComponent(couponCode.trim())}` : ""}`}
           className="mt-4 flex w-full items-center justify-center rounded-full bg-accent-500 py-3 text-sm font-semibold text-ink transition hover:bg-accent-400"
         >
           {community.isFree ? dict.communityDetails.freeSubscribe : dict.communityDetails.subscribeNow}
-        </button>
+        </Link>
       ) : (
         <Link
           href={`/${locale}/login`}
@@ -130,10 +134,10 @@ export default function RealCommunitySubscribeCard({
       )}
 
       <ul className="mt-5 space-y-2.5 border-t border-line pt-5 text-sm text-ink/65">
-        <li className="flex items-center gap-2"><Sparkles size={14} className="text-primary-500" />{dict.courseDetails.get1}</li>
-        <li className="flex items-center gap-2"><Sparkles size={14} className="text-primary-500" />{dict.courseDetails.get2}</li>
-        <li className="flex items-center gap-2"><Sparkles size={14} className="text-primary-500" />{dict.courseDetails.get3}</li>
-        <li className="flex items-center gap-2"><Sparkles size={14} className="text-primary-500" />{dict.courseDetails.get4}</li>
+        <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-success" />{dict.courseDetails.get1}</li>
+        <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-success" />{dict.courseDetails.get2}</li>
+        <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-success" />{dict.courseDetails.get3}</li>
+        <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-success" />{dict.courseDetails.get4}</li>
       </ul>
     </div>
   );

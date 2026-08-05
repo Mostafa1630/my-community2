@@ -80,14 +80,14 @@ export default function ResetPasswordForm({ locale, dict }: { locale: Locale; di
         <div className="mb-6 flex flex-col items-center text-center">
           <Seal size={44} label={dict.meta.siteName[0]} />
           <h1 className="mt-4 text-xl font-bold text-ink">{dict.auth.resetPasswordTitle}</h1>
-          <p className="mt-1.5 text-sm text-ink/55">{dict.auth.resetPasswordSubtitle}</p>
+          <p className="mt-1.5 text-sm text-ink/65">{dict.auth.resetPasswordSubtitle}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-ink/60">
+          <label className="block">
+            <span className="mb-1.5 block text-xs font-medium text-ink/65">
               {dict.changePassword.newPasswordLabel}
-            </label>
+            </span>
             <input
               type="password"
               value={password}
@@ -96,12 +96,12 @@ export default function ResetPasswordForm({ locale, dict }: { locale: Locale; di
               placeholder="••••••••"
             />
             {fieldErrors.password && <p className="mt-1 text-xs text-danger">{fieldErrors.password}</p>}
-          </div>
+          </label>
 
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-ink/60">
+          <label className="block">
+            <span className="mb-1.5 block text-xs font-medium text-ink/65">
               {dict.changePassword.confirmPasswordLabel}
-            </label>
+            </span>
             <input
               type="password"
               value={passwordConfirmation}
@@ -112,7 +112,7 @@ export default function ResetPasswordForm({ locale, dict }: { locale: Locale; di
             {fieldErrors.passwordConfirmation && (
               <p className="mt-1 text-xs text-danger">{fieldErrors.passwordConfirmation}</p>
             )}
-          </div>
+          </label>
 
           {error && (
             <p className="flex items-start gap-2 rounded-xl bg-danger/10 px-3 py-2.5 text-xs text-danger">

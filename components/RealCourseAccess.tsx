@@ -47,7 +47,7 @@ export default function RealCourseAccess({
         {activeUrl ? (
           <VideoPlayer url={activeUrl} title={activeTitle} />
         ) : (
-          <div className="flex aspect-video items-center justify-center rounded-2xl border border-line bg-ink/5 text-sm text-ink/40">
+          <div className="flex aspect-video items-center justify-center rounded-2xl border border-line bg-ink/5 text-sm text-ink/65">
             {dict.common.empty}
           </div>
         )}
@@ -71,12 +71,12 @@ export default function RealCourseAccess({
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium text-ink">{lesson.title}</span>
-                  {!open && <span className="block text-xs text-ink/40">{dict.courseDetails.lessonLocked}</span>}
+                  {!open && <span className="block text-xs text-ink/65">{dict.courseDetails.lessonLocked}</span>}
                 </span>
                 {open ? (
                   <PlayCircle size={18} className={active ? "text-primary-600" : "text-primary-500"} />
                 ) : (
-                  <Lock size={16} className="text-ink/30" />
+                  <Lock size={16} className="text-ink/65" />
                 )}
               </button>
             );
@@ -93,7 +93,7 @@ export default function RealCourseAccess({
             </p>
           ) : (
             <>
-              <p className="flex items-center gap-1.5 text-sm text-ink/60">
+              <p className="flex items-center gap-1.5 text-sm text-ink/65">
                 <Lock size={15} />
                 {t(dict.courseDetails.subscribeToUnlock, { name: course.community.name })}
               </p>

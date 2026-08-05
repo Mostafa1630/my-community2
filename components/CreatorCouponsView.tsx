@@ -177,7 +177,7 @@ export default function CreatorCouponsView({ locale, dict }: { locale: Locale; d
       />
 
       {loading ? (
-        <div className="flex items-center gap-2 py-10 text-sm text-ink/50">
+        <div className="flex items-center gap-2 py-10 text-sm text-ink/65">
           <Loader2 size={16} className="animate-spin" />
           {dict.creatorDash.couponsLoading}
         </div>
@@ -211,13 +211,13 @@ export default function CreatorCouponsView({ locale, dict }: { locale: Locale; d
                       <div className="flex items-center gap-1.5">
                         <button
                           onClick={() => openEdit(coupon)}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg text-ink/50 hover:bg-primary-50 hover:text-primary-700"
+                          className="flex h-8 w-8 items-center justify-center rounded-lg text-ink/65 hover:bg-primary-50 hover:text-primary-700"
                         >
                           <Pencil size={15} />
                         </button>
                         <button
                           onClick={() => setConfirmId(coupon.id)}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg text-ink/50 hover:bg-danger/10 hover:text-danger"
+                          className="flex h-8 w-8 items-center justify-center rounded-lg text-ink/65 hover:bg-danger/10 hover:text-danger"
                         >
                           <Trash2 size={15} />
                         </button>

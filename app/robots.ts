@@ -14,6 +14,6 @@ export default function robots(): MetadataRoute.Robots {
         allow: "/"
       }
     ],
-    sitemap: "https://mujtamaaty.example/sitemap.xml"
+    sitemap: "https://nadi-community.com/sitemap.xml"
   };
 }

@@ -32,7 +32,7 @@ export default function FavoritesView({ locale, dict }: { locale: Locale; dict: 
         <button
           onClick={() => setTab("communities")}
           className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
-            tab === "communities" ? "border-primary-500 bg-primary-500 text-white" : "border-line text-ink/60"
+            tab === "communities" ? "border-primary-500 bg-primary-500 text-white" : "border-line text-ink/65"
           }`}
         >
           {dict.favorites.tabCommunities} ({communityFavorites.length})
@@ -40,7 +40,7 @@ export default function FavoritesView({ locale, dict }: { locale: Locale; dict: 
         <button
           onClick={() => setTab("courses")}
           className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
-            tab === "courses" ? "border-primary-500 bg-primary-500 text-white" : "border-line text-ink/60"
+            tab === "courses" ? "border-primary-500 bg-primary-500 text-white" : "border-line text-ink/65"
           }`}
         >
           {dict.favorites.tabCourses} ({courseFavorites.length})
@@ -48,7 +48,7 @@ export default function FavoritesView({ locale, dict }: { locale: Locale; dict: 
       </div>
 
       {favoritesLoading ? (
-        <div className="flex items-center gap-2 py-10 text-sm text-ink/50">
+        <div className="flex items-center gap-2 py-10 text-sm text-ink/65">
           <Loader2 size={16} className="animate-spin" />
           {dict.common.empty}
         </div>
@@ -81,10 +81,10 @@ export default function FavoritesView({ locale, dict }: { locale: Locale; dict: 
                     </div>
                   </div>
                   <div className="flex flex-1 flex-col p-4">
-                    <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-ink transition-colors group-hover:text-primary-700">
+                    <h3 className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug text-ink transition-colors group-hover:text-primary-700">
                       {fav.name}
                     </h3>
-                    <p className="mt-1.5 text-sm text-ink/60">{fav.creator.name}</p>
+                    <p className="mt-1.5 text-sm text-ink/65">{fav.creator.name}</p>
                     <div className="mt-5 flex items-center justify-between gap-2 border-t border-line pt-3.5">
                       <span className="whitespace-nowrap font-mono text-[11px] font-bold tracking-wide text-accent-600 sm:text-xs">
                         {fav.isFree ? dict.common.free : formatPrice(fav.finalPrice, locale)}
@@ -115,10 +115,10 @@ export default function FavoritesView({ locale, dict }: { locale: Locale; dict: 
                     </div>
                   </div>
                   <div className="flex flex-1 flex-col gap-1.5 p-4">
-                    <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-ink transition-colors group-hover:text-primary-700">
+                    <h3 className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug text-ink transition-colors group-hover:text-primary-700">
                       {fav.title}
                     </h3>
-                    <p className="line-clamp-2 text-xs leading-5 text-ink/70">{fav.description}</p>
+                    <p className="line-clamp-2 min-h-[2.5rem] text-xs leading-5 text-ink/70">{fav.description}</p>
                     <p className="mt-auto pt-2 text-sm font-medium text-primary-700">
                       {t(dict.communityDetails.lessonsCount, { count: fav.lessonsCount })}
                     </p>

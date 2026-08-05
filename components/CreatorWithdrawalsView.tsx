@@ -92,7 +92,7 @@ export default function CreatorWithdrawalsView({ locale, dict }: { locale: Local
 
       <Modal open={open} onClose={() => setOpen(false)}>
         <h3 className="text-base font-bold text-ink">{dict.creatorDash.newWithdrawal}</h3>
-        <p className="mt-2 text-xs text-ink/50">
+        <p className="mt-2 text-xs text-ink/65">
           {dict.creatorDash.earningsAvailable}: {formatPrice(user.balance, locale)}
         </p>
         <input
@@ -102,13 +102,13 @@ export default function CreatorWithdrawalsView({ locale, dict }: { locale: Local
           placeholder="0"
           className="mt-4 w-full rounded-xl border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus:border-primary-400"
         />
-        <label className="mb-1.5 mt-4 block text-xs font-medium text-ink/60">{dict.creatorDash.fieldPayoutMethod}</label>
+        <label className="mb-1.5 mt-4 block text-xs font-medium text-ink/65">{dict.creatorDash.fieldPayoutMethod}</label>
         <div className="flex gap-2">
           <button
             type="button"
             onClick={() => setPayoutMethod("vodafone_cash")}
             className={`flex-1 rounded-full border px-3 py-2 text-xs font-medium ${
-              payoutMethod === "vodafone_cash" ? "border-primary-500 bg-primary-50 text-primary-700" : "border-line text-ink/60"
+              payoutMethod === "vodafone_cash" ? "border-primary-500 bg-primary-50 text-primary-700" : "border-line text-ink/65"
             }`}
           >
             {dict.creatorDash.payoutVodafoneCash}
@@ -117,13 +117,13 @@ export default function CreatorWithdrawalsView({ locale, dict }: { locale: Local
             type="button"
             onClick={() => setPayoutMethod("instapay")}
             className={`flex-1 rounded-full border px-3 py-2 text-xs font-medium ${
-              payoutMethod === "instapay" ? "border-primary-500 bg-primary-50 text-primary-700" : "border-line text-ink/60"
+              payoutMethod === "instapay" ? "border-primary-500 bg-primary-50 text-primary-700" : "border-line text-ink/65"
             }`}
           >
             {dict.creatorDash.payoutInstapay}
           </button>
         </div>
-        <label className="mb-1.5 mt-4 block text-xs font-medium text-ink/60">{dict.creatorDash.fieldPayoutAccount}</label>
+        <label className="mb-1.5 mt-4 block text-xs font-medium text-ink/65">{dict.creatorDash.fieldPayoutAccount}</label>
         <input
           value={payoutAccountNumber}
           onChange={(e) => setPayoutAccountNumber(e.target.value)}

@@ -27,7 +27,7 @@ export default function RoleGuard({
           <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-accent-50 text-accent-600">
             <ShieldAlert size={24} />
           </span>
-          <p className="mb-5 text-sm text-ink/60">{message}</p>
+          <p className="mb-5 text-sm text-ink/65">{message}</p>
           <Link href={`/${locale}`} className="rounded-full bg-primary-500 px-5 py-2.5 text-sm font-medium text-white">
             {locale === "ar" ? "العودة للرئيسية" : "Back home"}
           </Link>

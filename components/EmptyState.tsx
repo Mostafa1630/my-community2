@@ -15,7 +15,7 @@ export default function EmptyState({
       <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary-50 text-primary-600">
         <Icon size={24} />
       </span>
-      <p className="mb-4 max-w-sm text-sm text-ink/60">{title}</p>
+      <p className="mb-4 max-w-sm text-sm text-ink/65">{title}</p>
       {action}
     </div>
   );

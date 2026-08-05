@@ -130,7 +130,7 @@ export default function CreatorReviewsView({ locale, dict }: { locale: Locale; d
             key={t}
             onClick={() => setTab(t)}
             className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
-              tab === t ? "border-primary-500 bg-primary-500 text-white" : "border-line text-ink/60"
+              tab === t ? "border-primary-500 bg-primary-500 text-white" : "border-line text-ink/65"
             }`}
           >
             {t === "all" ? dict.common.all : t === "pending" ? dict.creatorDash.reviewsPending : dict.creatorDash.reviewsApproved}
@@ -139,7 +139,7 @@ export default function CreatorReviewsView({ locale, dict }: { locale: Locale; d
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2 py-10 text-sm text-ink/50">
+        <div className="flex items-center gap-2 py-10 text-sm text-ink/65">
           <Loader2 size={16} className="animate-spin" />
           {dict.creatorDash.reviewsLoading}
         </div>
@@ -175,7 +175,7 @@ export default function CreatorReviewsView({ locale, dict }: { locale: Locale; d
                   <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => openDetail(review.id)}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-ink/50 hover:bg-primary-50 hover:text-primary-700"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-ink/65 hover:bg-primary-50 hover:text-primary-700"
                       title={dict.common.viewDetails}
                     >
                       <Eye size={15} />
@@ -184,7 +184,7 @@ export default function CreatorReviewsView({ locale, dict }: { locale: Locale; d
                       <button
                         onClick={() => handleModerate(review.id, false)}
                         disabled={actingId === review.id}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg text-ink/50 hover:bg-danger/10 hover:text-danger disabled:opacity-50"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-ink/65 hover:bg-danger/10 hover:text-danger disabled:opacity-50"
                         title={dict.creatorDash.reviewReject}
                       >
                         <XCircle size={15} />
@@ -193,7 +193,7 @@ export default function CreatorReviewsView({ locale, dict }: { locale: Locale; d
                       <button
                         onClick={() => handleModerate(review.id, true)}
                         disabled={actingId === review.id}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg text-ink/50 hover:bg-success/10 hover:text-success disabled:opacity-50"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-ink/65 hover:bg-success/10 hover:text-success disabled:opacity-50"
                         title={dict.creatorDash.reviewApprove}
                       >
                         <CheckCircle2 size={15} />
@@ -201,7 +201,7 @@ export default function CreatorReviewsView({ locale, dict }: { locale: Locale; d
                     )}
                     <button
                       onClick={() => setConfirmDeleteId(review.id)}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-ink/50 hover:bg-danger/10 hover:text-danger"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-ink/65 hover:bg-danger/10 hover:text-danger"
                       title={dict.common.delete}
                     >
                       <Trash2 size={15} />
@@ -217,7 +217,7 @@ export default function CreatorReviewsView({ locale, dict }: { locale: Locale; d
 
       <Modal open={!!detailId} onClose={() => { setDetailId(null); setDetail(null); }}>
         {detailLoading || !detail ? (
-          <div className="flex items-center gap-2 py-6 text-sm text-ink/50">
+          <div className="flex items-center gap-2 py-6 text-sm text-ink/65">
             <Loader2 size={16} className="animate-spin" />
             {dict.creatorDash.reviewsLoading}
           </div>
@@ -225,7 +225,7 @@ export default function CreatorReviewsView({ locale, dict }: { locale: Locale; d
           <div className="space-y-3">
             <Stars rating={detail.rating} />
             <p className="text-sm leading-6 text-ink/80">{detail.comment || dict.creatorDash.reviewNoComment}</p>
-            <div className="flex items-center justify-between border-t border-line pt-3 text-xs text-ink/50">
+            <div className="flex items-center justify-between border-t border-line pt-3 text-xs text-ink/65">
               <span>{detail.user.name}</span>
               <ReviewableLink review={detail} locale={locale} />
             </div>

@@ -15,7 +15,7 @@ export default function NotFound() {
         <Compass size={24} />
       </span>
       <h1 className="text-2xl font-bold text-ink">404</h1>
-      <p className="mt-2 max-w-sm text-sm text-ink/60">
+      <p className="mt-2 max-w-sm text-sm text-ink/65">
         {locale === "ar" ? "الصفحة اللي بتدور عليها مش موجودة." : "We couldn't find the page you're looking for."}
       </p>
       <Link href={`/${locale}`} className="mt-6 rounded-full bg-primary-500 px-5 py-2.5 text-sm font-semibold text-white">

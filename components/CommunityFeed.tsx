@@ -63,9 +63,9 @@ function PostAttachment({ media }: { media: Media }) {
       </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-xs font-medium text-ink">{media.fileName}</span>
-        <span className="block text-[11px] text-ink/45">{formatFileSize(media.size)}</span>
+        <span className="block text-[11px] text-ink/65">{formatFileSize(media.size)}</span>
       </span>
-      <Download size={14} className="shrink-0 text-ink/40" />
+      <Download size={14} className="shrink-0 text-ink/65" />
     </a>
   );
 }
@@ -233,7 +233,7 @@ export default function CommunityFeed({
             <div className="h-[3px] w-full bg-gradient-to-r from-accent-600 via-accent-400 to-accent-600" />
 
             <div className="p-5 sm:p-6">
-              <h2 className="mb-5 text-[11px] font-semibold uppercase tracking-[0.16em] text-ink/40">
+              <h2 className="mb-5 text-[11px] font-semibold uppercase tracking-[0.16em] text-ink/65">
                 {dict.community.composerTitle}
               </h2>
 
@@ -274,10 +274,10 @@ export default function CommunityFeed({
                     </div>
                   ) : (
                     <div className="flex max-w-xs items-center gap-2 rounded-lg border border-line px-3 py-2">
-                      <FileText size={16} className="shrink-0 text-ink/50" />
+                      <FileText size={16} className="shrink-0 text-ink/65" />
                       <span className="min-w-0 flex-1 truncate text-xs text-ink">{attachedFile.name}</span>
                       <button onClick={clearAttachment} aria-label="remove attachment">
-                        <X size={14} className="text-ink/50" />
+                        <X size={14} className="text-ink/65" />
                       </button>
                     </div>
                   )}
@@ -305,7 +305,7 @@ export default function CommunityFeed({
                     type="button"
                     onClick={() => imageInputRef.current?.click()}
                     title={dict.community.attachImage}
-                    className="flex h-9 w-9 items-center justify-center rounded-full text-ink/40 transition hover:bg-paper hover:text-ink/70"
+                    className="flex h-9 w-9 items-center justify-center rounded-full text-ink/65 transition hover:bg-paper hover:text-ink/70"
                   >
                     <ImageIcon size={17} />
                   </button>
@@ -313,7 +313,7 @@ export default function CommunityFeed({
                     type="button"
                     onClick={() => videoInputRef.current?.click()}
                     title={dict.community.attachVideo}
-                    className="flex h-9 w-9 items-center justify-center rounded-full text-ink/40 transition hover:bg-paper hover:text-ink/70"
+                    className="flex h-9 w-9 items-center justify-center rounded-full text-ink/65 transition hover:bg-paper hover:text-ink/70"
                   >
                     <Video size={17} />
                   </button>
@@ -321,7 +321,7 @@ export default function CommunityFeed({
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     title={dict.community.attachFile}
-                    className="flex h-9 w-9 items-center justify-center rounded-full text-ink/40 transition hover:bg-paper hover:text-ink/70"
+                    className="flex h-9 w-9 items-center justify-center rounded-full text-ink/65 transition hover:bg-paper hover:text-ink/70"
                   >
                     <Paperclip size={17} />
                   </button>
@@ -372,7 +372,7 @@ export default function CommunityFeed({
                     <Avatar accent={author?.avatarAccent ?? "ink"} name={author?.name ?? ""} />
                     <div>
                       <p className="text-sm font-semibold text-ink">{author?.name}</p>
-                      <div className="flex items-center gap-1.5 text-xs text-ink/45">
+                      <div className="flex items-center gap-1.5 text-xs text-ink/65">
                         <AnimatePresence initial={false}>
                           {post.pinned && (
                             <motion.span
@@ -384,7 +384,7 @@ export default function CommunityFeed({
                             >
                               <Pin size={11} className="fill-accent-700" />
                               {dict.community.pinnedLabel}
-                              <span className="text-ink/30">·</span>
+                              <span className="text-ink/65">·</span>
                             </motion.span>
                           )}
                         </AnimatePresence>
@@ -396,7 +396,7 @@ export default function CommunityFeed({
                     <div className="relative">
                       <button
                         onClick={() => setOpenMenuId(openMenuId === post.id ? null : post.id)}
-                        className="rounded-full p-1.5 text-ink/40 hover:bg-ink/5"
+                        className="rounded-full p-1.5 text-ink/65 hover:bg-ink/5"
                         aria-label="options"
                       >
                         <MoreHorizontal size={18} />
@@ -449,7 +449,7 @@ export default function CommunityFeed({
                     <div className="mt-2 flex justify-end gap-2">
                       <button
                         onClick={() => setEditingId(null)}
-                        className="rounded-full border border-line px-3 py-1 text-xs font-medium text-ink/60"
+                        className="rounded-full border border-line px-3 py-1 text-xs font-medium text-ink/65"
                       >
                         {dict.common.cancel}
                       </button>
@@ -470,7 +470,7 @@ export default function CommunityFeed({
                   </>
                 )}
 
-                <div className="mt-3 flex items-center gap-4 border-t border-line pt-3 text-xs text-ink/50">
+                <div className="mt-3 flex items-center gap-4 border-t border-line pt-3 text-xs text-ink/65">
                   <motion.button
                     whileTap={{ scale: 0.85 }}
                     onClick={() => toggleLike(post.id)}
@@ -546,7 +546,7 @@ export default function CommunityFeed({
             <Users size={16} className="text-primary-600" />
             <h3 className="text-sm font-bold text-ink">{dict.community.activeMembersTitle}</h3>
           </div>
-          <p className="mb-4 text-xs leading-5 text-ink/50">{dict.community.activeMembersSubtitle}</p>
+          <p className="mb-4 text-xs leading-5 text-ink/65">{dict.community.activeMembersSubtitle}</p>
 
           <div className="space-y-3.5">
             {creatorMember && (
@@ -563,7 +563,7 @@ export default function CommunityFeed({
             )}
 
             {activeMembers.length === 0 ? (
-              <p className="text-xs text-ink/40">{dict.community.activeMembersEmpty}</p>
+              <p className="text-xs text-ink/65">{dict.community.activeMembersEmpty}</p>
             ) : (
               <>
                 {activeMembers.slice(0, 8).map((member) => (
@@ -576,7 +576,7 @@ export default function CommunityFeed({
                   </div>
                 ))}
                 {activeMembers.length > 8 && (
-                  <p className="ps-11 text-xs font-medium text-ink/40">
+                  <p className="ps-11 text-xs font-medium text-ink/65">
                     {t(dict.community.andMore, { count: activeMembers.length - 8 })}
                   </p>
                 )}
@@ -637,7 +637,7 @@ function CommentThread({
           {canReply && (
             <button
               onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
-              className="mt-1 text-[11px] font-medium text-ink/40 hover:text-primary-600"
+              className="mt-1 text-[11px] font-medium text-ink/65 hover:text-primary-600"
             >
               {dict.common.reply}
             </button>

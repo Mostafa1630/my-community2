@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { AlertCircle, CheckCircle2, GraduationCap, Loader2, Users } from "lucide-react";
+import { AlertCircle, GraduationCap, Loader2, Users } from "lucide-react";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import { useAuth } from "@/lib/auth-context";
@@ -21,8 +21,6 @@ export default function AuthForm({
   dict: Dictionary;
 }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const justRegistered = searchParams.get("registered") === "1";
   const { login, register } = useAuth();
 
   const [name, setName] = useState("");
@@ -97,7 +95,7 @@ export default function AuthForm({
         },
         locale
       );
-      router.push(`/${locale}/login?registered=1`);
+      router.push(`/${locale}`);
     } catch (err) {
       if (err instanceof ApiError && Object.keys(err.fieldErrors).length > 0) {
         setFieldErrors(mapApiErrors(err));
@@ -119,17 +117,10 @@ export default function AuthForm({
           <h1 className="mt-4 text-xl font-bold text-ink">
             {isLogin ? dict.auth.loginTitle : dict.auth.registerTitle}
           </h1>
-          <p className="mt-1.5 text-sm text-ink/55">
+          <p className="mt-1.5 text-sm text-ink/65">
             {isLogin ? dict.auth.loginSubtitle : dict.auth.registerSubtitle}
           </p>
         </div>
-
-        {isLogin && justRegistered && (
-          <p className="mb-4 flex items-start gap-2 rounded-xl bg-success/10 px-3 py-2.5 text-xs text-success">
-            <CheckCircle2 size={14} className="mt-0.5 shrink-0" />
-            {dict.auth.registerSuccessLoginPrompt}
-          </p>
-        )}
 
         <form onSubmit={isLogin ? handleLogin : handleRegister} className="space-y-4">
           {!isLogin && (
@@ -186,7 +177,7 @@ export default function AuthForm({
               </Field>
 
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-ink/60">{dict.auth.accountType}</label>
+                <label className="mb-1.5 block text-xs font-medium text-ink/65">{dict.auth.accountType}</label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
@@ -194,7 +185,7 @@ export default function AuthForm({
                     className={`flex flex-col items-center gap-1.5 rounded-xl border px-3 py-3 text-xs font-medium transition ${
                       accountType === "student"
                         ? "border-primary-500 bg-primary-50 text-primary-700"
-                        : "border-line text-ink/60"
+                        : "border-line text-ink/65"
                     }`}
                   >
                     <GraduationCap size={18} />
@@ -206,7 +197,7 @@ export default function AuthForm({
                     className={`flex flex-col items-center gap-1.5 rounded-xl border px-3 py-3 text-xs font-medium transition ${
                       accountType === "creator"
                         ? "border-primary-500 bg-primary-50 text-primary-700"
-                        : "border-line text-ink/60"
+                        : "border-line text-ink/65"
                     }`}
                   >
                     <Users size={18} />
@@ -241,7 +232,7 @@ export default function AuthForm({
           </button>
         </form>
 
-        <p className="mt-5 text-center text-xs text-ink/50">
+        <p className="mt-5 text-center text-xs text-ink/65">
           {isLogin ? dict.auth.noAccount : dict.auth.haveAccount}{" "}
           <Link
             href={isLogin ? `/${locale}/register` : `/${locale}/login`}
@@ -288,10 +279,10 @@ function mapApiErrors(err: ApiError) {
 
 function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
-    <div>
-      <label className="mb-1.5 block text-xs font-medium text-ink/60">{label}</label>
+    <label className="block">
+      <span className="mb-1.5 block text-xs font-medium text-ink/65">{label}</span>
       {children}
       {error && <p className="mt-1 text-xs text-danger">{error}</p>}
-    </div>
+    </label>
   );
 }

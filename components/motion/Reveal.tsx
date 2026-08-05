@@ -4,9 +4,9 @@ import { motion } from "framer-motion";
 import type { ReactNode } from "react";
 
 // Slides a block in from alternating sides (even index from the start/left, odd from the
-// end/right) as it scrolls into view — slow and calm on purpose, a deliberate contrast to
-// Slider's punchy pop-in, per the client's explicit ask for a slower, more "impressive"
-// feel on plain card grids that don't have a slider of their own.
+// end/right) as it scrolls into view. An earlier round asked for this to be slow and
+// dramatic; this round explicitly asked to calm it back down, so the distance, duration,
+// and per-item stagger are all toned down from that original request.
 export default function Reveal({
   children,
   index = 0,
@@ -20,10 +20,10 @@ export default function Reveal({
   return (
     <motion.div
       className={className}
-      initial={{ opacity: 0, x: fromStart ? -48 : 48 }}
+      initial={{ opacity: 0, x: fromStart ? -20 : 20 }}
       whileInView={{ opacity: 1, x: 0 }}
       viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.9, delay: Math.min(index, 10) * 0.1, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.45, delay: Math.min(index, 10) * 0.05, ease: [0.16, 1, 0.3, 1] }}
     >
       {children}
     </motion.div>

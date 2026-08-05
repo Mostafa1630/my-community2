@@ -119,6 +119,7 @@ export default function MyCommunitiesView({
           <select
             value={category}
             onChange={(e) => updateFilter(() => setCategory(e.target.value))}
+            aria-label={dict.common.category}
             className="appearance-none rounded-full border border-line bg-surface py-3 text-sm font-medium text-ink shadow-card outline-none transition hover:border-primary-300 focus:border-primary-400 ps-10 pe-9"
           >
             <option value="all">{dict.common.all}</option>
@@ -128,11 +129,11 @@ export default function MyCommunitiesView({
               </option>
             ))}
           </select>
-          <ChevronDown size={15} className="pointer-events-none absolute text-ink/40 end-3.5" />
+          <ChevronDown size={15} className="pointer-events-none absolute text-ink/65 end-3.5" />
         </div>
       </div>
 
-      <p className="mb-5 text-sm text-ink/50">{t(dict.communities.resultsCount, { count: filtered.length })}</p>
+      <p className="mb-5 text-sm text-ink/65">{t(dict.communities.resultsCount, { count: filtered.length })}</p>
 
       {paged.length === 0 ? (
         <EmptyState icon={Search} title={dict.communities.noResults} />
@@ -147,7 +148,7 @@ export default function MyCommunitiesView({
                   <Badge tone={expired ? "danger" : "success"}>
                     {expired ? dict.communityDetails.subscriptionExpired : dict.common.active}
                   </Badge>
-                  <span className="text-xs text-ink/45">
+                  <span className="text-xs text-ink/65">
                     {t(dict.communityDetails.expiresOn, { date: formatDate(subscription.endsAt, locale) })}
                   </span>
                 </div>

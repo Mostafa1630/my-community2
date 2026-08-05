@@ -1,7 +1,27 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
+
+// Compact page list: page 1, page 2, an ellipsis, the current page (if it
+// isn't already 1/2/last), another ellipsis, then the last page — instead of
+// a button per page, which stops being usable once there are dozens of
+// pages (communities/creators/coupons lists can all get there).
+function getCompactPages(page: number, totalPages: number): (number | "ellipsis")[] {
+  if (totalPages <= 4) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+  const pageSet = new Set<number>([1, 2, totalPages]);
+  if (page > 2 && page < totalPages) pageSet.add(page);
+  const sorted = Array.from(pageSet).sort((a, b) => a - b);
+
+  const result: (number | "ellipsis")[] = [];
+  for (let i = 0; i < sorted.length; i++) {
+    if (i > 0 && sorted[i] - sorted[i - 1] > 1) result.push("ellipsis");
+    result.push(sorted[i]);
+  }
+  return result;
+}
 
 export default function Pagination({
   page,
@@ -15,7 +35,7 @@ export default function Pagination({
   dict: Dictionary;
 }) {
   if (totalPages <= 1) return null;
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+  const pages = getCompactPages(page, totalPages);
 
   return (
     <div className="mt-10 flex items-center justify-center gap-2">
@@ -30,17 +50,23 @@ export default function Pagination({
       </button>
 
       <div className="flex items-center gap-1 rounded-full border border-line bg-surface p-1 shadow-card">
-        {pages.map((p) => (
-          <button
-            key={p}
-            onClick={() => onChange(p)}
-            className={`flex h-8 w-8 items-center justify-center rounded-full font-mono text-sm font-medium transition ${
-              p === page ? "bg-primary-500 text-white shadow-raised" : "text-ink/60 hover:bg-primary-50 hover:text-primary-700"
-            }`}
-          >
-            {p}
-          </button>
-        ))}
+        {pages.map((p, i) =>
+          p === "ellipsis" ? (
+            <span key={`ellipsis-${i}`} className="flex h-8 w-8 items-center justify-center text-ink/65">
+              <MoreHorizontal size={15} />
+            </span>
+          ) : (
+            <button
+              key={p}
+              onClick={() => onChange(p)}
+              className={`flex h-8 w-8 items-center justify-center rounded-full font-mono text-sm font-medium transition ${
+                p === page ? "bg-primary-500 text-white shadow-raised" : "text-ink/65 hover:bg-primary-50 hover:text-primary-700"
+              }`}
+            >
+              {p}
+            </button>
+          )
+        )}
       </div>
 
       <button

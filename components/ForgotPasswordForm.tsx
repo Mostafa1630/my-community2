@@ -48,7 +48,7 @@ export default function ForgotPasswordForm({ locale, dict }: { locale: Locale; d
         <div className="mb-6 flex flex-col items-center text-center">
           <Seal size={44} label={dict.meta.siteName[0]} />
           <h1 className="mt-4 text-xl font-bold text-ink">{dict.auth.forgotPasswordTitle}</h1>
-          <p className="mt-1.5 text-sm text-ink/55">{dict.auth.forgotPasswordSubtitle}</p>
+          <p className="mt-1.5 text-sm text-ink/65">{dict.auth.forgotPasswordSubtitle}</p>
         </div>
 
         {sent ? (
@@ -58,8 +58,8 @@ export default function ForgotPasswordForm({ locale, dict }: { locale: Locale; d
           </p>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-ink/60">{dict.auth.email}</label>
+            <label className="block">
+              <span className="mb-1.5 block text-xs font-medium text-ink/65">{dict.auth.email}</span>
               <input
                 type="email"
                 value={email}
@@ -68,7 +68,7 @@ export default function ForgotPasswordForm({ locale, dict }: { locale: Locale; d
                 placeholder="you@example.com"
               />
               {fieldError && <p className="mt-1 text-xs text-danger">{fieldError}</p>}
-            </div>
+            </label>
 
             {error && (
               <p className="flex items-start gap-2 rounded-xl bg-danger/10 px-3 py-2.5 text-xs text-danger">
@@ -88,7 +88,7 @@ export default function ForgotPasswordForm({ locale, dict }: { locale: Locale; d
           </form>
         )}
 
-        <p className="mt-5 text-center text-xs text-ink/50">
+        <p className="mt-5 text-center text-xs text-ink/65">
           <Link href={`/${locale}/login`} className="link-underline font-medium text-primary-700">
             {dict.auth.backToLogin}
           </Link>

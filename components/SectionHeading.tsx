@@ -23,7 +23,7 @@ export default function SectionHeading({
           </p>
         )}
         <Heading className="text-2xl font-bold text-ink sm:text-3xl">{title}</Heading>
-        {subtitle && <p className="mt-2 max-w-xl text-sm text-ink/60">{subtitle}</p>}
+        {subtitle && <p className="mt-2 max-w-xl text-sm text-ink/65">{subtitle}</p>}
       </div>
       {action}
     </div>

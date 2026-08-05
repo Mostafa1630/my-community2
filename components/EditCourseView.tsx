@@ -96,7 +96,7 @@ export default function EditCourseView({
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 py-10 text-sm text-ink/50">
+      <div className="flex items-center gap-2 py-10 text-sm text-ink/65">
         <Loader2 size={16} className="animate-spin" />
         {dict.creatorDash.courseLoading}
       </div>
@@ -188,8 +188,8 @@ export default function EditCourseView({
         <TextArea label={dict.creatorDash.fieldDescAr} value={descriptionAr} onChange={setDescriptionAr} dir="rtl" />
       </div>
 
-      <div>
-        <label className="mb-1.5 block text-xs font-medium text-ink/60">{dict.creatorDash.fieldCategory}</label>
+      <label className="block">
+        <span className="mb-1.5 block text-xs font-medium text-ink/65">{dict.creatorDash.fieldCategory}</span>
         <select
           value={categoryId}
           onChange={(e) => setCategoryId(e.target.value)}
@@ -202,11 +202,11 @@ export default function EditCourseView({
             </option>
           ))}
         </select>
-        <p className="mt-1 text-xs text-ink/45">{dict.creatorDash.courseCategoryNote}</p>
-      </div>
+        <p className="mt-1 text-xs text-ink/65">{dict.creatorDash.courseCategoryNote}</p>
+      </label>
 
-      <div>
-        <label className="mb-1.5 block text-xs font-medium text-ink/60">{dict.creatorDash.fieldCourseImage}</label>
+      <label className="block">
+        <span className="mb-1.5 block text-xs font-medium text-ink/65">{dict.creatorDash.fieldCourseImage}</span>
         {currentImage && !image && <img src={currentImage} alt="" className="mb-2 h-28 w-full rounded-xl object-cover" />}
         <input
           type="file"
@@ -214,7 +214,7 @@ export default function EditCourseView({
           onChange={(e) => setImage(e.target.files?.[0] ?? null)}
           className="w-full text-sm text-ink/70"
         />
-      </div>
+      </label>
 
       <label className="flex items-center gap-2 text-sm text-ink/70">
         <input
@@ -302,8 +302,8 @@ function TextArea({
   dir?: "ltr" | "rtl";
 }) {
   return (
-    <div>
-      <label className="mb-1.5 block text-xs font-medium text-ink/60">{label}</label>
+    <label className="block">
+      <span className="mb-1.5 block text-xs font-medium text-ink/65">{label}</span>
       <textarea
         dir={dir}
         rows={3}
@@ -311,6 +311,6 @@ function TextArea({
         onChange={(e) => onChange(e.target.value)}
         className="w-full resize-none rounded-xl border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus:border-primary-400"
       />
-    </div>
+    </label>
   );
 }

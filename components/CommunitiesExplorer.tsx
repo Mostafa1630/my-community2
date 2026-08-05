@@ -14,9 +14,22 @@ import Reveal from "./motion/Reveal";
 import Slider from "./motion/Slider";
 
 // "newest" leaves the API's own order alone (there's no created_at on the
-// community summary to re-sort by client-side); price-asc/desc genuinely
-// re-sort whichever page is currently loaded.
-type SortKey = "newest" | "price-asc" | "price-desc";
+// community summary to re-sort by client-side); every other key genuinely
+// re-sorts whichever page is currently loaded, over fields the list
+// response already carries (price, ratingAvg, coursesCount,
+// subscriptionsCount) — no server-side sort param is documented.
+type SortKey =
+  | "newest"
+  | "price-asc"
+  | "price-desc"
+  | "rating-desc"
+  | "rating-asc"
+  | "courses-desc"
+  | "courses-asc"
+  | "students-desc"
+  | "students-asc";
+
+const CATEGORY_PAGE_SIZE = 5;
 
 export default function CommunitiesExplorer({
   initialCommunities,
@@ -35,6 +48,7 @@ export default function CommunitiesExplorer({
   const [communitiesPage, setCommunitiesPage] = useState(initialCommunities);
   const [page, setPage] = useState(initialCommunities.currentPage);
   const [loading, setLoading] = useState(false);
+  const [visibleCategoryCount, setVisibleCategoryCount] = useState(CATEGORY_PAGE_SIZE);
 
   // GET /communities takes `page` and an optional `category_id` — both are
   // real, server-side filters, unlike creators (which had neither). Search
@@ -73,7 +87,17 @@ export default function CommunitiesExplorer({
     }
 
     if (sort !== "newest") {
-      list = [...list].sort((a, b) => (sort === "price-asc" ? a.finalPrice - b.finalPrice : b.finalPrice - a.finalPrice));
+      const comparators: Record<Exclude<SortKey, "newest">, (a: (typeof list)[number], b: (typeof list)[number]) => number> = {
+        "price-asc": (a, b) => a.finalPrice - b.finalPrice,
+        "price-desc": (a, b) => b.finalPrice - a.finalPrice,
+        "rating-desc": (a, b) => b.ratingAvg - a.ratingAvg,
+        "rating-asc": (a, b) => a.ratingAvg - b.ratingAvg,
+        "courses-desc": (a, b) => b.coursesCount - a.coursesCount,
+        "courses-asc": (a, b) => a.coursesCount - b.coursesCount,
+        "students-desc": (a, b) => b.subscriptionsCount - a.subscriptionsCount,
+        "students-asc": (a, b) => a.subscriptionsCount - b.subscriptionsCount
+      };
+      list = [...list].sort(comparators[sort]);
     }
 
     return list;
@@ -96,13 +120,20 @@ export default function CommunitiesExplorer({
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value as SortKey)}
+            aria-label={dict.communities.sortLabel}
             className="appearance-none rounded-full border border-line bg-surface py-3 text-sm font-medium text-ink shadow-card outline-none transition hover:border-primary-300 focus:border-primary-400 ps-10 pe-9"
           >
             <option value="newest">{dict.communities.sortNewest}</option>
             <option value="price-asc">{dict.communities.sortPriceAsc}</option>
             <option value="price-desc">{dict.communities.sortPriceDesc}</option>
+            <option value="rating-desc">{dict.communities.sortRatingDesc}</option>
+            <option value="rating-asc">{dict.communities.sortRatingAsc}</option>
+            <option value="courses-desc">{dict.communities.sortCoursesDesc}</option>
+            <option value="courses-asc">{dict.communities.sortCoursesAsc}</option>
+            <option value="students-desc">{dict.communities.sortStudentsDesc}</option>
+            <option value="students-asc">{dict.communities.sortStudentsAsc}</option>
           </select>
-          <ChevronDown size={15} className="pointer-events-none absolute text-ink/40 end-3.5" />
+          <ChevronDown size={15} className="pointer-events-none absolute text-ink/65 end-3.5" />
         </div>
       </div>
 
@@ -112,27 +143,35 @@ export default function CommunitiesExplorer({
           className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${
             category === "all"
               ? "border-primary-500 bg-primary-500 text-white"
-              : "border-line text-ink/60 hover:border-primary-300"
+              : "border-line text-ink/65 hover:border-primary-300"
           }`}
         >
           {dict.common.all}
         </button>
-        {categories.map((c) => (
+        {categories.slice(0, visibleCategoryCount).map((c) => (
           <button
             key={c.id}
             onClick={() => updateFilter(() => setCategory(c.id))}
             className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${
               category === c.id
                 ? "border-primary-500 bg-primary-500 text-white"
-                : "border-line text-ink/60 hover:border-primary-300"
+                : "border-line text-ink/65 hover:border-primary-300"
             }`}
           >
             {locale === "ar" ? c.nameAr : c.nameEn}
           </button>
         ))}
+        {visibleCategoryCount < categories.length && (
+          <button
+            onClick={() => setVisibleCategoryCount((n) => n + CATEGORY_PAGE_SIZE)}
+            className="rounded-full border border-dashed border-line px-3.5 py-1.5 text-xs font-medium text-primary-700 hover:border-primary-300"
+          >
+            {dict.common.loadMore}
+          </button>
+        )}
       </div>
 
-      <p className="mb-5 text-sm text-ink/50">{t(dict.communities.resultsCount, { count: communitiesPage.total })}</p>
+      <p className="mb-5 text-sm text-ink/65">{t(dict.communities.resultsCount, { count: communitiesPage.total })}</p>
 
       {filtered.length === 0 ? (
         <EmptyState icon={Search} title={dict.communities.noResults} />

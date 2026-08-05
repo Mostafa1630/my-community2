@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BookOpen, Users2 } from "lucide-react";
 import { isLocale, type Locale } from "@/lib/i18n/config";
@@ -64,10 +65,13 @@ export default async function CreatorProfilePage({ params }: { params: { locale:
           <h1 className="text-2xl font-bold">{creator.name}</h1>
           <p className="max-w-xl text-sm leading-6 text-white/80">{creator.bio}</p>
           {creator.community && (
-            <span className="flex items-center gap-1.5 rounded-full bg-white/10 px-4 py-2 text-xs font-medium backdrop-blur">
+            <Link
+              href={`/${locale}/communities/${creator.community.id}`}
+              className="flex items-center gap-1.5 rounded-full bg-white/10 px-4 py-2 text-xs font-medium backdrop-blur transition hover:bg-white/20"
+            >
               <Users2 size={13} />
               {creator.community.name}
-            </span>
+            </Link>
           )}
         </div>
       </div>
@@ -80,7 +84,10 @@ export default async function CreatorProfilePage({ params }: { params: { locale:
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {creator.courses.map((course, i) => (
               <Reveal key={course.id} index={i}>
-                <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-card">
+                <Link
+                  href={`/${locale}/courses/${course.id}`}
+                  className="hover-lift flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-card hover:border-primary-200"
+                >
                   <div className="relative h-36 overflow-hidden bg-ink/5">
                     {course.image && (
                       <img src={course.image} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
@@ -94,7 +101,7 @@ export default async function CreatorProfilePage({ params }: { params: { locale:
                       {t(dict.communityDetails.lessonsCount, { count: course.lessonsCount })}
                     </p>
                   </div>
-                </div>
+                </Link>
               </Reveal>
             ))}
           </div>

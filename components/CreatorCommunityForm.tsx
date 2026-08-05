@@ -91,7 +91,7 @@ export default function CreatorCommunityForm({
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 py-10 text-sm text-ink/50">
+      <div className="flex items-center gap-2 py-10 text-sm text-ink/65">
         <Loader2 size={16} className="animate-spin" />
         {dict.creatorDash.communityLoading}
       </div>
@@ -174,7 +174,7 @@ export default function CreatorCommunityForm({
     <div className="w-full">
       <DashboardPageHeader title={dict.creatorDash.myCommunityTitle} subtitle={dict.creatorDash.myCommunitySubtitle} />
 
-      {!communityId && <p className="mb-4 text-sm text-ink/60">{dict.creatorDash.communityNoneYet}</p>}
+      {!communityId && <p className="mb-4 text-sm text-ink/65">{dict.creatorDash.communityNoneYet}</p>}
 
       <form onSubmit={submit} className="space-y-4 rounded-2xl border border-line bg-surface p-6 shadow-card">
         <div className="grid gap-4 sm:grid-cols-2">
@@ -217,8 +217,8 @@ export default function CreatorCommunityForm({
           </FormField>
         </div>
 
-        <div>
-          <label className="mb-1.5 block text-xs font-medium text-ink/60">{dict.creatorDash.fieldCommunityCategory}</label>
+        <label className="block">
+          <span className="mb-1.5 block text-xs font-medium text-ink/65">{dict.creatorDash.fieldCommunityCategory}</span>
           <select
             value={categoryId}
             onChange={(e) => {
@@ -243,10 +243,10 @@ export default function CreatorCommunityForm({
               {fieldErrors.categoryId || dict.creatorDash.communityCategoryUnresolved}
             </p>
           )}
-        </div>
+        </label>
 
-        <div>
-          <label className="mb-1.5 block text-xs font-medium text-ink/60">{dict.creatorDash.fieldCommunityCoverImage}</label>
+        <label className="block">
+          <span className="mb-1.5 block text-xs font-medium text-ink/65">{dict.creatorDash.fieldCommunityCoverImage}</span>
           {currentCoverImage && !coverImage && (
             <img src={currentCoverImage} alt="" className="mb-2 h-28 w-full rounded-xl object-cover" />
           )}
@@ -256,17 +256,17 @@ export default function CreatorCommunityForm({
             onChange={(e) => setCoverImage(e.target.files?.[0] ?? null)}
             className="w-full text-sm text-ink/70"
           />
-        </div>
+        </label>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-ink/60">{dict.creatorDash.fieldCommunityType}</label>
+            <label className="mb-1.5 block text-xs font-medium text-ink/65">{dict.creatorDash.fieldCommunityType}</label>
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={() => setType("public")}
                 className={`flex-1 rounded-full border px-3 py-2 text-xs font-medium ${
-                  type === "public" ? "border-primary-500 bg-primary-50 text-primary-700" : "border-line text-ink/60"
+                  type === "public" ? "border-primary-500 bg-primary-50 text-primary-700" : "border-line text-ink/65"
                 }`}
               >
                 {dict.creatorDash.communityTypePublic}
@@ -275,7 +275,7 @@ export default function CreatorCommunityForm({
                 type="button"
                 onClick={() => setType("private")}
                 className={`flex-1 rounded-full border px-3 py-2 text-xs font-medium ${
-                  type === "private" ? "border-primary-500 bg-primary-50 text-primary-700" : "border-line text-ink/60"
+                  type === "private" ? "border-primary-500 bg-primary-50 text-primary-700" : "border-line text-ink/65"
                 }`}
               >
                 {dict.creatorDash.communityTypePrivate}

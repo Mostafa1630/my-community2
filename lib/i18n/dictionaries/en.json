@@ -1,8 +1,8 @@
 {
   "meta": {
-    "siteName": "Mujtamaaty",
+    "siteName": "Nadi Community",
     "tagline": "Learn from content creators who ship real work",
-    "defaultDescription": "Mujtamaaty is a bilingual, community-first learning platform — every content creator runs one community that bundles their courses, and students subscribe to unlock everything inside and join the discussion."
+    "defaultDescription": "Nadi Community is a bilingual, community-first learning platform — every content creator runs one community that bundles their courses, and students subscribe to unlock everything inside and join the discussion."
   },
   "common": {
     "search": "Search",
@@ -68,7 +68,8 @@
     "login": "Log in",
     "register": "Create account",
     "logout": "Log out",
-    "account": "Account"
+    "account": "Account",
+    "changePasswordLink": "Change password"
   },
   "roles": {
     "guest": "Guest",
@@ -83,7 +84,7 @@
     "latestTitle": "Newest communities",
     "latestSubtitle": "Fresh from our content creators this month",
     "topCreatorsTitle": "Top content creators",
-    "topCreatorsSubtitle": "The people teaching what they actually build",
+    "topCreatorsSubtitle": "Meet our top content creators",
     "ctaBannerTitle": "Have something worth teaching?",
     "ctaBannerSubtitle": "Build your community, publish courses inside it, and get paid for every subscriber.",
     "ctaBannerButton": "Start creating"
@@ -94,9 +95,16 @@
     "sortNewest": "Newest",
     "sortPriceAsc": "Price: low to high",
     "sortPriceDesc": "Price: high to low",
+    "sortRatingDesc": "Rating: high to low",
+    "sortRatingAsc": "Rating: low to high",
+    "sortCoursesDesc": "Courses: most first",
+    "sortCoursesAsc": "Courses: fewest first",
+    "sortStudentsDesc": "Students: most first",
+    "sortStudentsAsc": "Students: fewest first",
     "noResults": "No communities match your filters",
     "freeBadge": "Free to join",
-    "subscribersLabel": "subscribers"
+    "subscribersLabel": "subscribers",
+    "moreCategoriesButton": "More"
   },
   "creatorsPage": {
     "title": "Content creators",
@@ -114,10 +122,13 @@
     "freeSubscribe": "Join for free",
     "alreadySubscribed": "You're already subscribed to this community",
     "subscribeConfirmTitle": "Confirm subscription",
-    "subscribeConfirmBody": "This is a UI-only demo against local mock data — no real payment is processed.",
+    "subscribeConfirmBody": "Real payment isn't live yet — we'll turn it on soon.",
     "confirmSubscribe": "Confirm subscription",
     "subscribeSuccess": "Subscribed! You now have full access to this community.",
     "backToCommunity": "Back to community details",
+    "checkoutTitle": "Checkout",
+    "amountDue": "Amount due",
+    "checkoutSubscribingTo": "Subscribing to",
     "goToFeed": "Community feed",
     "reviewsTitle": "Reviews",
     "reviewsCount": "({count} reviews)",
@@ -134,7 +145,7 @@
     "couponApplied": "Coupon applied successfully",
     "couponInvalid": "Invalid or expired coupon",
     "subscribeNotConnected": "Subscribing isn't connected to the real backend yet — check back soon.",
-    "noReviewsYet": "No reviews yet",
+    "noReviewsYet": "No reviews yet — you can be the first to rate this community",
     "subscriptionDuration": "This subscription is valid for {duration}",
     "durationMonth": "a month",
     "durationYear": "a year",
@@ -152,8 +163,8 @@
     "whatYouGet": "What you get",
     "get1": "Lifetime access to all lessons",
     "get2": "Access to the private student community",
-    "get3": "Certificate of completion",
-    "get4": "Direct Q&A with the content creator",
+    "get3": "New content added regularly",
+    "get4": "Cancel your subscription anytime",
     "alreadyOwned": "This course is already unlocked for you",
     "subscribeToUnlock": "Subscribe to {name}'s community to unlock every lesson in this course",
     "partOfCommunity": "This course is part of {name}'s community",
@@ -406,7 +417,7 @@
     "empty": "Nothing in your favorites yet"
   },
   "footer": {
-    "about": "Mujtamaaty is a demo concept for a community-first learning platform, where content creators build a community and publish courses inside it.",
+    "about": "Nadi Community is a learning platform built around communities, where content creators build a community and publish courses inside it.",
     "explore": "Explore",
     "company": "Company",
     "aboutUs": "About us",

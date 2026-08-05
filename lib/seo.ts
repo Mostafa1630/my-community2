@@ -1,9 +1,9 @@
 import type { Locale } from "@/lib/i18n/config";
 
-// Drop the real photo at public/images/og-default.jpg (1200x630 recommended) — every
-// page that doesn't have its own cover/avatar image falls back to this for social
-// share previews (Open Graph / Twitter cards).
-export const DEFAULT_OG_IMAGE = "/images/og-default.jpg";
+// No dedicated 1200x630 social-share photo exists yet, so this falls back to the
+// real logo (the only brand image actually shipped) rather than a path with no
+// file behind it — swap in a proper og-default.jpg here once one is designed.
+export const DEFAULT_OG_IMAGE = "/images/nadi-logo.png";
 
 // Metadata.alternates is replaced wholesale (not deep-merged) by any page that sets
 // its own value, which silently drops the root layout's hreflang `languages` map.

@@ -29,7 +29,7 @@ export default function CommunityFeedPage({ params }: { params: { locale: string
     <div className="container-page py-8 sm:py-10">
       <div className="mb-6 sm:mb-8">
         <h1 className="text-2xl font-bold text-ink">{t(dict.community.feedTitle, { name })}</h1>
-        <p className="mt-1.5 text-sm text-ink/60">{dict.community.feedSubtitle}</p>
+        <p className="mt-1.5 text-sm text-ink/65">{dict.community.feedSubtitle}</p>
       </div>
       <CreatorCommunityGate creatorId={community.creatorId} communityId={community.id} locale={locale} dict={dict} />
     </div>

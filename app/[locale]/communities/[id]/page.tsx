@@ -10,6 +10,7 @@ import { getCommunityDetails } from "@/lib/api-content";
 import { getAccent, initials } from "@/lib/accents";
 import RealCommunitySubscribeCard from "@/components/RealCommunitySubscribeCard";
 import CommunityReviewForm from "@/components/CommunityReviewForm";
+import CommunityReviewsList from "@/components/CommunityReviewsList";
 import FavoriteButton from "@/components/FavoriteButton";
 
 // No generateStaticParams — community ids can't be enumerated at build time
@@ -86,13 +87,18 @@ export default async function CommunityDetailsPage({ params }: { params: { local
               {community.ratingAvg.toFixed(1)} {t(dict.communityDetails.reviewsCount, { count: community.reviewsCount })}
             </p>
           ) : (
-            <p className="text-sm text-ink/50">{dict.communityDetails.noReviewsYet}</p>
+            <p className="text-sm text-ink/65">{dict.communityDetails.noReviewsYet}</p>
           )}
+
+          {community.reviews.length > 0 && (
+            <CommunityReviewsList reviews={community.reviews} locale={locale} dict={dict} />
+          )}
+
           <CommunityReviewForm communityId={community.id} locale={locale} dict={dict} />
 
           <h2 className="mb-3 mt-10 text-lg font-bold text-ink">{dict.communityDetails.coursesInCommunity}</h2>
           {community.courses.length === 0 ? (
-            <p className="text-sm text-ink/50">{dict.common.empty}</p>
+            <p className="text-sm text-ink/65">{dict.common.empty}</p>
           ) : (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               {community.courses.map((course) => (

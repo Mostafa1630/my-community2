@@ -39,8 +39,8 @@ export default function CreatorCard({
             </span>
           )}
         </span>
-        <h3 className="text-base font-semibold text-ink transition-colors group-hover:text-primary-700">{creator.name}</h3>
-        <p className="mt-2 line-clamp-2 text-sm leading-5 text-ink/70">{creator.bio}</p>
+        <h2 className="text-base font-semibold text-ink transition-colors group-hover:text-primary-700">{creator.name}</h2>
+        <p className="mt-2 line-clamp-2 min-h-[2.5rem] text-sm leading-5 text-ink/70">{creator.bio}</p>
         <span className="mt-4 flex items-center gap-1.5 rounded-full bg-primary-50 px-3 py-1 text-xs font-medium text-primary-700">
           <UserRound size={13} />
           {dict.creator.viewProfile}

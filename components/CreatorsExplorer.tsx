@@ -81,7 +81,7 @@ export default function CreatorsExplorer({
         </div>
       </div>
 
-      <p className="mb-5 text-sm text-ink/50">{t(dict.creatorsPage.resultsCount, { count: creatorsPage.total })}</p>
+      <p className="mb-5 text-sm text-ink/65">{t(dict.creatorsPage.resultsCount, { count: creatorsPage.total })}</p>
 
       {filtered.length === 0 ? (
         <EmptyState icon={Search} title={dict.creatorsPage.noResults} />

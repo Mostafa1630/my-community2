@@ -129,7 +129,7 @@ export default function LessonsManagerView({
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 py-10 text-sm text-ink/50">
+      <div className="flex items-center gap-2 py-10 text-sm text-ink/65">
         <Loader2 size={16} className="animate-spin" />
         {dict.creatorDash.lessonsLoading}
       </div>
@@ -279,7 +279,7 @@ export default function LessonsManagerView({
                 <p className="truncate text-sm font-medium text-ink">
                   {locale === "ar" ? lesson.titleAr : lesson.titleEn}
                 </p>
-                <p className="truncate text-xs text-ink/45">{lesson.url}</p>
+                <p className="truncate text-xs text-ink/65">{lesson.url}</p>
               </div>
               {lesson.status === "inactive" && (
                 <span className="shrink-0 rounded-full bg-accent-50 px-2 py-0.5 text-[11px] font-medium text-accent-700">
@@ -288,13 +288,13 @@ export default function LessonsManagerView({
               )}
               <button
                 onClick={() => openEdit(lesson)}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-ink/50 hover:bg-primary-50 hover:text-primary-700"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-ink/65 hover:bg-primary-50 hover:text-primary-700"
               >
                 <Pencil size={14} />
               </button>
               <button
                 onClick={() => setConfirmId(lesson.id)}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-ink/50 hover:bg-danger/10 hover:text-danger"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-ink/65 hover:bg-danger/10 hover:text-danger"
               >
                 <Trash2 size={14} />
               </button>
@@ -305,7 +305,7 @@ export default function LessonsManagerView({
 
       <Modal open={!!modalMode} onClose={closeModal} maxWidth="max-w-lg" panelClassName="max-h-[90vh] space-y-4 overflow-y-auto">
         {modalLoading ? (
-          <div className="flex items-center gap-2 py-6 text-sm text-ink/50">
+          <div className="flex items-center gap-2 py-6 text-sm text-ink/65">
             <Loader2 size={16} className="animate-spin" />
             {dict.creatorDash.lessonsLoading}
           </div>
@@ -397,13 +397,13 @@ export default function LessonsManagerView({
 
               {modalMode === "edit" && (
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-ink/60">{dict.common.status}</span>
+                  <span className="text-xs font-medium text-ink/65">{dict.common.status}</span>
                   <div className="flex gap-1.5">
                     <button
                       type="button"
                       onClick={() => setForm({ ...form, status: "active" })}
                       className={`rounded-full border px-3 py-1.5 text-xs font-medium ${
-                        form.status === "active" ? "border-success bg-success/10 text-success" : "border-line text-ink/60"
+                        form.status === "active" ? "border-success bg-success/10 text-success" : "border-line text-ink/65"
                       }`}
                     >
                       {dict.common.active}
@@ -412,7 +412,7 @@ export default function LessonsManagerView({
                       type="button"
                       onClick={() => setForm({ ...form, status: "inactive" })}
                       className={`rounded-full border px-3 py-1.5 text-xs font-medium ${
-                        form.status === "inactive" ? "border-accent-500 bg-accent-50 text-accent-700" : "border-line text-ink/60"
+                        form.status === "inactive" ? "border-accent-500 bg-accent-50 text-accent-700" : "border-line text-ink/65"
                       }`}
                     >
                       {dict.common.inactive}

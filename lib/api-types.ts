@@ -265,18 +265,55 @@ export interface ApiCommunityCourse {
   created_at: string;
 }
 
+// The reviews embedded in GET /communities/details/{id} are only the
+// approved ones (confirmed via a live example the client sent — round 14)
+// — no separate "pending" entries show up here, unlike the creator-side
+// moderation list, which sees everything regardless of approval state. The
+// rating field is named `rate` here specifically, not `rating` like the
+// POST /reviews create request or the creator-moderation list's `rating` —
+// three different names for the same concept across this API, each kept as
+// its own type rather than assumed consistent.
+export interface ApiCommunityReviewUser {
+  name: string;
+  profile_image: string | null;
+}
+
+export interface ApiCommunityReview {
+  id: number;
+  rate: number;
+  comment: string | null;
+  created_at: string;
+  user: ApiCommunityReviewUser;
+}
+
+export interface CommunityReview {
+  id: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+  user: { name: string; profileImage?: string };
+}
+
 export interface ApiCommunityDetails extends ApiCommunitySummary {
-  reviews: unknown[];
+  reviews: ApiCommunityReview[];
   courses: ApiCommunityCourse[];
 }
 
 export interface CommunityDetails extends CommunitySummary {
+  reviews: CommunityReview[];
   courses: { id: string; title: string; description: string; image?: string; lessonsCount: number; createdAt: string }[];
 }
 
 export function mapApiCommunityDetails(c: ApiCommunityDetails): CommunityDetails {
   return {
     ...mapApiCommunitySummary(c),
+    reviews: c.reviews.map((r) => ({
+      id: String(r.id),
+      rating: r.rate,
+      comment: r.comment ?? "",
+      createdAt: r.created_at,
+      user: { name: r.user.name, profileImage: r.user.profile_image ?? undefined }
+    })),
     courses: c.courses.map((course) => ({
       id: String(course.id),
       title: course.title,

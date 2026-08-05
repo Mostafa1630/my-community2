@@ -84,7 +84,7 @@ export default function WatchCourseView({
       </div>
 
       <div>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-ink/45">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-ink/65">
           {dict.student.watchLessons}
         </h2>
         <div className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface shadow-card">
@@ -109,7 +109,7 @@ export default function WatchCourseView({
                     {i + 1}. {lessonTitle}
                   </p>
                 </div>
-                <span className="shrink-0 font-mono text-xs text-ink/40">{lesson.durationMinutes}m</span>
+                <span className="shrink-0 font-mono text-xs text-ink/65">{lesson.durationMinutes}m</span>
               </button>
             );
           })}

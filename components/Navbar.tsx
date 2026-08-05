@@ -7,9 +7,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Menu,
   X,
-  Globe,
   ChevronDown,
-  GraduationCap,
+  KeyRound,
   LayoutDashboard,
   LogOut,
   UserRound
@@ -34,9 +33,7 @@ export default function Navbar({ locale, dict }: { locale: Locale; dict: Diction
     return () => window.removeEventListener("scroll", closeOnScroll);
   }, [mobileOpen]);
 
-  const otherLocale: Locale = locale === "ar" ? "en" : "ar";
   const pathWithoutLocale = pathname.replace(/^\/(ar|en)/, "") || "/";
-  const switchHref = `/${otherLocale}${pathWithoutLocale}`;
   const profileHref = role === "creator" ? `/${locale}/creator/profile` : `/${locale}/profile`;
 
   const navLinks = [
@@ -53,9 +50,8 @@ export default function Navbar({ locale, dict }: { locale: Locale; dict: Diction
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-paper/90 backdrop-blur">
       <div className="container-page flex h-16 items-center justify-between gap-4">
-        <Link href={`/${locale}`} className="flex items-center gap-2 shrink-0">
-          <Seal size={36} label={dict.meta.siteName[0]} />
-          <span className="font-display text-lg font-bold text-ink">{dict.meta.siteName}</span>
+        <Link href={`/${locale}`} className="flex items-center shrink-0">
+          <Seal size={46} />
         </Link>
 
         <nav className="hidden items-center gap-1 lg:flex">
@@ -80,46 +76,55 @@ export default function Navbar({ locale, dict }: { locale: Locale; dict: Diction
         </nav>
 
         <div className="flex items-center gap-2">
-          <Link
-            href={switchHref}
-            className="flex items-center gap-1 rounded-full border border-line px-3 py-1.5 text-sm font-medium text-ink/70 hover:border-primary-300 hover:text-primary-700"
+          <div
+            className="flex items-center rounded-full border border-line p-0.5 text-xs font-semibold"
+            role="group"
             aria-label={dict.common.language}
           >
-            <Globe size={15} />
-            {otherLocale === "ar" ? "عربي" : "English"}
-          </Link>
-
-          <div className="relative hidden sm:block">
-            <button
-              onClick={() => setRoleMenuOpen((v) => !v)}
-              className="flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-sm font-medium text-ink/70 hover:border-primary-300 hover:text-primary-700"
+            <Link
+              href={`/ar${pathWithoutLocale}`}
+              className={`rounded-full px-2.5 py-1 transition ${
+                locale === "ar" ? "bg-primary-500 text-white" : "text-ink/65 hover:text-primary-700"
+              }`}
             >
-              {user ? (
-                user.profileImage ? (
+              عربي
+            </Link>
+            <Link
+              href={`/en${pathWithoutLocale}`}
+              className={`rounded-full px-2.5 py-1 transition ${
+                locale === "en" ? "bg-primary-500 text-white" : "text-ink/65 hover:text-primary-700"
+              }`}
+            >
+              EN
+            </Link>
+          </div>
+
+          {user ? (
+            <div className="relative hidden sm:block">
+              <button
+                onClick={() => setRoleMenuOpen((v) => !v)}
+                className="flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-sm font-medium text-ink/70 hover:border-primary-300 hover:text-primary-700"
+              >
+                {user.profileImage ? (
                   <img src={user.profileImage} alt="" className="h-5 w-5 rounded-full object-cover" />
                 ) : (
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary-500 text-[10px] font-bold text-white">
                     {initials(user.name)}
                   </span>
-                )
-              ) : (
-                <GraduationCap size={15} />
-              )}
-              {user ? user.name.split(" ")[0] : dict.nav.account}
-              <ChevronDown size={14} />
-            </button>
-            <AnimatePresence>
-            {roleMenuOpen && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.96, y: -4 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.96, y: -4 }}
-                transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
-                className="absolute end-0 top-11 w-72 rounded-xl border border-line bg-surface p-2 shadow-raised"
-                onMouseLeave={() => setRoleMenuOpen(false)}
-              >
-                {user ? (
-                  <>
+                )}
+                {user.name.split(" ")[0]}
+                <ChevronDown size={14} />
+              </button>
+              <AnimatePresence>
+                {roleMenuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.96, y: -4 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.96, y: -4 }}
+                    transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                    className="absolute end-0 top-11 w-72 rounded-xl border border-line bg-surface p-2 shadow-raised"
+                    onMouseLeave={() => setRoleMenuOpen(false)}
+                  >
                     <Link
                       href={profileHref}
                       onClick={() => setRoleMenuOpen(false)}
@@ -127,6 +132,14 @@ export default function Navbar({ locale, dict }: { locale: Locale; dict: Diction
                     >
                       <UserRound size={14} />
                       {dict.nav.profile}
+                    </Link>
+                    <Link
+                      href={`/${locale}/change-password`}
+                      onClick={() => setRoleMenuOpen(false)}
+                      className="flex w-full items-center gap-1.5 rounded-lg px-2 py-2 text-start text-sm text-ink/80 hover:bg-primary-50 hover:text-primary-700"
+                    >
+                      <KeyRound size={14} />
+                      {dict.nav.changePasswordLink}
                     </Link>
                     <button
                       onClick={() => {
@@ -139,29 +152,26 @@ export default function Navbar({ locale, dict }: { locale: Locale; dict: Diction
                       <LogOut size={14} />
                       {dict.nav.logout}
                     </button>
-                  </>
-                ) : (
-                  <div className="flex gap-2 px-2 pt-1">
-                    <Link
-                      href={`/${locale}/login`}
-                      className="flex-1 whitespace-nowrap rounded-lg bg-primary-500 px-1.5 py-2 text-center text-sm font-medium text-white"
-                      onClick={() => setRoleMenuOpen(false)}
-                    >
-                      {dict.nav.login}
-                    </Link>
-                    <Link
-                      href={`/${locale}/register`}
-                      className="flex-1 whitespace-nowrap rounded-lg border border-line px-1.5 py-2 text-center text-sm font-medium text-ink"
-                      onClick={() => setRoleMenuOpen(false)}
-                    >
-                      {dict.nav.register}
-                    </Link>
-                  </div>
+                  </motion.div>
                 )}
-              </motion.div>
-            )}
-            </AnimatePresence>
-          </div>
+              </AnimatePresence>
+            </div>
+          ) : (
+            <div className="hidden items-center gap-2 sm:flex">
+              <Link
+                href={`/${locale}/login`}
+                className="rounded-full border border-line px-3.5 py-1.5 text-sm font-medium text-ink/70 hover:border-primary-300 hover:text-primary-700"
+              >
+                {dict.nav.login}
+              </Link>
+              <Link
+                href={`/${locale}/register`}
+                className="rounded-full bg-primary-500 px-3.5 py-1.5 text-sm font-medium text-white hover:bg-primary-600"
+              >
+                {dict.nav.register}
+              </Link>
+            </div>
+          )}
 
           <button
             className="rounded-full border border-line p-2 lg:hidden"
@@ -211,6 +221,13 @@ export default function Navbar({ locale, dict }: { locale: Locale; dict: Diction
                   className="rounded-lg px-3 py-2 text-sm font-medium text-ink/80 hover:bg-primary-50"
                 >
                   {dict.nav.profile}
+                </Link>
+                <Link
+                  href={`/${locale}/change-password`}
+                  onClick={() => setMobileOpen(false)}
+                  className="rounded-lg px-3 py-2 text-sm font-medium text-ink/80 hover:bg-primary-50"
+                >
+                  {dict.nav.changePasswordLink}
                 </Link>
                 <button
                   onClick={() => {

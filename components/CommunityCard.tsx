@@ -59,7 +59,7 @@ export default function CommunityCard({
       </div>
 
       <div className="flex flex-1 flex-col p-4">
-        <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-ink transition-colors group-hover:text-primary-700 sm:text-base">
+        <h3 className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug text-ink transition-colors group-hover:text-primary-700 sm:min-h-[2.75rem] sm:text-base">
           {name}
         </h3>
 
@@ -70,11 +70,11 @@ export default function CommunityCard({
             >
               {initials(creator.name)}
             </span>
-            <span className="text-sm text-ink/60">{creator.name}</span>
+            <span className="text-sm text-ink/65">{creator.name}</span>
           </div>
         )}
 
-        <div className="mt-4 flex items-center gap-3 text-[11px] text-ink/60 sm:text-xs">
+        <div className="mt-4 flex items-center gap-3 text-[11px] text-ink/65 sm:text-xs">
           <span className="flex shrink-0 items-center gap-1 whitespace-nowrap">
             <BookOpen size={12} className="shrink-0" />
             {courseCount} {dict.common.courses}

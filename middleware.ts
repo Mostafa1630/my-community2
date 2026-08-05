@@ -9,8 +9,18 @@ export function middleware(request: NextRequest) {
   );
   if (pathnameHasLocale) return NextResponse.next();
 
-  // Skip static assets and API-ish paths
-  if (pathname.startsWith("/_next") || pathname.includes(".")) return NextResponse.next();
+  // Skip static assets, API-ish paths, and Next's generated metadata routes
+  // (icon/apple-icon/opengraph-image have no file extension in their URL path,
+  // so the dot-check above doesn't catch them — without this they'd otherwise
+  // get redirected to a non-existent /en/icon and 404).
+  if (
+    pathname.startsWith("/_next") ||
+    pathname.includes(".") ||
+    pathname === "/icon" ||
+    pathname === "/apple-icon"
+  ) {
+    return NextResponse.next();
+  }
 
   // Always land new visitors on the default locale (English) regardless of their
   // browser's Accept-Language — the client wants English as the site's first

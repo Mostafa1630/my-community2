@@ -55,7 +55,7 @@ interface AuthContextValue {
   apiUser: ApiUser | null;
   role: Role | "guest";
   login: (email: string, password: string, locale: Locale) => Promise<AnyUser>;
-  register: (input: RegisterApiInput, locale: Locale) => Promise<void>;
+  register: (input: RegisterApiInput, locale: Locale) => Promise<AnyUser>;
   logout: (locale: Locale) => void;
   forgotPassword: (email: string, locale: Locale) => Promise<void>;
   resetPassword: (
@@ -241,11 +241,11 @@ export function AuthProvider({ children, locale = "en" }: { children: ReactNode;
     return mapApiUserToLocal(res.data);
   }, []);
 
-  // Deliberately does NOT call setAuthToken/setApiUser — the client wants a
-  // freshly-registered account to land on the login screen and sign in
-  // explicitly, not get auto-authenticated even though the register response
-  // does include a usable token. Account creation and "being logged in" are
-  // kept as two separate steps on purpose here.
+  // Auto-authenticates on successful registration, using the token the
+  // register response already includes — same shape and handling as login's
+  // own response. (An earlier round deliberately kept these as two separate
+  // steps per the client's own instruction at the time; this round reverses
+  // that explicitly — a freshly-registered account now lands signed in.)
   const register = useCallback(async (input: RegisterApiInput, requestLocale: Locale) => {
     const form = new FormData();
     form.set("name", input.name);
@@ -253,10 +253,15 @@ export function AuthProvider({ children, locale = "en" }: { children: ReactNode;
     form.set("password", input.password);
     form.set("password_confirmation", input.passwordConfirmation);
     form.set("type", input.type);
-    await apiFetch<{ data: { id: number; name: string; email: string; type: "student" | "creator"; token: string } }>(
-      "/auth/register",
-      { method: "POST", body: form, locale: requestLocale, auth: false }
-    );
+    const res = await apiFetch<{ data: ApiUser & { token: string } }>("/auth/register", {
+      method: "POST",
+      body: form,
+      locale: requestLocale,
+      auth: false
+    });
+    setAuthToken(res.data.token);
+    setApiUser(res.data);
+    return mapApiUserToLocal(res.data);
   }, []);
 
   const logout = useCallback((requestLocale: Locale) => {

@@ -64,7 +64,7 @@ export default function Slider({
         {items.map((item, i) => (
           <motion.div
             key={i}
-            className={`h-full shrink-0 snap-start ${itemClassName}`}
+            className={`flex self-stretch shrink-0 snap-start ${itemClassName}`}
             initial={{ opacity: 0, scale: 0.8, rotate: -6 }}
             whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
             viewport={{ root: trackRef, once: false, amount: "some" }}

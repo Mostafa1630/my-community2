@@ -57,7 +57,7 @@ export default function CreatorEarningsView({ locale, dict }: { locale: Locale; 
               <Tr key={s.id}>
                 <Td>{student?.name}</Td>
                 <Td className="font-mono">{formatPrice(s.creatorEarning, locale)}</Td>
-                <Td className="font-mono text-ink/50">-{formatPrice(s.platformCommission, locale)}</Td>
+                <Td className="font-mono text-ink/65">-{formatPrice(s.platformCommission, locale)}</Td>
                 <Td>{formatDate(s.date, locale)}</Td>
               </Tr>
             );
