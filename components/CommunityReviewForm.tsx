@@ -59,7 +59,15 @@ export default function CommunityReviewForm({
       setSubmitted(true);
       router.refresh();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : dict.communityDetails.reviewError);
+      if (err instanceof ApiError) {
+        // Laravel's top-level `message` for a validation failure is usually a
+        // generic "The given data was invalid." — the actual reason lives in
+        // the per-field `errors` object, so that takes priority when present.
+        const fieldMessage = Object.values(err.fieldErrors).flat()[0];
+        setError(fieldMessage || err.message);
+      } else {
+        setError(dict.communityDetails.reviewError);
+      }
     } finally {
       setSubmitting(false);
     }

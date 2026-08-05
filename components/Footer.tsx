@@ -33,10 +33,14 @@ const socialLinks = [
 ];
 
 const paymentBadges = [
-  { name: "Visa", image: "/images/payment-visa.jpg" },
-  { name: "Mastercard", image: "/images/payment-mastercard.jpg" },
-  { name: "PayPal", image: "/images/payment-paypal.jpg" },
-  { name: "Apple Pay", image: "/images/payment-apple-pay.jpg" }
+  { name: "Visa", image: "/images/payment-visa.jpg", className: "" },
+  { name: "Mastercard", image: "/images/payment-mastercard.jpg", className: "" },
+  // PayPal/Apple Pay's own logo files are white-background wordmarks with no
+  // fill of their own (unlike Visa/Mastercard's solid colored card shapes),
+  // so they'd otherwise disappear against this section's white background —
+  // a light chip behind them gives all four badges equal visual weight.
+  { name: "PayPal", image: "/images/payment-paypal.jpg", className: "bg-[#F2F4F7]" },
+  { name: "Apple Pay", image: "/images/payment-apple-pay.jpg", className: "bg-[#F2F4F7]" }
 ];
 
 export default function Footer({ locale, dict }: { locale: Locale; dict: Dictionary }) {
@@ -78,7 +82,7 @@ export default function Footer({ locale, dict }: { locale: Locale; dict: Diction
             {paymentBadges.map((brand) => (
               <span
                 key={brand.name}
-                className="flex h-9 w-14 items-center justify-center overflow-hidden rounded-md border border-line"
+                className={`flex h-9 w-14 items-center justify-center overflow-hidden rounded-md border border-line ${brand.className}`}
               >
                 <img src={brand.image} alt={brand.name} loading="lazy" decoding="async" className="h-full w-full object-cover" />
               </span>
@@ -96,9 +100,9 @@ export default function Footer({ locale, dict }: { locale: Locale; dict: Diction
                 key={label}
                 href={href}
                 aria-label={label}
-                className={`flex h-9 w-9 items-center justify-center rounded-full text-white transition ${className}`}
+                className={`flex h-10 w-10 items-center justify-center rounded-full text-white transition ${className}`}
               >
-                <Icon size={16} />
+                <Icon size={19} strokeWidth={2.5} />
               </a>
             ))}
           </div>

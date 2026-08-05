@@ -137,7 +137,7 @@
     "submitReview": "إرسال التقييم",
     "ratingLabel": "تقييمك",
     "reviewError": "معرفناش نبعت تقييمك، حاول تاني.",
-    "loginToReview": "سجّل دخول عشان تكتب تقييم",
+    "loginToReview": "يجب تسجيل الدخول أولاً",
     "couponLabel": "أدخل الكوبون الخاص بيك",
     "couponHint": "عندك كود خصم؟ فعّله هنا قبل ما تكمل الاشتراك",
     "couponPlaceholder": "مثال: BACKEND20",
