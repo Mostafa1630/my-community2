@@ -145,7 +145,7 @@
     "couponApplied": "تم تطبيق الكوبون بنجاح",
     "couponInvalid": "الكوبون غير صالح أو منتهي",
     "subscribeNotConnected": "الاشتراك مش متصل بالباك اند الحقيقي لسه — تابعنا قريب.",
-    "noReviewsYet": "لسه محدش قيّم — يمكنك تكون أول حد يقيّم المجتمع ده",
+    "noReviewsYet": "لا يوجد تقيمات علي هذا المجتمع يمكنك ان تكون اول من يشاركنا تقيمه",
     "subscriptionDuration": "هذا الاشتراك ساري لمدة {duration}",
     "durationMonth": "شهر",
     "durationYear": "سنة",
