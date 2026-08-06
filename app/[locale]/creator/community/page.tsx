@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/getDictionary";
-import { getCategories } from "@/lib/api-content";
-import CreatorCommunityForm from "@/components/CreatorCommunityForm";
+import CreatorCommunitiesView from "@/components/CreatorCommunitiesView";
 
 export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
   const locale: Locale = isLocale(params.locale) ? params.locale : "ar";
@@ -13,6 +12,5 @@ export async function generateMetadata({ params }: { params: { locale: string } 
 export default async function CreatorCommunityPage({ params }: { params: { locale: string } }) {
   const locale: Locale = isLocale(params.locale) ? params.locale : "ar";
   const dict = getDictionary(locale);
-  const categories = await getCategories(locale);
-  return <CreatorCommunityForm locale={locale} dict={dict} categories={categories} />;
+  return <CreatorCommunitiesView locale={locale} dict={dict} />;
 }

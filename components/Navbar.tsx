@@ -17,6 +17,7 @@ import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import { useAuth } from "@/lib/auth-context";
 import { initials } from "@/lib/accents";
+import { setStoredLocale } from "@/lib/locale-storage";
 import Seal from "./Seal";
 
 export default function Navbar({ locale, dict }: { locale: Locale; dict: Dictionary }) {
@@ -59,7 +60,11 @@ export default function Navbar({ locale, dict }: { locale: Locale; dict: Diction
             <Link
               key={link.href}
               href={link.href}
-              className="rounded-full px-3 py-2 text-sm font-medium text-ink/70 transition hover:bg-primary-50 hover:text-primary-700"
+              className={`rounded-full px-3 py-2 text-sm font-medium transition ${
+                pathname === link.href
+                  ? "bg-primary-500 text-white"
+                  : "text-ink/70 hover:bg-primary-50 hover:text-primary-700"
+              }`}
             >
               {link.label}
             </Link>
@@ -67,7 +72,11 @@ export default function Navbar({ locale, dict }: { locale: Locale; dict: Diction
           {role === "creator" && (
             <Link
               href={`/${locale}/creator/dashboard`}
-              className="flex items-center gap-1.5 rounded-full bg-primary-50 px-3 py-2 text-sm font-medium text-primary-700"
+              className={`flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium transition ${
+                pathname.startsWith(`/${locale}/creator`)
+                  ? "bg-primary-500 text-white"
+                  : "text-ink/70 hover:bg-primary-50 hover:text-primary-700"
+              }`}
             >
               <LayoutDashboard size={16} />
               {dict.nav.creatorPanel}
@@ -83,6 +92,7 @@ export default function Navbar({ locale, dict }: { locale: Locale; dict: Diction
           >
             <Link
               href={`/ar${pathWithoutLocale}`}
+              onClick={() => setStoredLocale("ar")}
               className={`rounded-full px-2.5 py-1 transition ${
                 locale === "ar" ? "bg-primary-500 text-white" : "text-ink/65 hover:text-primary-700"
               }`}
@@ -91,6 +101,7 @@ export default function Navbar({ locale, dict }: { locale: Locale; dict: Diction
             </Link>
             <Link
               href={`/en${pathWithoutLocale}`}
+              onClick={() => setStoredLocale("en")}
               className={`rounded-full px-2.5 py-1 transition ${
                 locale === "en" ? "bg-primary-500 text-white" : "text-ink/65 hover:text-primary-700"
               }`}
@@ -198,7 +209,9 @@ export default function Navbar({ locale, dict }: { locale: Locale; dict: Diction
                 key={link.href}
                 href={link.href}
                 onClick={() => setMobileOpen(false)}
-                className="rounded-lg px-3 py-2 text-sm font-medium text-ink/80 hover:bg-primary-50"
+                className={`rounded-lg px-3 py-2 text-sm font-medium ${
+                  pathname === link.href ? "bg-primary-500 text-white" : "text-ink/80 hover:bg-primary-50"
+                }`}
               >
                 {link.label}
               </Link>
@@ -207,7 +220,11 @@ export default function Navbar({ locale, dict }: { locale: Locale; dict: Diction
               <Link
                 href={`/${locale}/creator/dashboard`}
                 onClick={() => setMobileOpen(false)}
-                className="rounded-lg px-3 py-2 text-sm font-medium text-primary-700 hover:bg-primary-50"
+                className={`rounded-lg px-3 py-2 text-sm font-medium ${
+                  pathname.startsWith(`/${locale}/creator`)
+                    ? "bg-primary-500 text-white"
+                    : "text-ink/80 hover:bg-primary-50"
+                }`}
               >
                 {dict.nav.creatorPanel}
               </Link>

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { locales, defaultLocale } from "@/lib/i18n/config";
+import { locales, defaultLocale, isLocale } from "@/lib/i18n/config";
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -22,11 +22,17 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Always land new visitors on the default locale (English) regardless of their
-  // browser's Accept-Language — the client wants English as the site's first
-  // impression; visitors can still switch manually via the navbar language toggle.
+  // New visitors (no NEXT_LOCALE cookie yet) land on the default locale
+  // (English) regardless of their browser's Accept-Language — the client
+  // wants English as the site's first impression. A returning visitor who
+  // has already picked a language via the navbar toggle (Navbar.tsx writes
+  // this cookie alongside the localStorage copy — localStorage itself
+  // isn't readable here, this runs at the edge before any page loads)
+  // lands back on that language instead, with no client-side flash/redirect.
+  const storedLocale = request.cookies.get("NEXT_LOCALE")?.value;
+  const targetLocale = storedLocale && isLocale(storedLocale) ? storedLocale : defaultLocale;
   const url = request.nextUrl.clone();
-  url.pathname = `/${defaultLocale}${pathname === "/" ? "" : pathname}`;
+  url.pathname = `/${targetLocale}${pathname === "/" ? "" : pathname}`;
   return NextResponse.redirect(url);
 }
 

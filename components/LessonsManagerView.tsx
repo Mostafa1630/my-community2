@@ -11,6 +11,7 @@ import { lessonFormSchema, collectIssues } from "@/lib/validation/creatorForms";
 import EmptyState from "./EmptyState";
 import Modal from "./motion/Modal";
 import FormField, { fieldInputClass } from "./FormField";
+import PageLoader from "./PageLoader";
 
 interface LessonRow {
   id: string;
@@ -128,12 +129,7 @@ export default function LessonsManagerView({
   if (!user || user.role !== "creator") return null;
 
   if (loading) {
-    return (
-      <div className="flex items-center gap-2 py-10 text-sm text-ink/65">
-        <Loader2 size={16} className="animate-spin" />
-        {dict.creatorDash.lessonsLoading}
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (notFound) {

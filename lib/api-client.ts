@@ -32,6 +32,15 @@ export function clearAuthToken() {
 // only for what shows up on the very first paint.
 const USER_CACHE_KEY = "mujtamaaty.cachedUser.v1";
 
+// Mirrors the same cached profile into a cookie, under this name, so the
+// root layout (a Server Component — no access to localStorage) can read it
+// during SSR and render the already-correct signed-in UI in the very first
+// HTML sent to the browser. That's what actually eliminates the
+// guest-then-flip flash on refresh, rather than just shortening it —
+// localStorage alone can only ever resolve after the client's own JS runs.
+export const USER_CACHE_COOKIE = "mujtamaaty_cached_user";
+const USER_CACHE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+
 export function getCachedUser<T>(): T | null {
   if (typeof window === "undefined") return null;
   const raw = window.localStorage.getItem(USER_CACHE_KEY);
@@ -45,12 +54,30 @@ export function getCachedUser<T>(): T | null {
 
 export function setCachedUser(user: unknown) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(USER_CACHE_KEY, JSON.stringify(user));
+  const json = JSON.stringify(user);
+  window.localStorage.setItem(USER_CACHE_KEY, json);
+  document.cookie = `${USER_CACHE_COOKIE}=${encodeURIComponent(json)}; path=/; max-age=${USER_CACHE_COOKIE_MAX_AGE}; SameSite=Lax`;
 }
 
 export function clearCachedUser() {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(USER_CACHE_KEY);
+  document.cookie = `${USER_CACHE_COOKIE}=; path=/; max-age=0`;
+}
+
+// Server-side counterpart of getCachedUser — parses the same cookie's raw
+// value (as read via next/headers' cookies() in a Server Component) instead
+// of localStorage, which doesn't exist there. Only ever holds display data
+// (name/avatar/role/...), never the bearer token itself — the token stays
+// localStorage-only, so this cookie alone can't be used to make authenticated
+// requests, only to pre-render what a cached session looked like.
+export function parseCachedUserCookie<T>(raw: string | undefined): T | null {
+  if (!raw) return null;
+  try {
+    return JSON.parse(decodeURIComponent(raw)) as T;
+  } catch {
+    return null;
+  }
 }
 
 // Laravel's default validation-error shape: { message, errors: { field: ["msg", ...] } }

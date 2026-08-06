@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, ListVideo, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, ListVideo } from "lucide-react";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import { useAuth } from "@/lib/auth-context";
@@ -12,6 +12,7 @@ import Badge from "@/components/Badge";
 import EmptyState from "@/components/EmptyState";
 import DashboardPageHeader from "@/components/DashboardPageHeader";
 import Modal from "@/components/motion/Modal";
+import PageLoader from "@/components/PageLoader";
 
 // GET /creators/courses (round 12) replaced the old
 // getCreatorDetails+per-course-getCourseDetails N+1 workaround from round
@@ -85,10 +86,7 @@ export default function CreatorCoursesView({ locale, dict }: { locale: Locale; d
       />
 
       {loading ? (
-        <div className="flex items-center gap-2 py-10 text-sm text-ink/65">
-          <Loader2 size={16} className="animate-spin" />
-          {dict.creatorDash.coursesLoading}
-        </div>
+        <PageLoader />
       ) : courses.length === 0 ? (
         <EmptyState icon={ListVideo} title={dict.common.empty} />
       ) : (

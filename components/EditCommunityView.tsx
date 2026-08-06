@@ -1,30 +1,39 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertCircle, CheckCircle2, Loader2, Users2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { AlertCircle, ImagePlus, Loader2, Users2 } from "lucide-react";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import type { Category } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api-client";
 import { communityFormSchema, collectIssues } from "@/lib/validation/creatorForms";
-import EmptyState from "./EmptyState";
 import DashboardPageHeader from "./DashboardPageHeader";
 import FormField, { fieldInputClass } from "./FormField";
+import EmptyState from "./EmptyState";
+import PageLoader from "./PageLoader";
 
-export default function CreatorCommunityForm({
+// POST /creators/communities/{id} (update only — creation lives in
+// NewCommunityView). No "get one community" endpoint exists, so the target
+// community is resolved by fetching the full list (GET /creators/communities)
+// and matching on id client-side, same as how the list page already has it.
+export default function EditCommunityView({
+  communityId,
   locale,
   dict,
   categories
 }: {
+  communityId: string;
   locale: Locale;
   dict: Dictionary;
   categories: Category[];
 }) {
-  const { user, saveCommunity, getMyCommunity } = useAuth();
+  const router = useRouter();
+  const { user, saveCommunity, getMyCommunities } = useAuth();
 
   const [loading, setLoading] = useState(true);
-  const [communityId, setCommunityId] = useState<string | null>(null);
+  const [notFound, setNotFound] = useState(false);
 
   const [nameEn, setNameEn] = useState("");
   const [nameAr, setNameAr] = useState("");
@@ -38,18 +47,27 @@ export default function CreatorCommunityForm({
   const [discountPercentage, setDiscountPercentage] = useState(0);
   const [durationDays, setDurationDays] = useState("");
   const [coverImage, setCoverImage] = useState<File | null>(null);
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
   const [currentCoverImage, setCurrentCoverImage] = useState<string | undefined>(undefined);
+
+  // Same reasoning as NewCommunityView: preview a newly picked file at the
+  // same size the existing cover renders at, rather than leaving the
+  // (much taller, now-stale) current cover showing until the save
+  // round-trips.
+  useEffect(() => {
+    if (!coverImage) {
+      setCoverPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(coverImage);
+    setCoverPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [coverImage]);
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [justCreated, setJustCreated] = useState(false);
   const [error, setError] = useState("");
 
-  // GET /creators/communities (round 12) returns the real bilingual
-  // name/description pair and the real category_id in one call — no more
-  // double-locale-fetching or best-effort category-name-matching needed
-  // (both were workarounds for the gap this endpoint closes).
   useEffect(() => {
     let cancelled = false;
     async function load() {
@@ -57,24 +75,27 @@ export default function CreatorCommunityForm({
         setLoading(false);
         return;
       }
-      const community = await getMyCommunity(locale);
+      const list = await getMyCommunities(locale);
       if (cancelled) return;
-      if (community) {
-        setCommunityId(community.id);
-        setNameEn(community.nameEn);
-        setNameAr(community.nameAr);
-        setDescriptionEn(community.descriptionEn);
-        setDescriptionAr(community.descriptionAr);
-        setType(community.type);
-        setIsFree(community.isFree);
-        setSubscriptionPrice(community.subscriptionPrice);
-        setDiscountPercentage(community.discountPercentage);
-        setCurrentCoverImage(community.coverImage);
-        if (categories.some((c) => c.id === community.categoryId)) {
-          setCategoryId(community.categoryId);
-        } else {
-          setCategoryUnresolved(true);
-        }
+      const community = list.find((c) => c.id === communityId);
+      if (!community) {
+        setNotFound(true);
+        setLoading(false);
+        return;
+      }
+      setNameEn(community.nameEn);
+      setNameAr(community.nameAr);
+      setDescriptionEn(community.descriptionEn);
+      setDescriptionAr(community.descriptionAr);
+      setType(community.type);
+      setIsFree(community.isFree);
+      setSubscriptionPrice(community.subscriptionPrice);
+      setDiscountPercentage(community.discountPercentage);
+      setCurrentCoverImage(community.coverImage);
+      if (categories.some((c) => c.id === community.categoryId)) {
+        setCategoryId(community.categoryId);
+      } else {
+        setCategoryUnresolved(true);
       }
       setLoading(false);
     }
@@ -83,19 +104,14 @@ export default function CreatorCommunityForm({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, locale]);
+  }, [user?.id, locale, communityId]);
 
-  if (!user || user.role !== "creator") {
-    return <EmptyState icon={Users2} title={dict.common.empty} />;
-  }
+  if (!user || user.role !== "creator") return null;
 
-  if (loading) {
-    return (
-      <div className="flex items-center gap-2 py-10 text-sm text-ink/65">
-        <Loader2 size={16} className="animate-spin" />
-        {dict.creatorDash.communityLoading}
-      </div>
-    );
+  if (loading) return <PageLoader />;
+
+  if (notFound) {
+    return <EmptyState icon={Users2} title={dict.creatorDash.communityError} />;
   }
 
   async function submit(e: React.FormEvent) {
@@ -132,14 +148,8 @@ export default function CreatorCommunityForm({
     setFieldErrors({});
 
     setSaving(true);
-    // Captured before the call, not read back from `communityId` afterwards —
-    // saveCommunity's success handler sets communityId to the new id in the
-    // same batch as `saved`, so by render time communityId is always truthy
-    // and a ternary keyed off it would show "saved" even on a genuine first
-    // create. wasJustCreated is the fix.
-    const wasCreating = !communityId;
     try {
-      const result = await saveCommunity(
+      await saveCommunity(
         {
           categoryId,
           nameEn,
@@ -156,28 +166,19 @@ export default function CreatorCommunityForm({
         communityId,
         locale
       );
-      setCommunityId(result.id);
-      setCurrentCoverImage(result.coverImage);
-      setCoverImage(null);
-      setCategoryUnresolved(false);
-      setJustCreated(wasCreating);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
+      router.push(`/${locale}/creator/community`);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : dict.creatorDash.communityError);
-    } finally {
       setSaving(false);
     }
   }
 
   return (
     <div className="w-full">
-      <DashboardPageHeader title={dict.creatorDash.myCommunityTitle} subtitle={dict.creatorDash.myCommunitySubtitle} />
+      <DashboardPageHeader title={dict.creatorDash.communityEditTitle} subtitle={dict.creatorDash.myCommunitySubtitle} />
 
-      {!communityId && <p className="mb-4 text-sm text-ink/65">{dict.creatorDash.communityNoneYet}</p>}
-
-      <form onSubmit={submit} className="space-y-4 rounded-2xl border border-line bg-surface p-6 shadow-card">
-        <div className="grid gap-4 sm:grid-cols-2">
+      <form onSubmit={submit} className="space-y-6 rounded-2xl border border-line bg-surface p-6 shadow-card sm:p-8">
+        <div className="grid gap-5 sm:grid-cols-2">
           <FormField label={dict.creatorDash.fieldCommunityNameEn} error={fieldErrors.nameEn}>
             <input
               dir="ltr"
@@ -196,7 +197,7 @@ export default function CreatorCommunityForm({
           </FormField>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-5 sm:grid-cols-2">
           <FormField label={dict.creatorDash.fieldCommunityDescEn} error={fieldErrors.descriptionEn}>
             <textarea
               dir="ltr"
@@ -218,7 +219,7 @@ export default function CreatorCommunityForm({
         </div>
 
         <label className="block">
-          <span className="mb-1.5 block text-xs font-medium text-ink/65">{dict.creatorDash.fieldCommunityCategory}</span>
+          <span className="mb-2 block text-xs font-semibold tracking-wide text-ink/70">{dict.creatorDash.fieldCommunityCategory}</span>
           <select
             value={categoryId}
             onChange={(e) => {
@@ -246,10 +247,14 @@ export default function CreatorCommunityForm({
         </label>
 
         <label className="block">
-          <span className="mb-1.5 block text-xs font-medium text-ink/65">{dict.creatorDash.fieldCommunityCoverImage}</span>
-          {currentCoverImage && !coverImage && (
-            <img src={currentCoverImage} alt="" className="mb-2 h-28 w-full rounded-xl object-cover" />
-          )}
+          <span className="mb-2 block text-xs font-semibold tracking-wide text-ink/70">{dict.creatorDash.fieldCommunityCoverImage}</span>
+          <div className="mb-3 flex h-44 w-full items-center justify-center overflow-hidden rounded-xl border border-dashed border-line bg-paper sm:h-56">
+            {coverPreviewUrl || currentCoverImage ? (
+              <img src={coverPreviewUrl ?? currentCoverImage} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <ImagePlus size={28} className="text-ink/30" />
+            )}
+          </div>
           <input
             type="file"
             accept="image/*"
@@ -258,9 +263,9 @@ export default function CreatorCommunityForm({
           />
         </label>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-5 sm:grid-cols-2">
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-ink/65">{dict.creatorDash.fieldCommunityType}</label>
+            <label className="mb-2 block text-xs font-semibold tracking-wide text-ink/70">{dict.creatorDash.fieldCommunityType}</label>
             <div className="flex gap-2">
               <button
                 type="button"
@@ -309,7 +314,7 @@ export default function CreatorCommunityForm({
         </label>
 
         {!isFree && (
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-5 sm:grid-cols-2">
             <FormField label={dict.creatorDash.fieldCommunitySubscriptionPrice} error={fieldErrors.subscriptionPrice}>
               <input
                 type="number"
@@ -336,22 +341,14 @@ export default function CreatorCommunityForm({
           </p>
         )}
 
-        <div className="flex items-center gap-3 pt-2">
-          <button
-            type="submit"
-            disabled={saving}
-            className="flex items-center gap-1.5 rounded-full bg-primary-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-600 disabled:opacity-60"
-          >
-            {saving && <Loader2 size={14} className="animate-spin" />}
-            {communityId ? dict.creatorDash.communitySaveButton : dict.creatorDash.communityCreateButton}
-          </button>
-          {saved && (
-            <span className="flex items-center gap-1.5 text-xs font-medium text-success">
-              <CheckCircle2 size={14} />
-              {justCreated ? dict.creatorDash.communityCreated : dict.creatorDash.communitySaved}
-            </span>
-          )}
-        </div>
+        <button
+          type="submit"
+          disabled={saving}
+          className="flex items-center gap-1.5 rounded-full bg-primary-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-600 disabled:opacity-60"
+        >
+          {saving && <Loader2 size={14} className="animate-spin" />}
+          {dict.creatorDash.communitySaveButton}
+        </button>
       </form>
     </div>
   );

@@ -42,7 +42,7 @@ export default function DashboardSidebar({ title, items }: { title: string; item
             href={item.href}
             onClick={onNavigate}
             className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
-              active ? "bg-accent-500 text-ink shadow-card" : "text-white/65 hover:bg-white/10 hover:text-white"
+              active ? "bg-primary-400 text-white shadow-card" : "text-white/65 hover:bg-white/10 hover:text-white"
             }`}
           >
             {item.icon}

@@ -238,7 +238,7 @@ export default function AuthForm({
             href={isLogin ? `/${locale}/register` : `/${locale}/login`}
             className="link-underline font-medium text-primary-700"
           >
-            {isLogin ? dict.auth.signUp : dict.auth.signIn}
+            {isLogin ? dict.auth.registerButton : dict.auth.loginButton}
           </Link>
         </p>
       </div>

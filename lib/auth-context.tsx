@@ -21,6 +21,7 @@ import {
   getCachedUser,
   setCachedUser,
   clearCachedUser,
+  ApiError,
 } from "./api-client";
 import type {
   ApiUser,
@@ -62,6 +63,7 @@ interface AuthContextValue {
   user: AnyUser | null;
   apiUser: ApiUser | null;
   role: Role | "guest";
+  hydrated: boolean;
   login: (email: string, password: string, locale: Locale) => Promise<AnyUser>;
   register: (input: RegisterApiInput, locale: Locale) => Promise<AnyUser>;
   logout: (locale: Locale) => void;
@@ -126,6 +128,7 @@ interface AuthContextValue {
     locale: Locale,
   ) => Promise<CreatorCommunity>;
   getMyCommunity: (locale: Locale) => Promise<CreatorCommunity | null>;
+  getMyCommunities: (locale: Locale) => Promise<CreatorCommunity[]>;
   getMyCourses: (locale: Locale) => Promise<CreatorCourseUpdateResult[]>;
   getCourseByCreator: (
     courseId: string,
@@ -250,13 +253,24 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({
   children,
   locale = "en",
+  initialUser = null,
 }: {
   children: ReactNode;
   locale?: Locale;
+  // Resolved server-side (see app/[locale]/layout.tsx) from the cached-user
+  // cookie, so the very first HTML sent to the browser already reflects the
+  // signed-in state instead of guest — this is what actually removes the
+  // refresh flash rather than just racing to hide it after the fact.
+  initialUser?: ApiUser | null;
 }) {
   const store = usePlatformStore();
-  const [apiUser, setApiUser] = useState<ApiUser | null>(null);
-  const [hydrated, setHydrated] = useState(false);
+  const [apiUser, setApiUser] = useState<ApiUser | null>(initialUser);
+  // A non-null initialUser means the server already made a definitive call
+  // from the cookie — nothing left to resolve before first paint. A null
+  // initialUser is ambiguous (genuine guest, or a stale/missing cookie
+  // while localStorage still has a live session) and still needs the mount
+  // effect below to check localStorage before anything gates on it.
+  const [hydrated, setHydrated] = useState(initialUser !== null);
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const [favoritesLoading, setFavoritesLoading] = useState(false);
 
@@ -271,9 +285,11 @@ export function AuthProvider({
   // itself a moment later.
   useEffect(() => {
     const token = getAuthToken();
-    const cached = token ? getCachedUser<ApiUser>() : null;
-    if (cached) setApiUser(cached);
-    setHydrated(true);
+    if (!hydrated) {
+      const cached = token ? getCachedUser<ApiUser>() : null;
+      if (cached) setApiUser(cached);
+      setHydrated(true);
+    }
 
     let cancelled = false;
     async function verify() {
@@ -285,8 +301,16 @@ export function AuthProvider({
           auth: true,
         });
         if (!cancelled) setApiUser(res.data);
-      } catch {
-        if (!cancelled) {
+      } catch (err) {
+        if (cancelled) return;
+        // Only a confirmed 401 means the token itself is actually invalid —
+        // anything else (a network blip, a slow/timed-out request, a 5xx from
+        // the backend) is a transient failure that says nothing about whether
+        // the session is still good, and clearing the token on every refresh
+        // that happens to hit one of those was logging real, still-valid
+        // sessions out for no reason. The cached user (already showing) is
+        // simply left in place until the next successful check confirms it.
+        if (err instanceof ApiError && err.status === 401) {
           clearAuthToken();
           setApiUser(null);
         }
@@ -602,6 +626,22 @@ export function AuthProvider({
       },
     );
     return res.data[0] ? mapApiCreatorCommunity(res.data[0]) : null;
+  }, []);
+
+  // Same endpoint as getMyCommunity above, but returns the full list rather
+  // than just the first item — the "My community" dashboard page now lists
+  // every community a creator has (rather than assuming exactly one) with
+  // its own create/edit pages, matching the same list+create+edit shape
+  // already used for courses/coupons/lessons.
+  const getMyCommunities = useCallback(async (requestLocale: Locale) => {
+    const res = await apiFetch<{ data: ApiCreatorCommunity[] }>(
+      "/creators/communities",
+      {
+        method: "GET",
+        locale: requestLocale,
+      },
+    );
+    return res.data.map(mapApiCreatorCommunity);
   }, []);
 
   // GET /creators/courses — replaces the getCreatorDetails+per-course
@@ -1279,6 +1319,7 @@ export function AuthProvider({
     user,
     apiUser,
     role: user?.role ?? "guest",
+    hydrated,
     login,
     register,
     logout,
@@ -1290,6 +1331,7 @@ export function AuthProvider({
     createReview,
     saveCommunity,
     getMyCommunity,
+    getMyCommunities,
     getMyCourses,
     getCourseByCreator,
     createCourse,

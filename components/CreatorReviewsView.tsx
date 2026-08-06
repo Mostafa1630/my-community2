@@ -12,6 +12,7 @@ import Badge from "./Badge";
 import EmptyState from "./EmptyState";
 import DashboardPageHeader from "./DashboardPageHeader";
 import Modal from "./motion/Modal";
+import PageLoader from "./PageLoader";
 
 type Tab = "all" | "pending" | "approved";
 
@@ -139,10 +140,7 @@ export default function CreatorReviewsView({ locale, dict }: { locale: Locale; d
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2 py-10 text-sm text-ink/65">
-          <Loader2 size={16} className="animate-spin" />
-          {dict.creatorDash.reviewsLoading}
-        </div>
+        <PageLoader />
       ) : filtered.length === 0 ? (
         <EmptyState icon={Star} title={dict.creatorDash.reviewsEmpty} />
       ) : (

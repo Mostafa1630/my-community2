@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import type { Role } from "@/lib/types";
 import type { Locale } from "@/lib/i18n/config";
 import { useAuth } from "@/lib/auth-context";
+import PageLoader from "./PageLoader";
 
 export default function RoleGuard({
   allow,
@@ -18,7 +19,19 @@ export default function RoleGuard({
   message: string;
   children: ReactNode;
 }) {
-  const { role } = useAuth();
+  const { role, hydrated } = useAuth();
+
+  // `role` briefly reads as "guest" on every refresh — not because the user
+  // is logged out, but because the cached session hasn't been read from
+  // localStorage into React state yet on this render. Deciding "not
+  // allowed" off that transient value was what flashed this whole guard's
+  // access-denied screen (and the guest navbar alongside it) for a moment
+  // on every reload before flipping back. Waiting for `hydrated` means the
+  // role check only ever runs once the cached session (or its absence) is
+  // actually known.
+  if (!hydrated) {
+    return <PageLoader />;
+  }
 
   if (role !== allow) {
     return (

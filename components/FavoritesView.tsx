@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Heart, Loader2 } from "lucide-react";
+import { Heart } from "lucide-react";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import { useAuth } from "@/lib/auth-context";
@@ -11,6 +11,7 @@ import { t } from "@/lib/i18n/t";
 import FavoriteButton from "./FavoriteButton";
 import EmptyState from "./EmptyState";
 import Reveal from "./motion/Reveal";
+import PageLoader from "./PageLoader";
 
 type Tab = "communities" | "courses";
 
@@ -48,10 +49,7 @@ export default function FavoritesView({ locale, dict }: { locale: Locale; dict: 
       </div>
 
       {favoritesLoading ? (
-        <div className="flex items-center gap-2 py-10 text-sm text-ink/65">
-          <Loader2 size={16} className="animate-spin" />
-          {dict.common.empty}
-        </div>
+        <PageLoader />
       ) : active.length === 0 ? (
         <EmptyState icon={Heart} title={dict.favorites.empty} />
       ) : (

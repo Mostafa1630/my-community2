@@ -11,6 +11,7 @@ import { ApiError } from "@/lib/api-client";
 import { courseFormSchema, collectIssues } from "@/lib/validation/creatorForms";
 import EmptyState from "./EmptyState";
 import FormField, { fieldInputClass } from "./FormField";
+import PageLoader from "./PageLoader";
 
 export default function EditCourseView({
   courseId,
@@ -95,12 +96,7 @@ export default function EditCourseView({
   if (!user || user.role !== "creator") return null;
 
   if (loading) {
-    return (
-      <div className="flex items-center gap-2 py-10 text-sm text-ink/65">
-        <Loader2 size={16} className="animate-spin" />
-        {dict.creatorDash.courseLoading}
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (notFound) {

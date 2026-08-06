@@ -12,6 +12,7 @@ import { couponFormSchema, collectIssues } from "@/lib/validation/creatorForms";
 import { Table, Thead, Th, Tr, Td } from "./Table";
 import Badge from "./Badge";
 import EmptyState from "./EmptyState";
+import PageLoader from "./PageLoader";
 import DashboardPageHeader from "./DashboardPageHeader";
 import Modal from "./motion/Modal";
 import Pagination from "./Pagination";
@@ -177,10 +178,7 @@ export default function CreatorCouponsView({ locale, dict }: { locale: Locale; d
       />
 
       {loading ? (
-        <div className="flex items-center gap-2 py-10 text-sm text-ink/65">
-          <Loader2 size={16} className="animate-spin" />
-          {dict.creatorDash.couponsLoading}
-        </div>
+        <PageLoader />
       ) : coupons.length === 0 ? (
         <EmptyState icon={Tag} title={dict.common.empty} />
       ) : (

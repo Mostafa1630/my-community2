@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { Plus_Jakarta_Sans, IBM_Plex_Sans_Arabic, IBM_Plex_Mono } from "next/font/google";
 import { MotionConfig } from "framer-motion";
 import "../globals.css";
@@ -7,6 +8,8 @@ import { getDictionary } from "@/lib/i18n/getDictionary";
 import { DEFAULT_OG_IMAGE } from "@/lib/seo";
 import { AuthProvider } from "@/lib/auth-context";
 import { PlatformStoreProvider } from "@/lib/platform-store";
+import { USER_CACHE_COOKIE, parseCachedUserCookie } from "@/lib/api-client";
+import type { ApiUser } from "@/lib/api-types";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ScrollToTopButton from "@/components/ScrollToTopButton";
@@ -93,6 +96,7 @@ export default function LocaleLayout({
 }) {
   const locale: Locale = isLocale(params.locale) ? params.locale : "ar";
   const dictionary = getDictionary(locale);
+  const initialUser = parseCachedUserCookie<ApiUser>(cookies().get(USER_CACHE_COOKIE)?.value);
 
   const organizationJsonLd = {
     "@context": "https://schema.org",
@@ -126,7 +130,7 @@ export default function LocaleLayout({
             transitions/animations, not these. */}
         <MotionConfig reducedMotion="user">
           <PlatformStoreProvider>
-            <AuthProvider locale={locale}>
+            <AuthProvider locale={locale} initialUser={initialUser}>
               <div className="flex min-h-screen flex-col">
                 <Navbar locale={locale} dict={dictionary} />
                 <main className="flex-1">{children}</main>

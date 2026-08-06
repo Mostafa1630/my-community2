@@ -11,6 +11,7 @@ import { useAuth } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api-client";
 import { courseCreateFormSchema, collectIssues } from "@/lib/validation/creatorForms";
 import FormField, { fieldInputClass } from "./FormField";
+import PageLoader from "./PageLoader";
 
 // POST /creators/courses (round 12) — previously this page just showed a
 // "not connected" notice since only update/delete existed (round 10).
@@ -75,12 +76,7 @@ export default function NewCourseView({
   if (!user || user.role !== "creator") return null;
 
   if (checkingCommunity) {
-    return (
-      <div className="flex items-center gap-2 py-10 text-sm text-ink/65">
-        <Loader2 size={16} className="animate-spin" />
-        {dict.creatorDash.communityLoading}
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (!hasCommunity) {
