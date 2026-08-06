@@ -13,7 +13,7 @@ import type { AnyUser, Role, Creator } from "./types";
 import type { Locale } from "./i18n/config";
 import { usePlatformStore } from "./platform-store";
 import { resolveCommunityPrice } from "./data";
-import { apiFetch, setAuthToken, getAuthToken, clearAuthToken } from "./api-client";
+import { apiFetch, setAuthToken, getAuthToken, clearAuthToken, getCachedUser, setCachedUser, clearCachedUser } from "./api-client";
 import type {
   ApiUser,
   ApiFavoriteEntry,
@@ -201,30 +201,48 @@ export function AuthProvider({ children, locale = "en" }: { children: ReactNode;
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const [favoritesLoading, setFavoritesLoading] = useState(false);
 
-  // On mount, a stored token (if any) is the only source of truth for whether
-  // someone's logged in — confirm it's still valid via GET /auth/profile
-  // before trusting it (a token can outlive the session it belongs to on the
-  // backend, e.g. after it's revoked elsewhere).
+  // On mount, hydrate synchronously from the cached profile first (no network
+  // wait) so a page refresh renders the logged-in UI immediately instead of
+  // flashing "guest" for the round-trip time of a GET /auth/profile call —
+  // that flash-then-flip was the actual bug being fixed here. The cached
+  // profile is still re-verified against the real backend right after, in
+  // the background, since a token can outlive the session it belongs to
+  // (e.g. after it's revoked elsewhere) — but that check no longer gates
+  // what the user sees on first paint, only whether it might quietly correct
+  // itself a moment later.
   useEffect(() => {
+    const token = getAuthToken();
+    const cached = token ? getCachedUser<ApiUser>() : null;
+    if (cached) setApiUser(cached);
+    setHydrated(true);
+
     let cancelled = false;
-    async function hydrate() {
-      const token = getAuthToken();
+    async function verify() {
       if (!token) return;
       try {
         const res = await apiFetch<{ data: ApiUser }>("/auth/profile", { method: "GET", locale, auth: true });
         if (!cancelled) setApiUser(res.data);
       } catch {
-        clearAuthToken();
+        if (!cancelled) {
+          clearAuthToken();
+          setApiUser(null);
+        }
       }
     }
-    hydrate().finally(() => {
-      if (!cancelled) setHydrated(true);
-    });
+    verify();
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Keeps the cache in lockstep with every place apiUser changes (hydrate,
+  // login, register, profile update, logout) without needing to touch each
+  // of those call sites individually.
+  useEffect(() => {
+    if (apiUser) setCachedUser(apiUser);
+    else clearCachedUser();
+  }, [apiUser]);
 
   const login = useCallback(async (email: string, password: string, requestLocale: Locale) => {
     const form = new FormData();

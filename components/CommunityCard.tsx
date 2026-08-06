@@ -31,7 +31,7 @@ export default function CommunityCard({
   return (
     <Link
       href={`/${locale}/communities/${community.slug}`}
-      className="hover-lift group flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-card hover:border-primary-200"
+      className="hover-lift group flex h-full w-full flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-card hover:border-primary-200"
     >
       <div className="relative h-52 overflow-hidden">
         {community.coverImage ? (
@@ -86,7 +86,7 @@ export default function CommunityCard({
         </div>
 
         <div className="mt-5 flex items-center justify-between gap-2 border-t border-line pt-3.5">
-          <span className="whitespace-nowrap font-mono text-[11px] font-bold tracking-wide text-accent-600 sm:text-xs">
+          <span className="whitespace-nowrap font-mono text-[11px] font-bold tracking-wide text-accent-700 sm:text-xs">
             {community.isFree ? dict.communities.freeBadge : formatPrice(community.subscriptionPrice, locale)}
           </span>
           <span className="shrink-0 whitespace-nowrap rounded-full border border-primary-200 px-2.5 py-1 text-center text-[11px] font-medium text-primary-800 transition-colors duration-200 group-hover:border-primary-300 group-hover:bg-primary-50 sm:px-3 sm:text-xs">

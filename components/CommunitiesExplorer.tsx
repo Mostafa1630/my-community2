@@ -179,8 +179,8 @@ export default function CommunitiesExplorer({
         <div className={loading ? "opacity-60 transition-opacity" : "transition-opacity"}>
           <div className="sm:hidden">
             <Slider
-              items={filtered.map((community) => (
-                <RealCommunityCard key={community.id} community={community} locale={locale} dict={dict} />
+              items={filtered.map((community, i) => (
+                <RealCommunityCard key={community.id} community={community} locale={locale} dict={dict} priority={i < 4} />
               ))}
               itemClassName="w-[calc((100%_-_1rem)/1.5)]"
             />
@@ -188,7 +188,7 @@ export default function CommunitiesExplorer({
           <div className="hidden sm:grid sm:grid-cols-2 gap-5 lg:grid-cols-4">
             {filtered.map((community, i) => (
               <Reveal key={community.id} index={i}>
-                <RealCommunityCard community={community} locale={locale} dict={dict} />
+                <RealCommunityCard community={community} locale={locale} dict={dict} priority={i < 4} />
               </Reveal>
             ))}
           </div>

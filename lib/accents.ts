@@ -16,7 +16,10 @@ export const accentMap: Record<AccentKey, AccentStyle> = {
   },
   gold: {
     gradient: "from-accent-700 via-accent-500 to-accent-300",
-    solid: "bg-accent-500",
+    // accent-500 (the gradient's own midpoint) is only 2.45:1 against white —
+    // fine as part of a gradient, but fails WCAG AA when used as a flat solid
+    // fill behind white text (e.g. the small creator-initials badge).
+    solid: "bg-accent-700",
     text: "text-accent-700",
     ring: "ring-accent-300"
   },
@@ -46,7 +49,8 @@ export const accentMap: Record<AccentKey, AccentStyle> = {
   },
   sand: {
     gradient: "from-[#8A6A3C] via-[#B99459] to-[#E4C48C]",
-    solid: "bg-[#B99459]",
+    // Same WCAG issue as "gold" — #B99459 is only 2.82:1 against white text.
+    solid: "bg-[#8A6A3C]",
     text: "text-[#8A6A3C]",
     ring: "ring-[#E4C48C]"
   },

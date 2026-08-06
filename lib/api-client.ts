@@ -25,6 +25,34 @@ export function clearAuthToken() {
   window.localStorage.removeItem(TOKEN_STORAGE_KEY);
 }
 
+// A cached copy of the last known /auth/profile response, kept alongside the
+// token so a page refresh can render the logged-in UI immediately instead of
+// waiting on a fresh network round-trip — the profile is still re-verified
+// in the background afterwards (see AuthProvider's hydrate effect), this is
+// only for what shows up on the very first paint.
+const USER_CACHE_KEY = "mujtamaaty.cachedUser.v1";
+
+export function getCachedUser<T>(): T | null {
+  if (typeof window === "undefined") return null;
+  const raw = window.localStorage.getItem(USER_CACHE_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return null;
+  }
+}
+
+export function setCachedUser(user: unknown) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(USER_CACHE_KEY, JSON.stringify(user));
+}
+
+export function clearCachedUser() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(USER_CACHE_KEY);
+}
+
 // Laravel's default validation-error shape: { message, errors: { field: ["msg", ...] } }
 export interface ApiFieldErrors {
   [field: string]: string[];

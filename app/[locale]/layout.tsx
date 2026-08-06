@@ -104,6 +104,15 @@ export default function LocaleLayout({
 
   return (
     <html lang={locale} dir={dir(locale)} className={`${jakarta.variable} ${plexSansArabic.variable} ${plexMono.variable}`}>
+      <head>
+        {/* Every creator/community image in this app (avatars, covers) is hosted on
+            one of these two external origins — preconnecting shaves the DNS+TLS
+            handshake off whichever one happens to end up serving the page's
+            Largest Contentful Paint image, since that connection setup was
+            measured to be a meaningful chunk of LCP time on the home page. */}
+        <link rel="preconnect" href="https://ui-avatars.com" />
+        <link rel="preconnect" href="https://admin.nadi-community.com" />
+      </head>
       <body>
         <script
           type="application/ld+json"

@@ -137,7 +137,6 @@ export default function RealCommunitySubscribeCard({
         <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-success" />{dict.courseDetails.get1}</li>
         <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-success" />{dict.courseDetails.get2}</li>
         <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-success" />{dict.courseDetails.get3}</li>
-        <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-success" />{dict.courseDetails.get4}</li>
       </ul>
     </div>
   );

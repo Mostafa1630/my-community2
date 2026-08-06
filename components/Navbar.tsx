@@ -87,7 +87,7 @@ export default function Navbar({ locale, dict }: { locale: Locale; dict: Diction
                 locale === "ar" ? "bg-primary-500 text-white" : "text-ink/65 hover:text-primary-700"
               }`}
             >
-              عربي
+              {locale === "ar" ? "عربي" : "AR"}
             </Link>
             <Link
               href={`/en${pathWithoutLocale}`}
@@ -95,7 +95,7 @@ export default function Navbar({ locale, dict }: { locale: Locale; dict: Diction
                 locale === "en" ? "bg-primary-500 text-white" : "text-ink/65 hover:text-primary-700"
               }`}
             >
-              EN
+              {locale === "ar" ? "انجليزي" : "EN"}
             </Link>
           </div>
 

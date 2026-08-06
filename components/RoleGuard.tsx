@@ -24,7 +24,7 @@ export default function RoleGuard({
     return (
       <div className="container-page py-20">
         <div className="mx-auto flex max-w-md flex-col items-center rounded-2xl border border-dashed border-line bg-surface/60 px-6 py-14 text-center">
-          <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-accent-50 text-accent-600">
+          <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-accent-50 text-accent-700">
             <ShieldAlert size={24} />
           </span>
           <p className="mb-5 text-sm text-ink/65">{message}</p>

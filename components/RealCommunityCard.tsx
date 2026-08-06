@@ -15,25 +15,32 @@ import FavoriteButton from "./FavoriteButton";
 export default function RealCommunityCard({
   community,
   locale,
-  dict
+  dict,
+  priority = false
 }: {
   community: CommunitySummary;
   locale: Locale;
   dict: Dictionary;
+  // Set for the first handful of cards on the home page, which sit above the
+  // fold on load — lazy-loading an image that's already in the viewport just
+  // delays its fetch for no benefit, and was measurably enough on its own to
+  // make Chrome's Largest Contentful Paint detection fail outright on that
+  // page (confirmed directly via PerformanceObserver, not just Lighthouse).
+  priority?: boolean;
 }) {
   const accent = getAccent(community.accent);
 
   return (
     <Link
       href={`/${locale}/communities/${community.id}`}
-      className="hover-lift group flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-card hover:border-primary-200"
+      className="hover-lift group flex h-full w-full flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-card hover:border-primary-200"
     >
       <div className="relative h-52 overflow-hidden">
         {community.coverImage ? (
           <img
             src={community.coverImage}
             alt={community.name}
-            loading="lazy"
+            loading={priority ? "eager" : "lazy"}
             decoding="async"
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
@@ -80,7 +87,7 @@ export default function RealCommunityCard({
         </div>
 
         <div className="mt-5 flex items-center justify-between gap-2 border-t border-line pt-3.5">
-          <span className="whitespace-nowrap font-mono text-[11px] font-bold tracking-wide text-accent-600 sm:text-xs">
+          <span className="whitespace-nowrap font-mono text-[11px] font-bold tracking-wide text-accent-700 sm:text-xs">
             {community.isFree ? dict.communities.freeBadge : formatPrice(community.finalPrice, locale)}
           </span>
           <span className="shrink-0 whitespace-nowrap rounded-full border border-primary-200 px-2.5 py-1 text-center text-[11px] font-medium text-primary-800 transition-colors duration-200 group-hover:border-primary-300 group-hover:bg-primary-50 sm:px-3 sm:text-xs">
