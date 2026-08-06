@@ -7,7 +7,7 @@
 export default function Seal({ size = 40 }: { size?: number; label?: string; tone?: "primary" | "accent" }) {
   return (
     <img
-      src="/images/nadi-logo.png"
+      src="/images/nadi-logo2.png"
       alt="Nadi Community"
       style={{ height: size, width: "auto" }}
       className="shrink-0 object-contain"
