@@ -19,13 +19,19 @@ export default function CommunityReviewForm({
   dict: Dictionary;
 }) {
   const router = useRouter();
-  const { role, createReview } = useAuth();
+  const { role, hydrated, createReview } = useAuth();
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
+
+  // Same bug class as the old RoleGuard flash: deciding "not a student" off
+  // `role` before the real session is confirmed showed a logged-in student
+  // a "please log in" link instead of the review form. Rendering nothing
+  // until hydrated is a safer default than guessing either way.
+  if (!hydrated) return null;
 
   if (role !== "student") {
     return (

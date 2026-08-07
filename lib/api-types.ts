@@ -7,7 +7,11 @@ import type { AnyUser, AccentKey, Category } from "./types";
 // still runs on local mock data, and those types are shaped for that. This
 // is the actual API contract; mapApiUserToLocal() bridges the two.
 export interface ApiCreatorProfile {
-  bio: string | null;
+  // Confirmed live: this comes back as a real {en, ar} object (each half
+  // independently nullable), not the flat string the rest of this project's
+  // comments assumed — every other bilingual field here (name, description,
+  // ...) follows the same {en, ar} shape, this one is no exception.
+  bio: { en: string | null; ar: string | null } | null;
   cover_image: string | null;
   balance: string;
   total_sales: number;
@@ -73,8 +77,8 @@ export function mapApiUserToLocal(apiUser: ApiUser): AnyUser {
       ...base,
       role: "creator",
       slug: slugify(apiUser.name, apiUser.id),
-      bioEn: profile?.bio ?? "",
-      bioAr: profile?.bio ?? "",
+      bioEn: profile?.bio?.en ?? "",
+      bioAr: profile?.bio?.ar ?? "",
       coverAccent: DEFAULT_ACCENT,
       coverImage: profile?.cover_image ?? undefined,
       verified: false,
@@ -879,4 +883,149 @@ export function mapApiAuthResultToLocal(result: ApiAuthResult): AnyUser {
     updated_at: new Date().toISOString(),
     creator_profile: result.type === "creator" ? { bio: null, cover_image: null, balance: "0", total_sales: 0 } : null
   });
+}
+
+// ---- Community feed: posts / comments / reactions ----
+// Named Feed* rather than reusing lib/types.ts's CommunityPost/PostComment,
+// which belong to the old local-mock feed (CommunityFeed.tsx/platform-store)
+// this real integration replaces — same name, different shape, would be
+// confusing to share.
+
+export type ReactionType = "like" | "love" | "haha" | "wow" | "sad" | "angry";
+
+export interface ApiFeedUserRef {
+  id: number;
+  name: string;
+  profile_image: string | null;
+}
+
+export interface ApiPostMedia {
+  id?: number;
+  url?: string;
+  file_path?: string;
+  type?: string;
+}
+
+export interface FeedUserRef {
+  id: string;
+  name: string;
+  profileImage?: string;
+}
+
+function mapApiFeedUserRef(u: ApiFeedUserRef): FeedUserRef {
+  return { id: String(u.id), name: u.name, profileImage: u.profile_image ?? undefined };
+}
+
+export interface ApiFeedPost {
+  id: number;
+  content: string;
+  is_pinned: boolean;
+  is_owner: boolean;
+  with_media: boolean;
+  comments_count: number | null;
+  reactions_count: number | null;
+  my_reaction: ReactionType | null;
+  created_at: string;
+  user: ApiFeedUserRef;
+  media: ApiPostMedia[];
+}
+
+export interface FeedPost {
+  id: string;
+  content: string;
+  isPinned: boolean;
+  isOwner: boolean;
+  withMedia: boolean;
+  commentsCount: number;
+  reactionsCount: number;
+  myReaction: ReactionType | null;
+  createdAt: string;
+  user: FeedUserRef;
+  media: { url: string }[];
+}
+
+export function mapApiFeedPost(p: ApiFeedPost): FeedPost {
+  return {
+    id: String(p.id),
+    content: p.content,
+    isPinned: p.is_pinned,
+    isOwner: p.is_owner,
+    withMedia: p.with_media,
+    // A freshly-created post with no comments/reactions yet comes back with
+    // these as null rather than 0 — coerced here so the UI never has to
+    // special-case a missing count.
+    commentsCount: p.comments_count ?? 0,
+    reactionsCount: p.reactions_count ?? 0,
+    myReaction: p.my_reaction,
+    createdAt: p.created_at,
+    user: mapApiFeedUserRef(p.user),
+    media: (p.media ?? [])
+      .map((m) => ({ url: m.url ?? m.file_path ?? "" }))
+      .filter((m) => m.url)
+  };
+}
+
+// GET /posts/{id}/comments list items — replies aren't nested here, only
+// counted (repliesCount); fetch GET /comments/{id}/replies to load them.
+export interface ApiFeedCommentListItem {
+  id: number;
+  content: string;
+  is_owner: boolean;
+  created_at: string;
+  replies_count: number | null;
+  user: ApiFeedUserRef;
+}
+
+export interface FeedComment {
+  id: string;
+  content: string;
+  isOwner: boolean;
+  createdAt: string;
+  repliesCount: number;
+  user: FeedUserRef;
+}
+
+export function mapApiFeedComment(c: ApiFeedCommentListItem): FeedComment {
+  return {
+    id: String(c.id),
+    content: c.content,
+    isOwner: c.is_owner,
+    createdAt: c.created_at,
+    repliesCount: c.replies_count ?? 0,
+    user: mapApiFeedUserRef(c.user)
+  };
+}
+
+// GET /comments/{id}/replies — unlike the comments list, this returns the
+// parent comment's own data at the top level plus its replies nested inside.
+export interface ApiFeedCommentRepliesResponse {
+  id: number;
+  content: string;
+  is_owner: boolean;
+  created_at: string;
+  replies_count: number | null;
+  replies: ApiFeedCommentListItem[];
+}
+
+export interface ApiFeedReaction {
+  id: number;
+  type: ReactionType;
+  created_at: string;
+  user: ApiFeedUserRef;
+}
+
+export interface FeedReaction {
+  id: string;
+  type: ReactionType;
+  createdAt: string;
+  user: FeedUserRef;
+}
+
+export function mapApiFeedReaction(r: ApiFeedReaction): FeedReaction {
+  return {
+    id: String(r.id),
+    type: r.type,
+    createdAt: r.created_at,
+    user: mapApiFeedUserRef(r.user)
+  };
 }

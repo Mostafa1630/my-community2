@@ -51,9 +51,13 @@ export default function Navbar({ locale, dict }: { locale: Locale; dict: Diction
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-paper/90 backdrop-blur">
       <div className="container-page flex h-16 items-center justify-between gap-4">
-        <Link href={`/${locale}`} className="flex items-center shrink-0">
+        {/* A plain anchor rather than next/link's client-side routing — clicking
+            the logo should always take you to a fresh home page, including
+            when you're already on it (where a client-side Link to the same
+            URL would otherwise do nothing at all). */}
+        <a href={`/${locale}`} className="flex items-center shrink-0">
           <Seal size={46} />
-        </Link>
+        </a>
 
         <nav className="hidden items-center gap-1 lg:flex">
           {navLinks.map((link) => (

@@ -1,15 +1,23 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AlertCircle, CheckCircle2, Pencil, UserRound } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { AlertCircle, Pencil, UserRound } from "lucide-react";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import { useAuth } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api-client";
+import DashboardPageHeader from "./DashboardPageHeader";
+import FormField, { fieldInputClass } from "./FormField";
 import EmptyState from "./EmptyState";
+import PageLoader from "./PageLoader";
 
+// Edit-only form — the display-first view lives in StudentProfileDisplayView
+// (rendered at /profile), same list/display+edit split used for My Community
+// and the creator profile. On save this navigates back to that display page.
 export default function StudentProfileView({ locale, dict }: { locale: Locale; dict: Dictionary }) {
-  const { user, role, updateProfile } = useAuth();
+  const router = useRouter();
+  const { user, role, hydrated, updateProfile } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [name, setName] = useState("");
@@ -17,7 +25,6 @@ export default function StudentProfileView({ locale, dict }: { locale: Locale; d
   const [phoneNumber, setPhoneNumber] = useState("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -29,6 +36,8 @@ export default function StudentProfileView({ locale, dict }: { locale: Locale; d
     }
   }, [user]);
 
+  if (!hydrated) return <PageLoader />;
+
   if (role !== "student" || !user) {
     return <EmptyState icon={UserRound} title={dict.common.empty} />;
   }
@@ -39,18 +48,17 @@ export default function StudentProfileView({ locale, dict }: { locale: Locale; d
     setSubmitting(true);
     try {
       await updateProfile({ name, email, phoneNumber, image: avatarFile ?? undefined }, locale);
-      setAvatarFile(null);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
+      router.push(`/${locale}/profile`);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : dict.changePassword.genericError);
-    } finally {
       setSubmitting(false);
     }
   }
 
   return (
     <div className="w-full">
+      <DashboardPageHeader title={dict.student.profileEditCta} subtitle={dict.student.profileSubtitle} />
+
       <div className="mb-6 flex items-center gap-4">
         <img
           src={avatarPreview || user.profileImage || "/images/avatar-placeholder.jpg"}
@@ -81,32 +89,29 @@ export default function StudentProfileView({ locale, dict }: { locale: Locale; d
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border border-line bg-surface p-6 shadow-card">
-        <label className="block">
-          <span className="mb-1.5 block text-xs font-medium text-ink/65">{dict.common.name}</span>
+      <form onSubmit={handleSubmit} className="space-y-6 rounded-2xl border border-line bg-surface p-6 shadow-card sm:p-8">
+        <FormField label={dict.common.name}>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-xl border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus:border-primary-400"
+            className={fieldInputClass()}
           />
-        </label>
-        <label className="block">
-          <span className="mb-1.5 block text-xs font-medium text-ink/65">{dict.common.email}</span>
+        </FormField>
+        <FormField label={dict.common.email}>
           <input
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-xl border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus:border-primary-400"
+            className={fieldInputClass()}
           />
-        </label>
-        <label className="block">
-          <span className="mb-1.5 block text-xs font-medium text-ink/65">{dict.common.phoneNumber}</span>
+        </FormField>
+        <FormField label={dict.common.phoneNumber}>
           <input
             value={phoneNumber}
             onChange={(e) => setPhoneNumber(e.target.value)}
             placeholder="+20 100 000 0000"
-            className="w-full rounded-xl border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus:border-primary-400"
+            className={fieldInputClass()}
           />
-        </label>
+        </FormField>
 
         {error && (
           <p className="flex items-start gap-2 rounded-xl bg-danger/10 px-3 py-2.5 text-xs text-danger">
@@ -123,12 +128,6 @@ export default function StudentProfileView({ locale, dict }: { locale: Locale; d
           >
             {dict.common.save}
           </button>
-          {saved && (
-            <span className="flex items-center gap-1.5 text-xs font-medium text-success">
-              <CheckCircle2 size={14} />
-              {locale === "ar" ? "تم الحفظ" : "Saved"}
-            </span>
-          )}
         </div>
       </form>
     </div>

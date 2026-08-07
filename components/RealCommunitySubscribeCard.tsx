@@ -19,7 +19,7 @@ export default function RealCommunitySubscribeCard({
   locale: Locale;
   dict: Dictionary;
 }) {
-  const { role, checkCoupon } = useAuth();
+  const { role, hydrated, checkCoupon } = useAuth();
   const [couponCode, setCouponCode] = useState("");
   const [checking, setChecking] = useState(false);
   const [couponResult, setCouponResult] = useState<{ discountPercentage: number } | null>(null);
@@ -117,7 +117,17 @@ export default function RealCommunitySubscribeCard({
         </div>
       )}
 
-      {role === "student" ? (
+      {!hydrated ? (
+        // Deciding "guest" here before the real session is confirmed was
+        // exactly what sent a genuinely logged-in student to /login —
+        // same class of bug as the old RoleGuard flash, just unguarded on
+        // this public page. A same-sized skeleton avoids both the wrong
+        // link and any layout shift once hydrated resolves.
+        <div className="mt-4 h-[46px] w-full animate-pulse rounded-full bg-line/60" />
+      ) : role === "student" ? (
+        // Always through checkout, free or not — CommunityCheckoutView
+        // itself is what skips straight into the feed once confirmed there
+        // for a free community (nothing to actually charge).
         <Link
           href={`/${locale}/communities/${community.id}/checkout${couponResult ? `?coupon=${encodeURIComponent(couponCode.trim())}` : ""}`}
           className="mt-4 flex w-full items-center justify-center rounded-full bg-accent-500 py-3 text-sm font-semibold text-ink transition hover:bg-accent-400"

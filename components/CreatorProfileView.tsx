@@ -1,14 +1,22 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AlertCircle, CheckCircle2, Pencil } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { AlertCircle, Pencil } from "lucide-react";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import { useAuth } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api-client";
+import { initials } from "@/lib/accents";
 import DashboardPageHeader from "./DashboardPageHeader";
+import FormField, { fieldInputClass } from "./FormField";
 
+// Edit-only form — the display-first view lives in CreatorProfileDisplayView
+// (rendered at /creator/profile), same list/display+edit split as My Community.
+// On save this navigates back to that display page rather than staying put,
+// per the same "save takes you a step back to see it displayed" pattern.
 export default function CreatorProfileView({ locale, dict }: { locale: Locale; dict: Dictionary }) {
+  const router = useRouter();
   const { user, updateProfile } = useAuth();
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
@@ -21,7 +29,7 @@ export default function CreatorProfileView({ locale, dict }: { locale: Locale; d
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
+  const [coverFailed, setCoverFailed] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -52,35 +60,46 @@ export default function CreatorProfileView({ locale, dict }: { locale: Locale; d
         },
         locale
       );
-      setAvatarFile(null);
-      setCoverFile(null);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
+      router.push(`/${locale}/creator/profile`);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : dict.changePassword.genericError);
-    } finally {
       setSubmitting(false);
     }
   }
 
   return (
     <div className="w-full">
-      <DashboardPageHeader title={dict.creatorDash.profile} subtitle={dict.creatorDash.profileSubtitle} />
+      <DashboardPageHeader title={dict.creatorDash.profileEditCta} subtitle={dict.creatorDash.profileSubtitle} />
 
-      <div className="mb-6 overflow-hidden rounded-2xl border border-line bg-surface shadow-card">
-        <div className="relative">
-          <img
-            src={coverPreview || user.coverImage || "/images/cover-placeholder.jpg"}
-            alt=""
-            className="h-24 w-full object-cover"
-          />
+      <div className="mb-6 rounded-2xl border border-line bg-surface shadow-card">
+        <div className="relative h-48 overflow-hidden rounded-t-2xl sm:h-64">
+          {(coverPreview || user.coverImage) && !coverFailed ? (
+            <img
+              src={coverPreview || user.coverImage}
+              alt=""
+              className="h-full w-full object-cover"
+              onError={() => setCoverFailed(true)}
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700">
+              <span className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-dashed border-white/50 text-xl font-bold text-white">
+                {initials(name || user.name)}
+              </span>
+            </div>
+          )}
           <button
             type="button"
             onClick={() => coverInputRef.current?.click()}
-            className="absolute end-3 top-3 rounded-full bg-ink/60 px-3 py-1.5 text-xs font-medium text-white backdrop-blur hover:bg-ink/75"
+            className="absolute end-3 top-3 rounded-full bg-ink/60 px-3.5 py-2 text-xs font-semibold text-white backdrop-blur hover:bg-ink/75"
           >
             {dict.common.changeCover}
           </button>
+          {/* z-10 — the avatar (painted after this cover in DOM order, since
+              it straddles this same bottom-left corner) would otherwise
+              paint over this label and hide it. */}
+          <span className="absolute bottom-3 left-3 z-10 flex items-center justify-center rounded-md bg-ink/60 px-2 py-1 text-center text-[11px] font-medium text-white backdrop-blur">
+            1200 × 400
+          </span>
           <input
             ref={coverInputRef}
             type="file"
@@ -90,78 +109,78 @@ export default function CreatorProfileView({ locale, dict }: { locale: Locale; d
               const file = e.target.files?.[0] ?? null;
               setCoverFile(file);
               setCoverPreview(file ? URL.createObjectURL(file) : null);
+              setCoverFailed(false);
             }}
           />
         </div>
-        <div className="flex items-end gap-3 px-5 pb-5">
-          <img
-            src={avatarPreview || user.profileImage || "/images/avatar-placeholder.jpg"}
-            alt={user.name}
-            className="-mt-8 h-16 w-16 rounded-full border-4 border-surface object-cover"
-          />
-          <button
-            type="button"
-            onClick={() => avatarInputRef.current?.click()}
-            className="link-underline flex items-center gap-1 text-sm font-semibold text-primary-700"
-          >
-            {dict.common.changePhoto}
-            <Pencil size={12} />
-          </button>
-          <input
-            ref={avatarInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0] ?? null;
-              setAvatarFile(file);
-              setAvatarPreview(file ? URL.createObjectURL(file) : null);
-            }}
-          />
+
+        <div className="flex items-end gap-4 px-5 pb-6 sm:px-8">
+          <div className="relative -mt-14 sm:-mt-16">
+            <img
+              src={avatarPreview || user.profileImage || "/images/avatar-placeholder.jpg"}
+              alt={user.name}
+              className="h-28 w-28 rounded-full border-4 border-surface object-cover shadow-raised sm:h-32 sm:w-32"
+            />
+            <button
+              type="button"
+              onClick={() => avatarInputRef.current?.click()}
+              aria-label={dict.common.changePhoto}
+              className="absolute -bottom-1 -end-1 flex h-8 w-8 items-center justify-center rounded-full border-2 border-surface bg-primary-500 text-white transition hover:bg-primary-600"
+            >
+              <Pencil size={14} />
+            </button>
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0] ?? null;
+                setAvatarFile(file);
+                setAvatarPreview(file ? URL.createObjectURL(file) : null);
+              }}
+            />
+          </div>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border border-line bg-surface p-6 shadow-card">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="block">
-            <span className="mb-1.5 block text-xs font-medium text-ink/65">{dict.common.name}</span>
+      <form onSubmit={handleSubmit} className="space-y-6 rounded-2xl border border-line bg-surface p-6 shadow-card sm:p-8">
+        <div className="grid gap-5 sm:grid-cols-2">
+          <FormField label={dict.common.name}>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-xl border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus:border-primary-400"
+              className={fieldInputClass()}
             />
-          </label>
-          <label className="block">
-            <span className="mb-1.5 block text-xs font-medium text-ink/65">{dict.common.phoneNumber}</span>
+          </FormField>
+          <FormField label={dict.common.phoneNumber}>
             <input
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
               placeholder="+20 100 000 0000"
-              className="w-full rounded-xl border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus:border-primary-400"
+              className={fieldInputClass()}
             />
-          </label>
+          </FormField>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="block">
-            <span className="mb-1.5 block text-xs font-medium text-ink/65">{locale === "ar" ? "السيرة الذاتية (إنجليزي)" : "Bio (English)"}</span>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <FormField label={locale === "ar" ? "السيرة الذاتية (إنجليزي)" : "Bio (English)"}>
             <textarea
               rows={4}
               value={bioEn}
               onChange={(e) => setBioEn(e.target.value)}
-              className="w-full resize-none rounded-xl border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus:border-primary-400"
+              className={`${fieldInputClass()} resize-none`}
             />
-          </label>
-          <label className="block">
-            <span className="mb-1.5 block text-xs font-medium text-ink/65">{locale === "ar" ? "السيرة الذاتية (عربي)" : "Bio (Arabic)"}</span>
+          </FormField>
+          <FormField label={locale === "ar" ? "السيرة الذاتية (عربي)" : "Bio (Arabic)"}>
             <textarea
               dir="rtl"
               rows={4}
               value={bioAr}
               onChange={(e) => setBioAr(e.target.value)}
-              className="w-full resize-none rounded-xl border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus:border-primary-400"
+              className={`${fieldInputClass()} resize-none`}
             />
-          </label>
+          </FormField>
         </div>
 
         {error && (
@@ -179,12 +198,6 @@ export default function CreatorProfileView({ locale, dict }: { locale: Locale; d
           >
             {dict.common.save}
           </button>
-          {saved && (
-            <span className="flex items-center gap-1.5 text-xs font-medium text-success">
-              <CheckCircle2 size={14} />
-              {locale === "ar" ? "تم الحفظ" : "Saved"}
-            </span>
-          )}
         </div>
       </form>
     </div>

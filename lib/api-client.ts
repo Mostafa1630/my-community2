@@ -159,7 +159,17 @@ export async function apiFetch<T = unknown>(
     requestBody = JSON.stringify(body);
   }
 
-  const response = await fetch(buildUrl(path), { method, headers, body: requestBody });
+  // Every piece of data this app reads (community/course details, prices,
+  // privacy type, ...) is editable elsewhere in the same app, so a stale
+  // read is never actually desirable here — cache: "no-store" only matters
+  // for the Server Component call sites (getCommunityDetails and friends in
+  // lib/api-content.ts); client-side fetches are never subject to Next's
+  // server Data Cache in the first place, so this is a no-op for those.
+  // Confirmed live: without this, editing a community's type from private
+  // back to public didn't show up on the next visit to its feed page — the
+  // Server Component was still serving Next's cached fetch from before the
+  // edit.
+  const response = await fetch(buildUrl(path), { method, headers, body: requestBody, cache: "no-store" });
 
   const text = await response.text();
   let data: any = null;

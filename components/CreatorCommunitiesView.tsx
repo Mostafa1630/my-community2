@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Pencil, Plus, Tag, Users2 } from "lucide-react";
+import { Pencil, Plus, Tag } from "lucide-react";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import type { CreatorCommunity } from "@/lib/api-types";
@@ -10,7 +10,6 @@ import { useAuth } from "@/lib/auth-context";
 import { formatPrice } from "@/lib/format";
 import { initials } from "@/lib/accents";
 import Badge from "@/components/Badge";
-import EmptyState from "@/components/EmptyState";
 import DashboardPageHeader from "@/components/DashboardPageHeader";
 import PageLoader from "@/components/PageLoader";
 
@@ -60,21 +59,36 @@ export default function CreatorCommunitiesView({ locale, dict }: { locale: Local
       <DashboardPageHeader
         title={dict.creatorDash.myCommunityTitle}
         subtitle={dict.creatorDash.myCommunitySubtitle}
+        // Only ever rendered once a community is confirmed to exist — during
+        // the initial fetch `community` is null the same as the genuinely
+        // empty state, so gating this on `community` (rather than `!loading`)
+        // means the header never shows "Create" for a split second before
+        // flipping to "Edit" once the real data lands.
         action={
-          <Link
-            href={community ? `${base}/community/${community.id}/edit` : `${base}/community/new`}
-            className="flex items-center gap-1.5 rounded-full bg-accent-500 px-4 py-2.5 text-sm font-semibold text-ink hover:bg-accent-400"
-          >
-            {community ? <Pencil size={16} /> : <Plus size={16} />}
-            {community ? dict.creatorDash.communityEditTitle : dict.creatorDash.communityCreateButton}
-          </Link>
+          community ? (
+            <Link
+              href={`${base}/community/${community.id}/edit`}
+              className="flex items-center gap-1.5 rounded-full bg-accent-500 px-4 py-2.5 text-sm font-semibold text-ink hover:bg-accent-400"
+            >
+              <Pencil size={16} />
+              {dict.creatorDash.communityEditTitle}
+            </Link>
+          ) : undefined
         }
       />
 
       {loading ? (
         <PageLoader />
       ) : !community ? (
-        <EmptyState icon={Users2} title={dict.creatorDash.communityNoneYet} />
+        <Link
+          href={`${base}/community/new`}
+          className="flex min-h-[24rem] flex-col items-center justify-center gap-5 rounded-2xl border-2 border-dashed border-line bg-surface/60 px-6 text-center transition hover:border-primary-300 hover:bg-primary-50/40"
+        >
+          <span className="flex h-20 w-20 items-center justify-center rounded-full bg-primary-50 text-primary-600">
+            <Plus size={40} />
+          </span>
+          <span className="text-lg font-semibold text-ink">{dict.creatorDash.communityAddCta}</span>
+        </Link>
       ) : (
         <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-card">
           <div className="relative h-56 sm:h-72">
@@ -92,9 +106,12 @@ export default function CreatorCommunitiesView({ locale, dict }: { locale: Local
                 </span>
               </div>
             )}
-            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/35 to-transparent px-6 pb-5 pt-16 sm:px-8">
-              <h2 className="text-2xl font-bold text-white sm:text-3xl">{name}</h2>
+            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/35 to-transparent px-6 pb-5 pt-16 text-end sm:px-8">
+              <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">{name}</h2>
             </div>
+            <span className="absolute bottom-3 left-3 z-10 flex items-center justify-center rounded-md bg-ink/60 px-2 py-1 text-center text-[11px] font-medium text-white backdrop-blur">
+              1200 × 400
+            </span>
           </div>
 
           <div className="p-6 sm:p-8">

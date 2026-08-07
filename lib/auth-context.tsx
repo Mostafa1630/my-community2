@@ -40,6 +40,14 @@ import type {
   ApiCreatorReview,
   CreatorReview,
   ApiCreatorReviewListResponse,
+  ApiFeedPost,
+  FeedPost,
+  ApiFeedCommentListItem,
+  FeedComment,
+  ApiFeedCommentRepliesResponse,
+  ApiFeedReaction,
+  FeedReaction,
+  ReactionType,
 } from "./api-types";
 import {
   mapApiUserToLocal,
@@ -49,6 +57,9 @@ import {
   mapApiCreatorLessonUpdate,
   mapApiCreatorCoupon,
   mapApiCreatorReview,
+  mapApiFeedPost,
+  mapApiFeedComment,
+  mapApiFeedReaction,
 } from "./api-types";
 
 interface RegisterApiInput {
@@ -231,6 +242,59 @@ interface AuthContextValue {
     locale: Locale,
   ) => Promise<void>;
   deleteReviewByCreator: (reviewId: string, locale: Locale) => Promise<void>;
+  getCommunityPosts: (
+    communityId: string,
+    locale: Locale,
+    page?: number,
+  ) => Promise<{
+    items: FeedPost[];
+    total: number;
+    currentPage: number;
+    lastPage: number;
+    perPage: number;
+  }>;
+  createCommunityPost: (
+    communityId: string,
+    input: { content: string; media?: File[] },
+    locale: Locale,
+  ) => Promise<void>;
+  getPost: (postId: string, locale: Locale) => Promise<FeedPost | null>;
+  updatePost: (
+    postId: string,
+    input: { content: string; media?: File[] },
+    locale: Locale,
+  ) => Promise<void>;
+  deletePost: (postId: string, locale: Locale) => Promise<void>;
+  togglePinPost: (postId: string, locale: Locale) => Promise<boolean>;
+  getPostComments: (
+    postId: string,
+    locale: Locale,
+    page?: number,
+  ) => Promise<{
+    items: FeedComment[];
+    total: number;
+    currentPage: number;
+    lastPage: number;
+    perPage: number;
+  }>;
+  addComment: (postId: string, content: string, locale: Locale) => Promise<void>;
+  updateComment: (commentId: string, content: string, locale: Locale) => Promise<void>;
+  deleteComment: (commentId: string, locale: Locale) => Promise<void>;
+  getCommentReplies: (commentId: string, locale: Locale) => Promise<FeedComment[]>;
+  addReply: (commentId: string, content: string, locale: Locale) => Promise<void>;
+  getPostReactions: (
+    postId: string,
+    locale: Locale,
+    page?: number,
+  ) => Promise<{
+    items: FeedReaction[];
+    total: number;
+    currentPage: number;
+    lastPage: number;
+    perPage: number;
+  }>;
+  addReaction: (postId: string, type: ReactionType, locale: Locale) => Promise<void>;
+  removeReaction: (postId: string, locale: Locale) => Promise<void>;
   isSubscribed: (communityId: string) => boolean;
   ownsCourseStandalone: (courseId: string) => boolean;
   subscribeToCommunity: (communityId: string, couponCode?: string) => void;
@@ -285,6 +349,21 @@ export function AuthProvider({
   // itself a moment later.
   useEffect(() => {
     const token = getAuthToken();
+
+    // A cached "logged in" snapshot (from the SSR cookie or localStorage)
+    // is only ever meaningful alongside a real token — without one, there's
+    // nothing to actually authenticate any request with, so the UI must not
+    // keep showing someone as signed in. This was the actual bug behind
+    // "the navbar shows me logged in, but every real action says I need to
+    // log in": initialUser (from the cookie) could be non-null while the
+    // token was missing/cleared, and since verify() below used to bail out
+    // silently whenever there was no token, that stale cached apiUser was
+    // never corrected — it just stuck around indefinitely (the cookie
+    // lives for a year) with nothing to back it up.
+    if (!token && apiUser) {
+      setApiUser(null);
+    }
+
     if (!hydrated) {
       const cached = token ? getCachedUser<ApiUser>() : null;
       if (cached) setApiUser(cached);
@@ -1078,6 +1157,211 @@ export function AuthProvider({
     [],
   );
 
+  // ---- Community feed: posts / comments / reactions ----
+  // No 403 case is documented for GET /communities/{id}/posts (only 404 —
+  // community not found), unlike every write action below (post/comment/
+  // react all 403 if the caller isn't allowed) — so viewing a community's
+  // feed is treated as open to anyone, and only the write actions need to
+  // handle a 403 from the backend (surfaced to the caller as a normal
+  // ApiError, same as everywhere else).
+  // Paginated the same way as every other list endpoint in this project
+  // ({items, total, currentPage, lastPage, perPage}) — the feed loads page 1
+  // up front and fetches the next page only once the caller scrolls near the
+  // bottom of the list (see RealCommunityFeedView's IntersectionObserver),
+  // rather than fetching every post in the community up front.
+  const getCommunityPosts = useCallback(
+    async (communityId: string, requestLocale: Locale, page = 1) => {
+      const res = await apiFetch<{
+        data: {
+          items: ApiFeedPost[];
+          total: number;
+          currentPage: number;
+          lastPage: number;
+          perPage: number;
+        };
+      }>(`/communities/${communityId}/posts?page=${page}`, {
+        method: "GET",
+        locale: requestLocale,
+        auth: false,
+      });
+      return { ...res.data, items: res.data.items.map(mapApiFeedPost) };
+    },
+    [],
+  );
+
+  const createCommunityPost = useCallback(
+    async (
+      communityId: string,
+      input: { content: string; media?: File[] },
+      requestLocale: Locale,
+    ) => {
+      const form = new FormData();
+      form.set("content", input.content);
+      input.media?.slice(0, 2).forEach((file, i) => form.set(`media[${i}]`, file));
+      await apiFetch(`/communities/${communityId}/posts`, {
+        method: "POST",
+        body: form,
+        locale: requestLocale,
+      });
+    },
+    [],
+  );
+
+  const getPost = useCallback(async (postId: string, requestLocale: Locale) => {
+    try {
+      const res = await apiFetch<{ data: ApiFeedPost }>(`/posts/${postId}`, {
+        method: "GET",
+        locale: requestLocale,
+      });
+      return mapApiFeedPost(res.data);
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const updatePost = useCallback(
+    async (
+      postId: string,
+      input: { content: string; media?: File[] },
+      requestLocale: Locale,
+    ) => {
+      const form = new FormData();
+      form.set("content", input.content);
+      input.media?.slice(0, 2).forEach((file, i) => form.set(`media[${i}]`, file));
+      await apiFetch(`/posts/${postId}`, {
+        method: "POST",
+        body: form,
+        locale: requestLocale,
+      });
+    },
+    [],
+  );
+
+  const deletePost = useCallback(async (postId: string, requestLocale: Locale) => {
+    await apiFetch(`/posts/${postId}`, { method: "DELETE", locale: requestLocale });
+  }, []);
+
+  // POST /posts/{id}/pin toggles — the response carries no pinned flag of
+  // its own, only the status code says which way it went (201 = just
+  // pinned, 200 = just unpinned, per the spec's own Responses table), same
+  // signal style as favorites/toggle.
+  const togglePinPost = useCallback(
+    async (postId: string, requestLocale: Locale) => {
+      const res = await apiFetch<{ status: number }>(`/posts/${postId}/pin`, {
+        method: "POST",
+        locale: requestLocale,
+      });
+      return res.status === 201;
+    },
+    [],
+  );
+
+  const getPostComments = useCallback(
+    async (postId: string, requestLocale: Locale, page = 1) => {
+      const res = await apiFetch<{
+        data: {
+          items: ApiFeedCommentListItem[];
+          total: number;
+          currentPage: number;
+          lastPage: number;
+          perPage: number;
+        };
+      }>(`/posts/${postId}/comments?page=${page}`, { method: "GET", locale: requestLocale });
+      return { ...res.data, items: res.data.items.map(mapApiFeedComment) };
+    },
+    [],
+  );
+
+  const addComment = useCallback(
+    async (postId: string, content: string, requestLocale: Locale) => {
+      const form = new FormData();
+      form.set("content", content);
+      await apiFetch(`/posts/${postId}/comments`, {
+        method: "POST",
+        body: form,
+        locale: requestLocale,
+      });
+    },
+    [],
+  );
+
+  const updateComment = useCallback(
+    async (commentId: string, content: string, requestLocale: Locale) => {
+      const form = new FormData();
+      form.set("content", content);
+      await apiFetch(`/comments/${commentId}`, {
+        method: "POST",
+        body: form,
+        locale: requestLocale,
+      });
+    },
+    [],
+  );
+
+  const deleteComment = useCallback(async (commentId: string, requestLocale: Locale) => {
+    await apiFetch(`/comments/${commentId}`, { method: "DELETE", locale: requestLocale });
+  }, []);
+
+  // GET /comments/{id}/replies — unlike the comments list, this wraps the
+  // parent comment's own fields around a nested `replies` array rather than
+  // an `{items}` list, so it's unwrapped differently here.
+  const getCommentReplies = useCallback(
+    async (commentId: string, requestLocale: Locale) => {
+      const res = await apiFetch<{ data: ApiFeedCommentRepliesResponse }>(
+        `/comments/${commentId}/replies`,
+        { method: "GET", locale: requestLocale },
+      );
+      return res.data.replies.map(mapApiFeedComment);
+    },
+    [],
+  );
+
+  const addReply = useCallback(
+    async (commentId: string, content: string, requestLocale: Locale) => {
+      const form = new FormData();
+      form.set("content", content);
+      await apiFetch(`/comments/${commentId}/replies`, {
+        method: "POST",
+        body: form,
+        locale: requestLocale,
+      });
+    },
+    [],
+  );
+
+  const getPostReactions = useCallback(
+    async (postId: string, requestLocale: Locale, page = 1) => {
+      const res = await apiFetch<{
+        data: {
+          items: ApiFeedReaction[];
+          total: number;
+          currentPage: number;
+          lastPage: number;
+          perPage: number;
+        };
+      }>(`/posts/${postId}/reactions?page=${page}`, { method: "GET", locale: requestLocale });
+      return { ...res.data, items: res.data.items.map(mapApiFeedReaction) };
+    },
+    [],
+  );
+
+  const addReaction = useCallback(
+    async (postId: string, type: ReactionType, requestLocale: Locale) => {
+      const form = new FormData();
+      form.set("type", type);
+      await apiFetch(`/posts/${postId}/reactions`, {
+        method: "POST",
+        body: form,
+        locale: requestLocale,
+      });
+    },
+    [],
+  );
+
+  const removeReaction = useCallback(async (postId: string, requestLocale: Locale) => {
+    await apiFetch(`/posts/${postId}/reactions`, { method: "DELETE", locale: requestLocale });
+  }, []);
+
   const user = useMemo(() => {
     if (!hydrated || !apiUser) return null;
     return mapApiUserToLocal(apiUser);
@@ -1350,6 +1634,21 @@ export function AuthProvider({
     getReviewByCreator,
     moderateReview,
     deleteReviewByCreator,
+    getCommunityPosts,
+    createCommunityPost,
+    getPost,
+    updatePost,
+    deletePost,
+    togglePinPost,
+    getPostComments,
+    addComment,
+    updateComment,
+    deleteComment,
+    getCommentReplies,
+    addReply,
+    getPostReactions,
+    addReaction,
+    removeReaction,
     isSubscribed,
     ownsCourseStandalone,
     subscribeToCommunity,

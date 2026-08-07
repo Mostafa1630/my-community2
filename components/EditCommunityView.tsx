@@ -248,12 +248,15 @@ export default function EditCommunityView({
 
         <label className="block">
           <span className="mb-2 block text-xs font-semibold tracking-wide text-ink/70">{dict.creatorDash.fieldCommunityCoverImage}</span>
-          <div className="mb-3 flex h-44 w-full items-center justify-center overflow-hidden rounded-xl border border-dashed border-line bg-paper sm:h-56">
+          <div className="relative mb-3 flex h-44 w-full items-center justify-center overflow-hidden rounded-xl border border-dashed border-line bg-paper sm:h-56">
             {coverPreviewUrl || currentCoverImage ? (
               <img src={coverPreviewUrl ?? currentCoverImage} alt="" className="h-full w-full object-cover" />
             ) : (
               <ImagePlus size={28} className="text-ink/30" />
             )}
+            <span className="absolute bottom-2 left-2 rounded-md bg-ink/60 px-2 py-1 text-[11px] font-medium text-white backdrop-blur">
+              1200 × 400
+            </span>
           </div>
           <input
             type="file"

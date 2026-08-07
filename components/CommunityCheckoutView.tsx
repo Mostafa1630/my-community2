@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 import type { CommunityDetails } from "@/lib/api-types";
 import type { Locale } from "@/lib/i18n/config";
@@ -22,10 +23,23 @@ export default function CommunityCheckoutView({
   dict: Dictionary;
   initialCouponCode?: string;
 }) {
+  const router = useRouter();
   const { checkCoupon } = useAuth();
   const [couponResult, setCouponResult] = useState<{ discountPercentage: number } | null>(null);
   const [checkingCoupon, setCheckingCoupon] = useState(!!initialCouponCode);
   const [confirming, setConfirming] = useState(false);
+
+  function handleConfirm() {
+    // Nothing to actually pay for, so there's no reason to show the "online
+    // payment isn't available yet" holding message here either — same
+    // reasoning as skipping this whole page for free communities from the
+    // details page's own subscribe button.
+    if (community.isFree) {
+      router.push(`/${locale}/communities/${community.id}/feed`);
+      return;
+    }
+    setConfirming(true);
+  }
 
   useEffect(() => {
     if (!initialCouponCode) return;
@@ -104,7 +118,7 @@ export default function CommunityCheckoutView({
           </p>
         ) : (
           <button
-            onClick={() => setConfirming(true)}
+            onClick={handleConfirm}
             disabled={checkingCoupon}
             className="flex w-full items-center justify-center gap-2 rounded-full bg-accent-500 py-3.5 text-sm font-semibold text-ink transition hover:bg-accent-400 disabled:opacity-60"
           >
