@@ -55,7 +55,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 export default function Slider({
   items,
   itemClassName = "w-[46%] sm:w-[31%] lg:w-[18%]",
-  animateIn = true
+  animateIn = true,
+  centered = false
 }: {
   items: ReactNode[];
   itemClassName?: string;
@@ -67,6 +68,13 @@ export default function Slider({
   // to make Lighthouse unable to detect any LCP element on the home page at
   // all — NO_LCP — while every other page measured normally).
   animateIn?: boolean;
+  // Swaps the scroll-snap alignment from the default (each card's start edge
+  // snaps to the track's start edge) to centered — combined with side padding
+  // on the track, this is what makes a peek of the previous/next card show
+  // symmetrically on both edges at rest, instead of only ever peeking on one
+  // side. Opt-in since most callers actually want the plain start-aligned
+  // layout.
+  centered?: boolean;
 }) {
   const trackRef = useRef<HTMLDivElement>(null);
 
@@ -92,22 +100,24 @@ export default function Slider({
 
       <div
         ref={trackRef}
-        className="scrollbar-hide flex flex-1 snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth py-1"
+        className={`scrollbar-hide flex flex-1 snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth py-1 ${
+          centered ? "px-[16.67%]" : ""
+        }`}
       >
         {items.map((item, i) =>
           animateIn ? (
             <motion.div
               key={i}
-              className={`flex min-w-0 self-stretch shrink-0 snap-start ${itemClassName}`}
-              initial={{ scale: 0.94, rotate: -3 }}
-              whileInView={{ scale: 1, rotate: 0 }}
+              className={`flex min-w-0 self-stretch shrink-0 ${centered ? "snap-center" : "snap-start"} ${itemClassName}`}
+              initial={{ scale: 0.96 }}
+              whileInView={{ scale: 1 }}
               viewport={{ root: trackRef, once: false, amount: "some" }}
-              transition={{ duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
             >
               {item}
             </motion.div>
           ) : (
-            <div key={i} className={`flex min-w-0 self-stretch shrink-0 snap-start ${itemClassName}`}>
+            <div key={i} className={`flex min-w-0 self-stretch shrink-0 ${centered ? "snap-center" : "snap-start"} ${itemClassName}`}>
               {item}
             </div>
           )

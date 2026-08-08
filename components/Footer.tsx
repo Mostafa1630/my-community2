@@ -62,7 +62,7 @@ export default function Footer({ locale, dict }: { locale: Locale; dict: Diction
           <h3 className="mb-3 text-sm font-semibold text-ink">{dict.footer.company}</h3>
           <ul className="space-y-2 text-sm text-ink/65">
             <li><span className="cursor-default">{dict.footer.aboutUs}</span></li>
-            <li><span className="cursor-default">{dict.footer.contact}</span></li>
+            <li><Link href={`/${locale}#contact`} className="link-underline transition-colors hover:text-primary-700">{dict.footer.contact}</Link></li>
           </ul>
         </div>
       </div>

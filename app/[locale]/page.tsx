@@ -8,6 +8,9 @@ import CreatorCard from "@/components/CreatorCard";
 import SectionHeading from "@/components/SectionHeading";
 import Slider from "@/components/motion/Slider";
 import CommunitiesExplorer from "@/components/CommunitiesExplorer";
+import TermsSection from "@/components/TermsSection";
+import PrivacyPolicySection from "@/components/PrivacyPolicySection";
+import ContactSection from "@/components/ContactSection";
 
 export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
   const locale: Locale = isLocale(params.locale) ? params.locale : "ar";
@@ -72,6 +75,10 @@ export default async function HomePage({ params }: { params: { locale: string } 
           </Link>
         </div>
       </section>
+
+      <TermsSection dict={dict} />
+      <PrivacyPolicySection dict={dict} />
+      <ContactSection dict={dict} />
     </div>
   );
 }

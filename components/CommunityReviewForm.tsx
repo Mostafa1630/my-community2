@@ -19,7 +19,7 @@ export default function CommunityReviewForm({
   dict: Dictionary;
 }) {
   const router = useRouter();
-  const { role, hydrated, createReview } = useAuth();
+  const { role, user, hydrated, createReview } = useAuth();
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState("");
@@ -34,6 +34,17 @@ export default function CommunityReviewForm({
   if (!hydrated) return null;
 
   if (role !== "student") {
+    // Signed in as something else (creator/admin) is a different situation
+    // from not being signed in at all — a login link makes no sense for an
+    // account that's already authenticated, just the wrong kind.
+    if (user) {
+      return (
+        <p className="mt-4 flex items-center gap-1.5 text-sm font-medium text-ink/65">
+          <AlertCircle size={15} className="shrink-0 text-accent-600" />
+          {dict.communityDetails.mustBeStudentToReview}
+        </p>
+      );
+    }
     return (
       <Link
         href={`/${locale}/login`}

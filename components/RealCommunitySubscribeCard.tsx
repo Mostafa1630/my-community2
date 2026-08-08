@@ -19,7 +19,7 @@ export default function RealCommunitySubscribeCard({
   locale: Locale;
   dict: Dictionary;
 }) {
-  const { role, hydrated, checkCoupon } = useAuth();
+  const { role, user, hydrated, checkCoupon } = useAuth();
   const [couponCode, setCouponCode] = useState("");
   const [checking, setChecking] = useState(false);
   const [couponResult, setCouponResult] = useState<{ discountPercentage: number } | null>(null);
@@ -134,6 +134,13 @@ export default function RealCommunitySubscribeCard({
         >
           {community.isFree ? dict.communityDetails.freeSubscribe : dict.communityDetails.subscribeNow}
         </Link>
+      ) : user ? (
+        // Signed in as something else (creator/admin) — a login link makes
+        // no sense for an already-authenticated account, just the wrong kind.
+        <p className="mt-4 flex items-center gap-1.5 rounded-full bg-paper px-4 py-3 text-center text-sm font-medium text-ink/65">
+          <AlertCircle size={15} className="shrink-0 text-accent-600" />
+          {dict.communityDetails.mustBeStudentToSubscribe}
+        </p>
       ) : (
         <Link
           href={`/${locale}/login`}

@@ -182,7 +182,8 @@ export default function CommunitiesExplorer({
               items={filtered.map((community, i) => (
                 <RealCommunityCard key={community.id} community={community} locale={locale} dict={dict} priority={i < 4} />
               ))}
-              itemClassName="w-[calc((100%_-_1rem)/1.5)]"
+              itemClassName="w-full"
+              centered
             />
           </div>
           <div className="hidden sm:grid sm:grid-cols-2 gap-5 lg:grid-cols-4">
