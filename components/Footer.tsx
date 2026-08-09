@@ -108,6 +108,8 @@ export default function Footer({ locale, dict }: { locale: Locale; dict: Diction
           <ul className="space-y-2 text-sm text-ink/65">
             <li><span className="cursor-default">{dict.footer.aboutUs}</span></li>
             <li><Link href={`/${locale}#contact`} className="link-underline transition-colors hover:text-primary-700">{dict.footer.contact}</Link></li>
+            <li><Link href={`/${locale}/terms`} className="link-underline transition-colors hover:text-primary-700">{dict.legal.termsTitle}</Link></li>
+            <li><Link href={`/${locale}/privacy`} className="link-underline transition-colors hover:text-primary-700">{dict.legal.privacyTitle}</Link></li>
           </ul>
         </div>
       </div>

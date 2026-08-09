@@ -41,8 +41,19 @@ export default function RealCommunityFeedView({
   locale: Locale;
   dict: Dictionary;
 }) {
-  const { user, role, hydrated, getCommunityPosts, createCommunityPost, updatePost, deletePost, togglePinPost, addReaction, removeReaction } =
-    useAuth();
+  const {
+    user,
+    role,
+    hydrated,
+    isSubscribed,
+    getCommunityPosts,
+    createCommunityPost,
+    updatePost,
+    deletePost,
+    togglePinPost,
+    addReaction,
+    removeReaction
+  } = useAuth();
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [posts, setPosts] = useState<FeedPost[]>([]);
@@ -51,8 +62,14 @@ export default function RealCommunityFeedView({
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const isCommunityCreator = role === "creator" && user?.id === creatorId;
-  const canPost = role === "student" || isCommunityCreator;
   const locked = communityType === "private" && !isCommunityCreator && role !== "admin";
+  // A public community's feed is visible to anyone (see the class comment
+  // above), but posting/reacting/commenting still requires real membership —
+  // an actual subscribed student, the community's own creator, or an admin.
+  // Anyone else (a guest, or a student just previewing via "Explore
+  // community") gets a read-only view, matching what the backend's own 403
+  // would enforce anyway.
+  const canInteract = isCommunityCreator || role === "admin" || (role === "student" && isSubscribed(communityId));
 
   const sortPosts = useCallback(
     (items: FeedPost[]) =>
@@ -187,7 +204,7 @@ export default function RealCommunityFeedView({
 
   return (
     <div className="mx-auto max-w-2xl space-y-4">
-      {canPost && user && (
+      {canInteract && user && (
         <div className="rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-5">
           <PostComposer
             dict={dict}
@@ -215,6 +232,7 @@ export default function RealCommunityFeedView({
               onEdit={(content, media) => handleEdit(post, content, media)}
               onDelete={() => handleDelete(post)}
               onTogglePin={() => handleTogglePin(post)}
+              canInteract={canInteract}
             />
           ))}
           {hasMore && (

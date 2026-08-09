@@ -51,11 +51,16 @@ export interface CreatorsPage {
 
 const EMPTY_CREATORS_PAGE: CreatorsPage = { items: [], total: 0, currentPage: 1, lastPage: 1, perPage: 10 };
 
-export async function getCreators(locale: Locale, page = 1): Promise<CreatorsPage> {
+export async function getCreators(
+  locale: Locale,
+  { page = 1, search }: { page?: number; search?: string } = {}
+): Promise<CreatorsPage> {
   try {
+    const query = new URLSearchParams({ page: String(page) });
+    if (search) query.set("search", search);
     const res = await apiFetch<{
       data: { items: ApiCreatorSummary[]; total: number; currentPage: number; lastPage: number; perPage: number };
-    }>(`/creators?page=${page}`, { method: "GET", locale, auth: false });
+    }>(`/creators?${query.toString()}`, { method: "GET", locale, auth: false });
     return { ...res.data, items: res.data.items.map(mapApiCreatorSummary) };
   } catch {
     return EMPTY_CREATORS_PAGE;
@@ -96,11 +101,12 @@ const EMPTY_COMMUNITIES_PAGE: CommunitiesPage = { items: [], total: 0, currentPa
 
 export async function getCommunities(
   locale: Locale,
-  { page = 1, categoryId }: { page?: number; categoryId?: string } = {}
+  { page = 1, categoryId, search }: { page?: number; categoryId?: string; search?: string } = {}
 ): Promise<CommunitiesPage> {
   try {
     const query = new URLSearchParams({ page: String(page) });
     if (categoryId) query.set("category_id", categoryId);
+    if (search) query.set("search", search);
     const res = await apiFetch<{
       data: { items: ApiCommunitySummary[]; total: number; currentPage: number; lastPage: number; perPage: number };
     }>(`/communities?${query.toString()}`, { method: "GET", locale, auth: false });

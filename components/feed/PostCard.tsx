@@ -35,6 +35,7 @@ export default function PostCard({
   onDelete,
   onTogglePin,
   detailMode = false,
+  canInteract = true,
 }: {
   post: FeedPost;
   locale: Locale;
@@ -47,6 +48,11 @@ export default function PostCard({
   onDelete: () => void;
   onTogglePin: () => void;
   detailMode?: boolean;
+  // False for someone previewing a public community's feed without a real
+  // subscription (the "Explore community" flow) — the backend still enforces
+  // this with a 403 on react/comment, but hiding the controls up front reads
+  // as "you're browsing, not a member" rather than a raw error after tapping.
+  canInteract?: boolean;
 }) {
   const { user } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -249,12 +255,16 @@ export default function PostCard({
       )}
 
       <div className="mt-3 flex items-center justify-between border-t border-line pt-3">
-        <ReactionPicker
-          current={post.myReaction}
-          onReact={handleReact}
-          onRemove={handleRemoveReaction}
-          dict={dict}
-        />
+        {canInteract ? (
+          <ReactionPicker
+            current={post.myReaction}
+            onReact={handleReact}
+            onRemove={handleRemoveReaction}
+            dict={dict}
+          />
+        ) : (
+          <span />
+        )}
         {countsRow}
       </div>
       {reactionError && <p className="mt-1.5 text-xs text-danger">{reactionError}</p>}

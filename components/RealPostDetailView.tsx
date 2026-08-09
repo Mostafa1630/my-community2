@@ -39,7 +39,8 @@ export default function RealPostDetailView({
   dict: Dictionary;
 }) {
   const router = useRouter();
-  const { user, role, hydrated, getPost, updatePost, deletePost, togglePinPost, addReaction, removeReaction } = useAuth();
+  const { user, role, hydrated, isSubscribed, getPost, updatePost, deletePost, togglePinPost, addReaction, removeReaction } =
+    useAuth();
   const [loading, setLoading] = useState(true);
   const [post, setPost] = useState<FeedPost | null>(null);
   const [tab, setTab] = useState<"comments" | "reactions">(initialTab);
@@ -47,6 +48,7 @@ export default function RealPostDetailView({
 
   const isCommunityCreator = role === "creator" && user?.id === creatorId;
   const locked = communityType === "private" && !isCommunityCreator && role !== "admin";
+  const canInteract = isCommunityCreator || role === "admin" || (role === "student" && isSubscribed(communityId));
 
   useEffect(() => {
     // Same reasoning as RealCommunityFeedView — wait for the real session
@@ -140,6 +142,7 @@ export default function RealPostDetailView({
         onDelete={handleDelete}
         onTogglePin={handleTogglePin}
         detailMode
+        canInteract={canInteract}
       />
 
       <div className="mt-4 flex items-center gap-1 rounded-full border border-line bg-surface p-1">
@@ -163,7 +166,13 @@ export default function RealPostDetailView({
 
       <div className="mt-4 rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-5">
         {tab === "comments" ? (
-          <CommentsPanel postId={postId} locale={locale} dict={dict} canModerate={isCommunityCreator || post.isOwner} />
+          <CommentsPanel
+            postId={postId}
+            locale={locale}
+            dict={dict}
+            canModerate={isCommunityCreator || post.isOwner}
+            canInteract={canInteract}
+          />
         ) : (
           <ReactionsPanel postId={postId} locale={locale} dict={dict} />
         )}

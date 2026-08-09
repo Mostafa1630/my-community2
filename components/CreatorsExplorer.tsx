@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
@@ -28,23 +28,32 @@ export default function CreatorsExplorer({
   dict: Dictionary;
 }) {
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [creatorsPage, setCreatorsPage] = useState(initialCreators);
   const [page, setPage] = useState(initialCreators.currentPage);
   const [loading, setLoading] = useState(false);
 
-  // GET /creators only takes a `page` param (no documented search/category
-  // query params) — page navigation hits the real API for that page's items;
-  // search and category are refined client-side over whatever page is
-  // currently loaded, not the full catalog. If the backend adds filter
-  // params later, this is the one spot that needs to pass them through.
+  // GET /creators takes `page` and, per the backend's own upcoming spec, a
+  // `search` param matching name/bio — not live server-side yet, but sent
+  // regardless so this starts working the moment it is, with no frontend
+  // change needed. Debounced so it doesn't refetch on every keystroke.
   useEffect(() => {
-    if (page === initialCreators.currentPage) {
+    const timer = setTimeout(() => setDebouncedQuery(query.trim()), 400);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedQuery]);
+
+  useEffect(() => {
+    if (page === initialCreators.currentPage && !debouncedQuery) {
       setCreatorsPage(initialCreators);
       return;
     }
     let cancelled = false;
     setLoading(true);
-    getCreators(locale, page).then((result) => {
+    getCreators(locale, { page, search: debouncedQuery || undefined }).then((result) => {
       if (!cancelled) {
         setCreatorsPage(result);
         setLoading(false);
@@ -54,18 +63,9 @@ export default function CreatorsExplorer({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, locale]);
+  }, [page, debouncedQuery, locale]);
 
-  const filtered = useMemo(() => {
-    let list = creatorsPage.items;
-
-    if (query.trim()) {
-      const q = query.trim().toLowerCase();
-      list = list.filter((c) => [c.name, c.bio].some((field) => field.toLowerCase().includes(q)));
-    }
-
-    return list;
-  }, [creatorsPage.items, query]);
+  const filtered = creatorsPage.items;
 
   return (
     <div>

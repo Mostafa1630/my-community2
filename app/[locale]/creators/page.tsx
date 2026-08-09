@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: { params: { locale: string } 
 export default async function CreatorsPage({ params }: { params: { locale: string } }) {
   const locale: Locale = isLocale(params.locale) ? params.locale : "ar";
   const dict = getDictionary(locale);
-  const initialCreators = await getCreators(locale, 1);
+  const initialCreators = await getCreators(locale, { page: 1 });
 
   return (
     <div className="container-page py-12">

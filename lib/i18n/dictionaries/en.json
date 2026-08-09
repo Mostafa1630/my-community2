@@ -106,6 +106,8 @@
     "noResults": "No communities match your search criteria",
     "freeBadge": "Free to join",
     "subscribersLabel": "subscribers",
+    "privateBadge": "Private",
+    "publicBadge": "Public",
     "moreCategoriesButton": "More"
   },
   "creatorsPage": {
@@ -142,6 +144,7 @@
     "loginToReview": "You must login first",
     "mustBeStudentToReview": "You must log in with a student account to leave a review",
     "mustBeStudentToSubscribe": "You must log in with a student account to subscribe",
+    "exploreCommunity": "Explore community",
     "couponLabel": "Enter your coupon",
     "couponHint": "Have a discount code? Apply it here before you subscribe",
     "couponPlaceholder": "e.g. BACKEND20",

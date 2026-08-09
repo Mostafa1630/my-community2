@@ -106,6 +106,8 @@
     "noResults": "لا توجد مجتمعات تطابق معايير البحث.",
     "freeBadge": "اشتراك مجاني",
     "subscribersLabel": "مشترك",
+    "privateBadge": "خاص",
+    "publicBadge": "عام",
     "moreCategoriesButton": "المزيد"
   },
   "creatorsPage": {
@@ -142,6 +144,7 @@
     "loginToReview": "يجب تسجيل الدخول أولاً",
     "mustBeStudentToReview": "يجب تسجيل الدخول كطالب أولاً لكي تتمكن من التقييم",
     "mustBeStudentToSubscribe": "يجب تسجيل الدخول كطالب أولاً لكي تتمكن من الاشتراك",
+    "exploreCommunity": "استكشاف المجتمع",
     "couponLabel": "أدخل الكوبون الخاص بيك",
     "couponHint": "عندك كود خصم؟ فعّله هنا قبل ما تكمل الاشتراك",
     "couponPlaceholder": "مثال: BACKEND20",

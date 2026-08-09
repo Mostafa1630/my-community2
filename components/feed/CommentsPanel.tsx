@@ -18,12 +18,16 @@ export default function CommentsPanel({
   locale,
   dict,
   canModerate,
+  canInteract = true,
   onCountChange
 }: {
   postId: string;
   locale: Locale;
   dict: Dictionary;
   canModerate: boolean;
+  // False for someone previewing a public community without a real
+  // subscription — same reasoning as PostCard's own canInteract.
+  canInteract?: boolean;
   // Lets the parent (the post's own comment-count badge in the tab label)
   // stay in sync without a full post refetch — comments/replies here are
   // fetched separately from the post itself, so nothing else updates it.
@@ -117,7 +121,7 @@ export default function CommentsPanel({
 
   return (
     <div>
-      {user && (
+      {user && canInteract && (
         <div className="mb-4 flex items-center gap-2">
           <img
             src={user.profileImage || "/images/avatar-placeholder.jpg"}

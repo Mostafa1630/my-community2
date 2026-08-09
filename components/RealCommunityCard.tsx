@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Users2, BookOpen } from "lucide-react";
+import { Users2, BookOpen, Lock, Unlock } from "lucide-react";
 import type { CommunitySummary } from "@/lib/api-types";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
@@ -51,11 +51,21 @@ export default function RealCommunityCard({
             </span>
           </div>
         )}
-        {community.categoryName && (
-          <span className="absolute top-3 start-3 rounded-full bg-black/40 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur">
-            {community.categoryName}
+        <div className="absolute top-3 start-3 flex items-center gap-1.5">
+          {community.categoryName && (
+            <span className="rounded-full bg-black/40 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur">
+              {community.categoryName}
+            </span>
+          )}
+          <span
+            className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium backdrop-blur ${
+              community.type === "private" ? "bg-danger text-white" : "bg-white/25 text-white"
+            }`}
+          >
+            {community.type === "private" ? <Lock size={11} /> : <Unlock size={11} />}
+            {community.type === "private" ? dict.communities.privateBadge : dict.communities.publicBadge}
           </span>
-        )}
+        </div>
         <div className="absolute top-3 end-3 flex flex-col items-end gap-1.5">
           <FavoriteButton favoritableType="community" favoritableId={community.id} locale={locale} />
         </div>

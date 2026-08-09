@@ -34,7 +34,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     let creatorPage = 1;
     let creatorLastPage = 1;
     do {
-      const result = await getCreators(locale, creatorPage);
+      const result = await getCreators(locale, { page: creatorPage });
       creatorLastPage = result.lastPage;
       for (const creator of result.items) {
         entries.push({

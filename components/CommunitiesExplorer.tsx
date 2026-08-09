@@ -43,6 +43,7 @@ export default function CommunitiesExplorer({
   dict: Dictionary;
 }) {
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [sort, setSort] = useState<SortKey>("newest");
   const [category, setCategory] = useState("all");
   const [communitiesPage, setCommunitiesPage] = useState(initialCommunities);
@@ -51,12 +52,24 @@ export default function CommunitiesExplorer({
   const [visibleCategoryCount, setVisibleCategoryCount] =
     useState(CATEGORY_PAGE_SIZE);
 
-  // GET /communities takes `page` and an optional `category_id` — both are
-  // real, server-side filters, unlike creators (which had neither). Search
-  // and price-sort stay client-side over whichever page is loaded, since
-  // there's no search/sort query param documented.
+  // Debounced so search doesn't refetch on every keystroke.
   useEffect(() => {
-    if (page === initialCommunities.currentPage && category === "all") {
+    const timer = setTimeout(() => setDebouncedQuery(query.trim()), 400);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedQuery, category]);
+
+  // GET /communities takes `page`, `category_id`, and — per the backend's
+  // own upcoming spec — `search` (matches community name/description/creator
+  // name). `search` isn't live server-side yet, but it's sent regardless so
+  // this starts working the moment it is, no frontend change needed.
+  // Price/rating/etc. sort stays client-side over whichever page is loaded,
+  // since there's no documented sort query param.
+  useEffect(() => {
+    if (page === initialCommunities.currentPage && category === "all" && !debouncedQuery) {
       setCommunitiesPage(initialCommunities);
       return;
     }
@@ -65,6 +78,7 @@ export default function CommunitiesExplorer({
     getCommunities(locale, {
       page,
       categoryId: category === "all" ? undefined : category,
+      search: debouncedQuery || undefined,
     }).then((result) => {
       if (!cancelled) {
         setCommunitiesPage(result);
@@ -75,7 +89,7 @@ export default function CommunitiesExplorer({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, category, locale]);
+  }, [page, category, debouncedQuery, locale]);
 
   function updateFilter(fn: () => void) {
     fn();
@@ -84,15 +98,6 @@ export default function CommunitiesExplorer({
 
   const filtered = useMemo(() => {
     let list = communitiesPage.items;
-
-    if (query.trim()) {
-      const q = query.trim().toLowerCase();
-      list = list.filter((c) =>
-        [c.name, c.creator.name, c.categoryName].some((field) =>
-          field.toLowerCase().includes(q),
-        ),
-      );
-    }
 
     if (sort !== "newest") {
       const comparators: Record<
@@ -112,7 +117,7 @@ export default function CommunitiesExplorer({
     }
 
     return list;
-  }, [communitiesPage.items, query, sort]);
+  }, [communitiesPage.items, sort]);
 
   return (
     <div>
