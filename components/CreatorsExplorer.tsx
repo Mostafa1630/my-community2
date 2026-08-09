@@ -84,7 +84,7 @@ export default function CreatorsExplorer({
       <p className="mb-5 text-sm text-ink/65">{t(dict.creatorsPage.resultsCount, { count: creatorsPage.total })}</p>
 
       {filtered.length === 0 ? (
-        <EmptyState icon={Search} title={dict.creatorsPage.noResults} />
+        <EmptyState image="/images/no-data.jpg" title={dict.creatorsPage.noResults} />
       ) : (
         <div className={loading ? "opacity-60 transition-opacity" : "transition-opacity"}>
           <div className="sm:hidden">

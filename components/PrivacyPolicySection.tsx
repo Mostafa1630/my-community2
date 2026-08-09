@@ -1,15 +1,17 @@
-import { ShieldCheck, Database, Settings2, UserCog } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
+import { getLegalSections } from "@/lib/api-content";
+import { resolveLegalIcon } from "@/lib/legalIcons";
 import LegalSection from "./LegalSection";
 
-export default function PrivacyPolicySection({ locale, dict }: { locale: Locale; dict: Dictionary }) {
-  const items = [
-    { icon: Database, question: dict.legal.privacyCollect, answer: dict.legal.privacyCollectBody },
-    { icon: Settings2, question: dict.legal.privacyUse, answer: dict.legal.privacyUseBody },
-    { icon: ShieldCheck, question: dict.legal.privacyPayments, answer: dict.legal.privacyPaymentsBody },
-    { icon: UserCog, question: dict.legal.privacyControl, answer: dict.legal.privacyControlBody }
-  ];
+export default async function PrivacyPolicySection({ locale, dict }: { locale: Locale; dict: Dictionary }) {
+  const sections = await getLegalSections("privacy-policy", locale);
+  const items = sections.map((s) => ({
+    icon: resolveLegalIcon(s.icon),
+    question: s.title,
+    answer: s.content
+  }));
 
   return (
     <LegalSection

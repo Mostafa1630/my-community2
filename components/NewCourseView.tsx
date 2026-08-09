@@ -13,10 +13,8 @@ import { courseCreateFormSchema, collectIssues, apiFieldErrors } from "@/lib/val
 
 const API_FIELD_MAP: Record<string, string> = {
   category_id: "categoryId",
-  "title.en": "titleEn",
-  "title.ar": "titleAr",
-  "description.en": "descriptionEn",
-  "description.ar": "descriptionAr",
+  title: "title",
+  description: "description",
   price: "price",
   discount_percentage: "discountPercentage",
   intro_video_url: "introVideoUrl",
@@ -52,10 +50,8 @@ export default function NewCourseView({
   const [checkingCommunity, setCheckingCommunity] = useState(true);
   const [hasCommunity, setHasCommunity] = useState(true);
 
-  const [titleEn, setTitleEn] = useState("");
-  const [titleAr, setTitleAr] = useState("");
-  const [descriptionEn, setDescriptionEn] = useState("");
-  const [descriptionAr, setDescriptionAr] = useState("");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState(categories[0]?.id ?? "");
   const [price, setPrice] = useState(0);
   const [discountPercentage, setDiscountPercentage] = useState(0);
@@ -120,8 +116,7 @@ export default function NewCourseView({
       invalidUrl: dict.validation.invalidUrl
     });
     const parsed = schema.safeParse({
-      titleEn,
-      titleAr,
+      title,
       categoryId,
       isFree,
       price,
@@ -139,10 +134,8 @@ export default function NewCourseView({
       const created = await createCourse(
         {
           categoryId,
-          titleEn,
-          titleAr,
-          descriptionEn: descriptionEn.trim() || undefined,
-          descriptionAr: descriptionAr.trim() || undefined,
+          title,
+          description: description.trim() || undefined,
           image: image ?? undefined,
           price: isFree ? undefined : price,
           discountPercentage: isFree ? undefined : discountPercentage,
@@ -167,45 +160,22 @@ export default function NewCourseView({
     <form onSubmit={submit} className="w-full space-y-5 rounded-2xl border border-line bg-surface p-6 shadow-card">
       <h1 className="text-xl font-bold text-ink">{dict.creatorDash.addCourseTitle}</h1>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <FormField label={dict.creatorDash.fieldTitleEn} error={fieldErrors.titleEn}>
-          <input
-            dir="ltr"
-            value={titleEn}
-            onChange={(e) => setTitleEn(e.target.value)}
-            className={fieldInputClass(!!fieldErrors.titleEn)}
-          />
-        </FormField>
-        <FormField label={dict.creatorDash.fieldTitleAr} error={fieldErrors.titleAr}>
-          <input
-            dir="rtl"
-            value={titleAr}
-            onChange={(e) => setTitleAr(e.target.value)}
-            className={fieldInputClass(!!fieldErrors.titleAr)}
-          />
-        </FormField>
-      </div>
+      <FormField label={dict.creatorDash.fieldTitle} error={fieldErrors.title}>
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className={fieldInputClass(!!fieldErrors.title)}
+        />
+      </FormField>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <FormField label={dict.creatorDash.fieldDescEn}>
-          <textarea
-            dir="ltr"
-            rows={3}
-            value={descriptionEn}
-            onChange={(e) => setDescriptionEn(e.target.value)}
-            className={`${fieldInputClass()} resize-none`}
-          />
-        </FormField>
-        <FormField label={dict.creatorDash.fieldDescAr}>
-          <textarea
-            dir="rtl"
-            rows={3}
-            value={descriptionAr}
-            onChange={(e) => setDescriptionAr(e.target.value)}
-            className={`${fieldInputClass()} resize-none`}
-          />
-        </FormField>
-      </div>
+      <FormField label={dict.creatorDash.fieldDesc}>
+        <textarea
+          rows={3}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          className={`${fieldInputClass()} resize-none`}
+        />
+      </FormField>
 
       <FormField label={dict.creatorDash.fieldCategory} error={fieldErrors.categoryId}>
         <select

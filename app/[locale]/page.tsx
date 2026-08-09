@@ -9,6 +9,7 @@ import SectionHeading from "@/components/SectionHeading";
 import Slider from "@/components/motion/Slider";
 import CommunitiesExplorer from "@/components/CommunitiesExplorer";
 import ContactSection from "@/components/ContactSection";
+import EmptyState from "@/components/EmptyState";
 
 export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
   const locale: Locale = isLocale(params.locale) ? params.locale : "ar";
@@ -33,16 +34,20 @@ export default async function HomePage({ params }: { params: { locale: string } 
       <section className="bg-surface py-14 sm:py-16">
         <div className="container-page">
           <SectionHeading as="h1" title={dict.home.topCreatorsTitle} subtitle={dict.home.topCreatorsSubtitle} />
-          {/* Repeated 3x so the slider has enough items to actually scroll with — the
-              live catalog will outgrow this on its own; remove the repeat once it does. */}
-          <Slider
-            items={[0, 1, 2].flatMap((rep) =>
-              topCreators.map((creator) => (
-                <CreatorCard key={`${creator.id}-${rep}`} creator={creator} locale={locale} dict={dict} />
-              ))
-            )}
-            itemClassName="w-[calc((100%_-_1rem)/1.5)] sm:w-[calc((100%_-_2rem)/3)] lg:w-[calc((100%_-_3rem)/4)]"
-          />
+          {topCreators.length === 0 ? (
+            <EmptyState image="/images/no-data.jpg" title={dict.home.noTopCreators} />
+          ) : (
+            // Repeated 3x so the slider has enough items to actually scroll with — the
+            // live catalog will outgrow this on its own; remove the repeat once it does.
+            <Slider
+              items={[0, 1, 2].flatMap((rep) =>
+                topCreators.map((creator) => (
+                  <CreatorCard key={`${creator.id}-${rep}`} creator={creator} locale={locale} dict={dict} />
+                ))
+              )}
+              itemClassName="w-[calc((100%_-_1rem)/1.5)] sm:w-[calc((100%_-_2rem)/3)] lg:w-[calc((100%_-_3rem)/4)]"
+            />
+          )}
         </div>
       </section>
 

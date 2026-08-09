@@ -52,8 +52,8 @@ export default function CreatorCommunitiesView({ locale, dict }: { locale: Local
   if (!user || user.role !== "creator") return null;
 
   const base = `/${locale}/creator`;
-  const name = community ? (locale === "ar" ? community.nameAr : community.nameEn) : "";
-  const description = community ? (locale === "ar" ? community.descriptionAr : community.descriptionEn) : "";
+  const name = community?.name ?? "";
+  const description = community?.description ?? "";
 
   return (
     <div>

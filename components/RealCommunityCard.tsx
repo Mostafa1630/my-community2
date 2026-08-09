@@ -51,21 +51,11 @@ export default function RealCommunityCard({
             </span>
           </div>
         )}
-        <div className="absolute top-3 start-3 flex items-center gap-1.5">
-          {community.categoryName && (
-            <span className="rounded-full bg-black/40 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur">
-              {community.categoryName}
-            </span>
-          )}
-          <span
-            className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium backdrop-blur ${
-              community.type === "private" ? "bg-danger text-white" : "bg-white/25 text-white"
-            }`}
-          >
-            {community.type === "private" ? <Lock size={11} /> : <Unlock size={11} />}
-            {community.type === "private" ? dict.communities.privateBadge : dict.communities.publicBadge}
+        {community.categoryName && (
+          <span className="absolute top-3 start-3 rounded-full bg-black/40 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur">
+            {community.categoryName}
           </span>
-        </div>
+        )}
         <div className="absolute top-3 end-3 flex flex-col items-end gap-1.5">
           <FavoriteButton favoritableType="community" favoritableId={community.id} locale={locale} />
         </div>
@@ -93,6 +83,17 @@ export default function RealCommunityCard({
           <span className="flex shrink-0 items-center gap-1 whitespace-nowrap">
             <Users2 size={12} className="shrink-0" />
             {community.subscriptionsCount} {dict.communities.subscribersLabel}
+          </span>
+        </div>
+
+        <div className="mt-2.5">
+          <span
+            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+              community.type === "private" ? "bg-danger/10 text-danger" : "bg-primary-500/10 text-primary-700"
+            }`}
+          >
+            {community.type === "private" ? <Lock size={11} /> : <Unlock size={11} />}
+            {community.type === "private" ? dict.communities.privateBadge : dict.communities.publicBadge}
           </span>
         </div>
 

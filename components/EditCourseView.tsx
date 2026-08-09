@@ -12,10 +12,8 @@ import { courseFormSchema, collectIssues, apiFieldErrors } from "@/lib/validatio
 
 const API_FIELD_MAP: Record<string, string> = {
   category_id: "categoryId",
-  "title.en": "titleEn",
-  "title.ar": "titleAr",
-  "description.en": "descriptionEn",
-  "description.ar": "descriptionAr",
+  title: "title",
+  description: "description",
   price: "price",
   discount_percentage: "discountPercentage",
   intro_video_url: "introVideoUrl",
@@ -42,10 +40,8 @@ export default function EditCourseView({
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
-  const [titleEn, setTitleEn] = useState("");
-  const [titleAr, setTitleAr] = useState("");
-  const [descriptionEn, setDescriptionEn] = useState("");
-  const [descriptionAr, setDescriptionAr] = useState("");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [price, setPrice] = useState(0);
   const [discountPercentage, setDiscountPercentage] = useState(0);
@@ -62,14 +58,11 @@ export default function EditCourseView({
   // GET /creators/courses/{id} (round 12) replaced the public
   // GET /courses/details/{id} used here before — creator-scoped, so the
   // backend itself enforces ownership (a course that isn't this creator's
-  // own just 404s, no manual creator-id check needed anymore). Still only
-  // ever returns one already-localized title/description per request,
-  // never both — fetched twice in parallel, once per locale, to prefill a
-  // real bilingual form. Still no category field anywhere in this shape
-  // either, so unlike name/desc it truly can't be recovered; left
-  // unresolved (see courseCategoryNote) rather than guessed, and only sent
-  // on save if the creator actively picks something other than the
-  // "leave unchanged" placeholder.
+  // own just 404s, no manual creator-id check needed anymore). Still no
+  // category field anywhere in this shape, so unlike title/description it
+  // truly can't be recovered; left unresolved (see courseCategoryNote)
+  // rather than guessed, and only sent on save if the creator actively
+  // picks something other than the "leave unchanged" placeholder.
   useEffect(() => {
     let cancelled = false;
     async function load() {
@@ -77,25 +70,20 @@ export default function EditCourseView({
         setLoading(false);
         return;
       }
-      const [enDetails, arDetails] = await Promise.all([
-        getCourseByCreator(courseId, "en"),
-        getCourseByCreator(courseId, "ar")
-      ]);
+      const details = await getCourseByCreator(courseId, locale);
       if (cancelled) return;
-      if (!enDetails || !arDetails) {
+      if (!details) {
         setNotFound(true);
         setLoading(false);
         return;
       }
-      setTitleEn(enDetails.title);
-      setTitleAr(arDetails.title);
-      setDescriptionEn(enDetails.description);
-      setDescriptionAr(arDetails.description);
-      setPrice(enDetails.price);
-      setDiscountPercentage(enDetails.discountPercentage);
-      setIntroVideoUrl(enDetails.introVideo ?? "");
-      setIsFree(enDetails.isFree);
-      setCurrentImage(enDetails.image);
+      setTitle(details.title);
+      setDescription(details.description);
+      setPrice(details.price);
+      setDiscountPercentage(details.discountPercentage);
+      setIntroVideoUrl(details.introVideo ?? "");
+      setIsFree(details.isFree);
+      setCurrentImage(details.image);
       setLoading(false);
     }
     load();
@@ -126,8 +114,7 @@ export default function EditCourseView({
       invalidUrl: dict.validation.invalidUrl
     });
     const parsed = schema.safeParse({
-      titleEn,
-      titleAr,
+      title,
       isFree,
       price,
       discountPercentage,
@@ -145,10 +132,8 @@ export default function EditCourseView({
         courseId,
         {
           categoryId: categoryId || undefined,
-          titleEn,
-          titleAr,
-          descriptionEn,
-          descriptionAr,
+          title,
+          description,
           image: image ?? undefined,
           price: isFree ? undefined : price,
           discountPercentage: isFree ? undefined : discountPercentage,
@@ -177,29 +162,23 @@ export default function EditCourseView({
     <form onSubmit={submit} className="w-full space-y-5 rounded-2xl border border-line bg-surface p-6 shadow-card">
       <h1 className="text-xl font-bold text-ink">{dict.creatorDash.editCourseTitle}</h1>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <FormField label={dict.creatorDash.fieldTitleEn} error={fieldErrors.titleEn}>
-          <input
-            dir="ltr"
-            value={titleEn}
-            onChange={(e) => setTitleEn(e.target.value)}
-            className={fieldInputClass(!!fieldErrors.titleEn)}
-          />
-        </FormField>
-        <FormField label={dict.creatorDash.fieldTitleAr} error={fieldErrors.titleAr}>
-          <input
-            dir="rtl"
-            value={titleAr}
-            onChange={(e) => setTitleAr(e.target.value)}
-            className={fieldInputClass(!!fieldErrors.titleAr)}
-          />
-        </FormField>
-      </div>
+      <FormField label={dict.creatorDash.fieldTitle} error={fieldErrors.title}>
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className={fieldInputClass(!!fieldErrors.title)}
+        />
+      </FormField>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <TextArea label={dict.creatorDash.fieldDescEn} value={descriptionEn} onChange={setDescriptionEn} dir="ltr" />
-        <TextArea label={dict.creatorDash.fieldDescAr} value={descriptionAr} onChange={setDescriptionAr} dir="rtl" />
-      </div>
+      <label className="block">
+        <span className="mb-1.5 block text-xs font-medium text-ink/65">{dict.creatorDash.fieldDesc}</span>
+        <textarea
+          rows={3}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          className="w-full resize-none rounded-xl border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus:border-primary-400"
+        />
+      </label>
 
       <label className="block">
         <span className="mb-1.5 block text-xs font-medium text-ink/65">{dict.creatorDash.fieldCategory}</span>
@@ -300,30 +279,5 @@ export default function EditCourseView({
         )}
       </div>
     </form>
-  );
-}
-
-function TextArea({
-  label,
-  value,
-  onChange,
-  dir
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  dir?: "ltr" | "rtl";
-}) {
-  return (
-    <label className="block">
-      <span className="mb-1.5 block text-xs font-medium text-ink/65">{label}</span>
-      <textarea
-        dir={dir}
-        rows={3}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full resize-none rounded-xl border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus:border-primary-400"
-      />
-    </label>
   );
 }

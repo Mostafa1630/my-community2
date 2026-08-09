@@ -65,6 +65,33 @@ export function clearCachedUser() {
   document.cookie = `${USER_CACHE_COOKIE}=; path=/; max-age=0`;
 }
 
+// GET /settings rarely changes and is public — no reason to hit it on every
+// single page load. Cached alongside the timestamp of our own fetch (not the
+// response's own `last_updated`, which only ever moves further into the past
+// relative to "now" and so can never itself signal "go refetch"); once that
+// fetch is older than SETTINGS_CACHE_TTL_MS, the next read is treated as a
+// miss and a fresh request replaces it.
+const SETTINGS_CACHE_KEY = "mujtamaaty.settingsCache.v1";
+const SETTINGS_CACHE_TTL_MS = 10 * 60 * 1000;
+
+export function getCachedSettings<T>(): T | null {
+  if (typeof window === "undefined") return null;
+  const raw = window.localStorage.getItem(SETTINGS_CACHE_KEY);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as { data: T; fetchedAt: number };
+    if (Date.now() - parsed.fetchedAt > SETTINGS_CACHE_TTL_MS) return null;
+    return parsed.data;
+  } catch {
+    return null;
+  }
+}
+
+export function setCachedSettings(data: unknown) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(SETTINGS_CACHE_KEY, JSON.stringify({ data, fetchedAt: Date.now() }));
+}
+
 // Server-side counterpart of getCachedUser — parses the same cookie's raw
 // value (as read via next/headers' cookies() in a Server Component) instead
 // of localStorage, which doesn't exist there. Only ever holds display data

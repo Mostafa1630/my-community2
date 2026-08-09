@@ -12,10 +12,8 @@ import { communityFormSchema, collectIssues, apiFieldErrors } from "@/lib/valida
 
 const API_FIELD_MAP: Record<string, string> = {
   category_id: "categoryId",
-  "name.en": "nameEn",
-  "name.ar": "nameAr",
-  "description.en": "descriptionEn",
-  "description.ar": "descriptionAr",
+  name: "name",
+  description: "description",
   type: "type",
   subscription_price: "subscriptionPrice",
   discount_percentage: "discountPercentage",
@@ -48,10 +46,8 @@ export default function EditCommunityView({
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
-  const [nameEn, setNameEn] = useState("");
-  const [nameAr, setNameAr] = useState("");
-  const [descriptionEn, setDescriptionEn] = useState("");
-  const [descriptionAr, setDescriptionAr] = useState("");
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [categoryUnresolved, setCategoryUnresolved] = useState(false);
   const [type, setType] = useState<"public" | "private">("public");
@@ -96,10 +92,8 @@ export default function EditCommunityView({
         setLoading(false);
         return;
       }
-      setNameEn(community.nameEn);
-      setNameAr(community.nameAr);
-      setDescriptionEn(community.descriptionEn);
-      setDescriptionAr(community.descriptionAr);
+      setName(community.name);
+      setDescription(community.description);
       setType(community.type);
       setIsFree(community.isFree);
       setSubscriptionPrice(community.subscriptionPrice);
@@ -143,10 +137,8 @@ export default function EditCommunityView({
       percentRange: dict.validation.percentRange
     });
     const parsed = schema.safeParse({
-      nameEn,
-      nameAr,
-      descriptionEn,
-      descriptionAr,
+      name,
+      description,
       categoryId,
       type,
       isFree,
@@ -165,10 +157,8 @@ export default function EditCommunityView({
       await saveCommunity(
         {
           categoryId,
-          nameEn,
-          nameAr,
-          descriptionEn: descriptionEn.trim() || undefined,
-          descriptionAr: descriptionAr.trim() || undefined,
+          name,
+          description: description.trim() || undefined,
           coverImage: coverImage ?? undefined,
           type,
           isFree,
@@ -196,45 +186,22 @@ export default function EditCommunityView({
       <DashboardPageHeader title={dict.creatorDash.communityEditTitle} subtitle={dict.creatorDash.myCommunitySubtitle} />
 
       <form onSubmit={submit} className="space-y-6 rounded-2xl border border-line bg-surface p-6 shadow-card sm:p-8">
-        <div className="grid gap-5 sm:grid-cols-2">
-          <FormField label={dict.creatorDash.fieldCommunityNameEn} error={fieldErrors.nameEn}>
-            <input
-              dir="ltr"
-              value={nameEn}
-              onChange={(e) => setNameEn(e.target.value)}
-              className={fieldInputClass(!!fieldErrors.nameEn)}
-            />
-          </FormField>
-          <FormField label={dict.creatorDash.fieldCommunityNameAr} error={fieldErrors.nameAr}>
-            <input
-              dir="rtl"
-              value={nameAr}
-              onChange={(e) => setNameAr(e.target.value)}
-              className={fieldInputClass(!!fieldErrors.nameAr)}
-            />
-          </FormField>
-        </div>
+        <FormField label={dict.creatorDash.fieldCommunityName} error={fieldErrors.name}>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className={fieldInputClass(!!fieldErrors.name)}
+          />
+        </FormField>
 
-        <div className="grid gap-5 sm:grid-cols-2">
-          <FormField label={dict.creatorDash.fieldCommunityDescEn} error={fieldErrors.descriptionEn}>
-            <textarea
-              dir="ltr"
-              rows={3}
-              value={descriptionEn}
-              onChange={(e) => setDescriptionEn(e.target.value)}
-              className={`${fieldInputClass(!!fieldErrors.descriptionEn)} resize-none`}
-            />
-          </FormField>
-          <FormField label={dict.creatorDash.fieldCommunityDescAr} error={fieldErrors.descriptionAr}>
-            <textarea
-              dir="rtl"
-              rows={3}
-              value={descriptionAr}
-              onChange={(e) => setDescriptionAr(e.target.value)}
-              className={`${fieldInputClass(!!fieldErrors.descriptionAr)} resize-none`}
-            />
-          </FormField>
-        </div>
+        <FormField label={dict.creatorDash.fieldCommunityDesc} error={fieldErrors.description}>
+          <textarea
+            rows={3}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className={`${fieldInputClass(!!fieldErrors.description)} resize-none`}
+          />
+        </FormField>
 
         <label className="block">
           <span className="mb-2 block text-xs font-semibold tracking-wide text-ink/70">{dict.creatorDash.fieldCommunityCategory}</span>

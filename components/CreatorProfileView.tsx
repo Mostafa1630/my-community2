@@ -16,8 +16,7 @@ import ImageCropper from "./ImageCropper";
 const API_FIELD_MAP: Record<string, string> = {
   name: "name",
   phone_number: "phoneNumber",
-  "bio.en": "bioEn",
-  "bio.ar": "bioAr"
+  bio: "bio"
 };
 
 // Edit-only form — the display-first view lives in CreatorProfileDisplayView
@@ -32,8 +31,7 @@ export default function CreatorProfileView({ locale, dict }: { locale: Locale; d
 
   const [name, setName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [bioEn, setBioEn] = useState("");
-  const [bioAr, setBioAr] = useState("");
+  const [bio, setBio] = useState("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
@@ -52,8 +50,7 @@ export default function CreatorProfileView({ locale, dict }: { locale: Locale; d
     if (user && user.role === "creator") {
       setName(user.name);
       setPhoneNumber(user.phoneNumber ?? "");
-      setBioEn(user.bioEn);
-      setBioAr(user.bioAr);
+      setBio(user.bioEn);
     }
   }, [user]);
 
@@ -84,8 +81,7 @@ export default function CreatorProfileView({ locale, dict }: { locale: Locale; d
         {
           name,
           phoneNumber,
-          bioEn,
-          bioAr,
+          bio,
           image: avatarFile ?? undefined,
           coverImage: coverFile ?? undefined
         },
@@ -204,25 +200,14 @@ export default function CreatorProfileView({ locale, dict }: { locale: Locale; d
           </FormField>
         </div>
 
-        <div className="grid gap-5 sm:grid-cols-2">
-          <FormField label={locale === "ar" ? "السيرة الذاتية (إنجليزي)" : "Bio (English)"} error={fieldErrors.bioEn}>
-            <textarea
-              rows={4}
-              value={bioEn}
-              onChange={(e) => setBioEn(e.target.value)}
-              className={`${fieldInputClass(!!fieldErrors.bioEn)} resize-none`}
-            />
-          </FormField>
-          <FormField label={locale === "ar" ? "السيرة الذاتية (عربي)" : "Bio (Arabic)"} error={fieldErrors.bioAr}>
-            <textarea
-              dir="rtl"
-              rows={4}
-              value={bioAr}
-              onChange={(e) => setBioAr(e.target.value)}
-              className={`${fieldInputClass(!!fieldErrors.bioAr)} resize-none`}
-            />
-          </FormField>
-        </div>
+        <FormField label={dict.creatorDash.fieldBio} error={fieldErrors.bio}>
+          <textarea
+            rows={4}
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
+            className={`${fieldInputClass(!!fieldErrors.bio)} resize-none`}
+          />
+        </FormField>
 
         {error && (
           <p className="flex items-start gap-2 rounded-xl bg-danger/10 px-3 py-2.5 text-xs text-danger">

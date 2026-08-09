@@ -21,6 +21,8 @@ import {
   getCachedUser,
   setCachedUser,
   clearCachedUser,
+  getCachedSettings,
+  setCachedSettings,
   ApiError,
 } from "./api-client";
 import type {
@@ -128,8 +130,7 @@ interface AuthContextValue {
       email?: string;
       phoneNumber?: string;
       image?: File;
-      bioEn?: string;
-      bioAr?: string;
+      bio?: string;
       coverImage?: File;
     },
     locale: Locale,
@@ -154,10 +155,8 @@ interface AuthContextValue {
   saveCommunity: (
     input: {
       categoryId: string;
-      nameEn: string;
-      nameAr: string;
-      descriptionEn?: string;
-      descriptionAr?: string;
+      name: string;
+      description?: string;
       coverImage?: File;
       type: "public" | "private";
       isFree: boolean;
@@ -178,10 +177,8 @@ interface AuthContextValue {
   createCourse: (
     input: {
       categoryId: string;
-      titleEn: string;
-      titleAr: string;
-      descriptionEn?: string;
-      descriptionAr?: string;
+      title: string;
+      description?: string;
       image?: File;
       price?: number;
       discountPercentage?: number;
@@ -194,10 +191,8 @@ interface AuthContextValue {
     courseId: string,
     input: {
       categoryId?: string;
-      titleEn?: string;
-      titleAr?: string;
-      descriptionEn?: string;
-      descriptionAr?: string;
+      title?: string;
+      description?: string;
       image?: File;
       price?: number;
       discountPercentage?: number;
@@ -218,10 +213,8 @@ interface AuthContextValue {
   createLesson: (
     courseId: string,
     input: {
-      titleEn: string;
-      titleAr: string;
-      descriptionEn?: string;
-      descriptionAr?: string;
+      title: string;
+      description?: string;
       videoUrl?: string;
       duration?: number;
       order?: number;
@@ -232,10 +225,8 @@ interface AuthContextValue {
   updateLessonByCreator: (
     lessonId: string,
     input: {
-      titleEn?: string;
-      titleAr?: string;
-      descriptionEn?: string;
-      descriptionAr?: string;
+      title?: string;
+      description?: string;
       videoUrl?: string;
       duration?: number;
       order?: number;
@@ -473,19 +464,28 @@ export function AuthProvider({
     else clearCachedUser();
   }, [apiUser]);
 
-  // Public, unauthenticated, fetched once on mount and cached for the whole
-  // session — per the client's explicit instruction, only currency + the
-  // social links are ever pulled out of this response (mapApiSettings drops
-  // everything else, see lib/api-types.ts).
+  // Public, unauthenticated — cached in localStorage for SETTINGS_CACHE_TTL_MS
+  // (see api-client.ts) so a fresh page load reuses the last fetch instead of
+  // re-requesting every single time; once that window passes, the cache is
+  // treated as a miss and this refetches, keeping settings eventually in
+  // sync with anything an admin changes.
   useEffect(() => {
     let cancelled = false;
+    const cached = getCachedSettings<ApiSettings>();
+    if (cached) {
+      setSettings(mapApiSettings(cached));
+      return;
+    }
     apiFetch<{ data: ApiSettings }>("/settings", { method: "GET", locale, auth: false })
       .then((res) => {
-        if (!cancelled) setSettings(mapApiSettings(res.data));
+        if (!cancelled) {
+          setSettings(mapApiSettings(res.data));
+          setCachedSettings(res.data);
+        }
       })
       .catch(() => {
-        // Settings are cosmetic (currency label, footer social icons) —
-        // silently keep the defaults rather than surfacing an error.
+        // Settings are cosmetic (currency label, footer social icons, about
+        // page) — silently keep the defaults rather than surfacing an error.
       });
     return () => {
       cancelled = true;
@@ -636,8 +636,7 @@ export function AuthProvider({
         email?: string;
         phoneNumber?: string;
         image?: File;
-        bioEn?: string;
-        bioAr?: string;
+        bio?: string;
         coverImage?: File;
       },
       requestLocale: Locale,
@@ -647,8 +646,7 @@ export function AuthProvider({
       if (input.email) form.set("email", input.email);
       if (input.phoneNumber) form.set("phone_number", input.phoneNumber);
       if (input.image) form.set("image", input.image);
-      if (input.bioEn) form.set("bio[en]", input.bioEn);
-      if (input.bioAr) form.set("bio[ar]", input.bioAr);
+      if (input.bio) form.set("bio", input.bio);
       if (input.coverImage) form.set("cover_image", input.coverImage);
       const res = await apiFetch<{ data: ApiUser }>("/auth/profile", {
         method: "POST",
@@ -816,10 +814,8 @@ export function AuthProvider({
     async (
       input: {
         categoryId: string;
-        nameEn: string;
-        nameAr: string;
-        descriptionEn?: string;
-        descriptionAr?: string;
+        name: string;
+        description?: string;
         coverImage?: File;
         type: "public" | "private";
         isFree: boolean;
@@ -832,10 +828,8 @@ export function AuthProvider({
     ) => {
       const form = new FormData();
       if (input.categoryId) form.set("category_id", input.categoryId);
-      form.set("name[en]", input.nameEn);
-      form.set("name[ar]", input.nameAr);
-      if (input.descriptionEn) form.set("description[en]", input.descriptionEn);
-      if (input.descriptionAr) form.set("description[ar]", input.descriptionAr);
+      form.set("name", input.name);
+      if (input.description) form.set("description", input.description);
       if (input.coverImage) form.set("cover_image", input.coverImage);
       form.set("type", input.type);
       form.set("is_free", input.isFree ? "1" : "0");
@@ -868,8 +862,9 @@ export function AuthProvider({
   // most one item; takes the first if present. Added round 12, replacing
   // the getCreatorDetails+double-locale-getCommunityDetails workaround
   // CreatorCommunityForm used before this endpoint existed — this one
-  // returns the real bilingual name/description pair and the real
-  // category_id directly, closing every gap that workaround had.
+  // returns the real name/description (single, already-localized string —
+  // no more ar/en split, backend collapsed it) and the real category_id
+  // directly, closing every gap that workaround had.
   const getMyCommunity = useCallback(async (requestLocale: Locale) => {
     const res = await apiFetch<{ data: ApiCreatorCommunity[] }>(
       "/creators/communities",
@@ -938,17 +933,15 @@ export function AuthProvider({
 
   // POST /creators/courses — create, added round 12 (previously
   // NewCourseView just showed a "not connected" notice). Required fields
-  // per the spec's own table: title[en], title[ar], category_id — same
-  // table-vs-formdata mismatch as the update endpoint (discount_percentage/
-  // intro_video_url/`image` not `cover_image`), resolved the same way.
+  // per the spec's own table: title, category_id — same table-vs-formdata
+  // mismatch as the update endpoint (discount_percentage/intro_video_url/
+  // `image` not `cover_image`), resolved the same way.
   const createCourse = useCallback(
     async (
       input: {
         categoryId: string;
-        titleEn: string;
-        titleAr: string;
-        descriptionEn?: string;
-        descriptionAr?: string;
+        title: string;
+        description?: string;
         image?: File;
         price?: number;
         discountPercentage?: number;
@@ -959,10 +952,8 @@ export function AuthProvider({
     ) => {
       const form = new FormData();
       form.set("category_id", input.categoryId);
-      form.set("title[en]", input.titleEn);
-      form.set("title[ar]", input.titleAr);
-      if (input.descriptionEn) form.set("description[en]", input.descriptionEn);
-      if (input.descriptionAr) form.set("description[ar]", input.descriptionAr);
+      form.set("title", input.title);
+      if (input.description) form.set("description", input.description);
       if (input.image) form.set("image", input.image);
       if (input.price != null) form.set("price", String(input.price));
       if (input.discountPercentage != null)
@@ -992,10 +983,8 @@ export function AuthProvider({
       courseId: string,
       input: {
         categoryId?: string;
-        titleEn?: string;
-        titleAr?: string;
-        descriptionEn?: string;
-        descriptionAr?: string;
+        title?: string;
+        description?: string;
         image?: File;
         price?: number;
         discountPercentage?: number;
@@ -1006,12 +995,8 @@ export function AuthProvider({
     ) => {
       const form = new FormData();
       if (input.categoryId) form.set("category_id", input.categoryId);
-      if (input.titleEn != null) form.set("title[en]", input.titleEn);
-      if (input.titleAr != null) form.set("title[ar]", input.titleAr);
-      if (input.descriptionEn != null)
-        form.set("description[en]", input.descriptionEn);
-      if (input.descriptionAr != null)
-        form.set("description[ar]", input.descriptionAr);
+      if (input.title != null) form.set("title", input.title);
+      if (input.description != null) form.set("description", input.description);
       if (input.image) form.set("image", input.image);
       if (input.price != null) form.set("price", String(input.price));
       if (input.discountPercentage != null)
@@ -1096,10 +1081,8 @@ export function AuthProvider({
     async (
       courseId: string,
       input: {
-        titleEn: string;
-        titleAr: string;
-        descriptionEn?: string;
-        descriptionAr?: string;
+        title: string;
+        description?: string;
         videoUrl?: string;
         duration?: number;
         order?: number;
@@ -1108,10 +1091,8 @@ export function AuthProvider({
       requestLocale: Locale,
     ) => {
       const form = new FormData();
-      form.set("title[en]", input.titleEn);
-      form.set("title[ar]", input.titleAr);
-      if (input.descriptionEn) form.set("description[en]", input.descriptionEn);
-      if (input.descriptionAr) form.set("description[ar]", input.descriptionAr);
+      form.set("title", input.title);
+      if (input.description) form.set("description", input.description);
       if (input.videoUrl) form.set("video_url", input.videoUrl);
       if (input.duration != null) form.set("duration", String(input.duration));
       if (input.order != null) form.set("order", String(input.order));
@@ -1133,10 +1114,8 @@ export function AuthProvider({
     async (
       lessonId: string,
       input: {
-        titleEn?: string;
-        titleAr?: string;
-        descriptionEn?: string;
-        descriptionAr?: string;
+        title?: string;
+        description?: string;
         videoUrl?: string;
         duration?: number;
         order?: number;
@@ -1146,12 +1125,8 @@ export function AuthProvider({
       requestLocale: Locale,
     ) => {
       const form = new FormData();
-      if (input.titleEn != null) form.set("title[en]", input.titleEn);
-      if (input.titleAr != null) form.set("title[ar]", input.titleAr);
-      if (input.descriptionEn != null)
-        form.set("description[en]", input.descriptionEn);
-      if (input.descriptionAr != null)
-        form.set("description[ar]", input.descriptionAr);
+      if (input.title != null) form.set("title", input.title);
+      if (input.description != null) form.set("description", input.description);
       if (input.videoUrl != null) form.set("video_url", input.videoUrl);
       if (input.duration != null) form.set("duration", String(input.duration));
       if (input.order != null) form.set("order", String(input.order));

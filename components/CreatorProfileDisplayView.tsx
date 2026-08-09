@@ -83,20 +83,10 @@ export default function CreatorProfileDisplayView({ locale, dict }: { locale: Lo
             </div>
           </div>
 
-          {(user.bioEn || user.bioAr) && (
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-xl border border-line bg-paper p-4 sm:p-5">
-                <p className="mb-2 text-xs font-medium tracking-wide text-ink/55">
-                  {locale === "ar" ? "السيرة الذاتية (إنجليزي)" : "Bio (English)"}
-                </p>
-                <p className="text-sm leading-6 text-ink/80">{user.bioEn || "—"}</p>
-              </div>
-              <div className="rounded-xl border border-line bg-paper p-4 sm:p-5">
-                <p className="mb-2 text-xs font-medium tracking-wide text-ink/55">
-                  {locale === "ar" ? "السيرة الذاتية (عربي)" : "Bio (Arabic)"}
-                </p>
-                <p dir="rtl" className="text-sm leading-6 text-ink/80">{user.bioAr || "—"}</p>
-              </div>
+          {user.bioEn && (
+            <div className="mt-4 rounded-xl border border-line bg-paper p-4 sm:p-5">
+              <p className="mb-2 text-xs font-medium tracking-wide text-ink/55">{dict.creatorDash.fieldBio}</p>
+              <p className="text-sm leading-6 text-ink/80">{user.bioEn}</p>
             </div>
           )}
         </div>

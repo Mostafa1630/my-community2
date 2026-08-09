@@ -10,22 +10,20 @@ import { z } from "zod";
 // explicit placeholder instead) — noted at each call site, not invented
 // silently.
 
-// description[en]/[ar] are documented optional ("No") on both create and
-// update, but live-testing (round 13) confirmed POST /creators/communities
-// (create) actually 422s without them — "The description.en field is
-// required." Confirmed separately that POST /creators/communities/{id}
-// (update) genuinely doesn't need them (omitting them on update leaves the
-// existing description untouched, verified live) — but by the time this
-// form is ever in "update" mode, description is already prefilled with the
-// real current value from getMyCommunity() (round 12), so requiring it
-// unconditionally here costs nothing on edit and protects create.
+// description is documented optional ("No") on both create and update, but
+// live-testing (round 13) confirmed POST /creators/communities (create)
+// actually 422s without it — "The description field is required."
+// Confirmed separately that POST /creators/communities/{id} (update)
+// genuinely doesn't need it (omitting it on update leaves the existing
+// description untouched, verified live) — but by the time this form is ever
+// in "update" mode, description is already prefilled with the real current
+// value from getMyCommunity() (round 12), so requiring it unconditionally
+// here costs nothing on edit and protects create.
 export function communityFormSchema(messages: { required: string; positive: string; percentRange: string }) {
   return z
     .object({
-      nameEn: z.string().min(1, messages.required),
-      nameAr: z.string().min(1, messages.required),
-      descriptionEn: z.string().min(1, messages.required),
-      descriptionAr: z.string().min(1, messages.required),
+      name: z.string().min(1, messages.required),
+      description: z.string().min(1, messages.required),
       categoryId: z.string().min(1, messages.required),
       type: z.enum(["public", "private"]),
       isFree: z.boolean(),
@@ -49,8 +47,7 @@ export function courseFormSchema(messages: {
 }) {
   return z
     .object({
-      titleEn: z.string().min(1, messages.required),
-      titleAr: z.string().min(1, messages.required),
+      title: z.string().min(1, messages.required),
       isFree: z.boolean(),
       price: z.number(),
       discountPercentage: z.number().min(0, messages.percentRange).max(100, messages.percentRange),
@@ -77,8 +74,7 @@ export function courseCreateFormSchema(messages: {
 }) {
   return z
     .object({
-      titleEn: z.string().min(1, messages.required),
-      titleAr: z.string().min(1, messages.required),
+      title: z.string().min(1, messages.required),
       categoryId: z.string().min(1, messages.required),
       isFree: z.boolean(),
       price: z.number(),
@@ -93,8 +89,7 @@ export function courseCreateFormSchema(messages: {
 
 export function lessonFormSchema(messages: { required: string; positive: string; invalidUrl: string }) {
   return z.object({
-    titleEn: z.string().min(1, messages.required),
-    titleAr: z.string().min(1, messages.required),
+    title: z.string().min(1, messages.required),
     videoUrl: z.string().min(1, messages.required).url(messages.invalidUrl),
     duration: z.number().int(messages.positive).positive(messages.positive).optional(),
     order: z.number().int(messages.positive).positive(messages.positive).optional()

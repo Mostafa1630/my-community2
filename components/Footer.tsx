@@ -1,31 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { Facebook, Instagram, Linkedin, Twitter, Youtube } from "lucide-react";
+import { Facebook, Heart, Instagram, Linkedin, Twitter, Youtube } from "lucide-react";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import { useAuth } from "@/lib/auth-context";
 import Seal from "./Seal";
-
-// Lucide ships no TikTok or WhatsApp mark (it only carries a handful of
-// legacy brand icons — Facebook/Instagram/LinkedIn), so these are small
-// inline SVGs instead of imports.
-function TikTokIcon({ size = 16 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M16.6 5.82c-1.02-.9-1.6-2.2-1.6-3.6h-3.2v14.1c0 1.5-1.2 2.7-2.7 2.7-1.5 0-2.7-1.2-2.7-2.7 0-1.5 1.2-2.7 2.7-2.7.3 0 .6.05.85.14V10.5c-.28-.04-.56-.06-.85-.06-3.2 0-5.8 2.6-5.8 5.8s2.6 5.8 5.8 5.8 5.8-2.6 5.8-5.8V9.1c1.2.86 2.67 1.37 4.25 1.37V7.28c-.9 0-1.75-.27-2.55-.75-.28-.17-.55-.37-.79-.6z" />
-    </svg>
-  );
-}
-
-function WhatsAppIcon({ size = 16 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M17.5 14.4c-.3-.15-1.7-.85-2-.94-.27-.1-.46-.15-.66.15-.2.3-.75.94-.92 1.13-.17.2-.34.22-.63.08-.3-.15-1.24-.46-2.37-1.47-.88-.78-1.47-1.75-1.64-2.05-.17-.3-.02-.46.13-.6.13-.14.3-.34.44-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.66-1.6-.9-2.2-.24-.57-.48-.5-.66-.5-.17 0-.37-.02-.56-.02-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.87 1.22 3.07c.15.2 2.1 3.2 5.08 4.49.71.3 1.26.49 1.7.62.71.23 1.36.2 1.87.12.57-.09 1.7-.7 1.94-1.37.24-.67.24-1.25.17-1.37-.07-.12-.27-.2-.56-.35z" />
-      <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.87.51 3.61 1.4 5.11L2 22l5.13-1.5a9.86 9.86 0 0 0 4.9 1.3h.01c5.46 0 9.9-4.45 9.9-9.91C21.95 6.44 17.5 2 12.04 2zm0 18.03h-.01c-1.7 0-3.35-.46-4.79-1.32l-.34-.2-3.06.9.9-2.98-.22-.35a8.03 8.03 0 0 1-1.24-4.17c0-4.42 3.6-8.02 8.05-8.02 2.15 0 4.16.84 5.68 2.36a7.96 7.96 0 0 1 2.35 5.67c0 4.42-3.6 8.11-8.03 8.11z" />
-    </svg>
-  );
-}
+import { TikTokIcon, WhatsAppIcon } from "./BrandIcons";
 
 const paymentBadges = [
   { name: "Visa", image: "/images/payment-visa.jpg" },
@@ -106,7 +87,7 @@ export default function Footer({ locale, dict }: { locale: Locale; dict: Diction
         <div>
           <h3 className="mb-3 text-sm font-semibold text-ink">{dict.footer.company}</h3>
           <ul className="space-y-2 text-sm text-ink/65">
-            <li><span className="cursor-default">{dict.footer.aboutUs}</span></li>
+            <li><Link href={`/${locale}/about`} className="link-underline transition-colors hover:text-primary-700">{dict.footer.aboutUs}</Link></li>
             <li><Link href={`/${locale}#contact`} className="link-underline transition-colors hover:text-primary-700">{dict.footer.contact}</Link></li>
             <li><Link href={`/${locale}/terms`} className="link-underline transition-colors hover:text-primary-700">{dict.legal.termsTitle}</Link></li>
             <li><Link href={`/${locale}/privacy`} className="link-underline transition-colors hover:text-primary-700">{dict.legal.privacyTitle}</Link></li>
@@ -154,10 +135,30 @@ export default function Footer({ locale, dict }: { locale: Locale; dict: Diction
         )}
       </div>
 
-      <div className="py-5">
-        <p className="container-page text-center text-xs text-ink/65">
-          © {year} {dict.meta.siteName}. {dict.footer.rights}
-        </p>
+      <div className="bg-ink py-5">
+        <div className="container-page flex flex-col items-center gap-3 text-xs text-white/60 sm:flex-row sm:justify-between">
+          <p className="flex items-center gap-1.5 order-1">
+            {dict.footer.madeWithPrefix}
+            <Heart size={12} className="fill-danger text-danger" />
+            {dict.footer.madeWithSuffix}
+          </p>
+          <div className="order-3 flex items-center gap-2 sm:order-2">
+            <Link href={`/${locale}/about`} className="transition-colors hover:text-white">
+              {dict.footer.aboutUs}
+            </Link>
+            <span aria-hidden="true">·</span>
+            <Link href={`/${locale}/privacy`} className="transition-colors hover:text-white">
+              {dict.legal.privacyTitle}
+            </Link>
+            <span aria-hidden="true">·</span>
+            <Link href={`/${locale}/terms`} className="transition-colors hover:text-white">
+              {dict.legal.termsTitle}
+            </Link>
+          </div>
+          <p className="order-2 sm:order-3">
+            © {year} {dict.meta.siteName} — {dict.footer.rights}
+          </p>
+        </div>
       </div>
     </footer>
   );

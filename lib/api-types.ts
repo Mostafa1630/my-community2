@@ -7,11 +7,10 @@ import type { AnyUser, AccentKey, Category } from "./types";
 // still runs on local mock data, and those types are shaped for that. This
 // is the actual API contract; mapApiUserToLocal() bridges the two.
 export interface ApiCreatorProfile {
-  // Confirmed live: this comes back as a real {en, ar} object (each half
-  // independently nullable), not the flat string the rest of this project's
-  // comments assumed — every other bilingual field here (name, description,
-  // ...) follows the same {en, ar} shape, this one is no exception.
-  bio: { en: string | null; ar: string | null } | null;
+  // Was a real {en, ar} object; the backend later collapsed the ar/en split
+  // across every bilingual field (name, description, title, bio, ...) to a
+  // single already-localized string, same as everywhere else.
+  bio: string | null;
   cover_image: string | null;
   balance: string;
   total_sales: number;
@@ -77,8 +76,12 @@ export function mapApiUserToLocal(apiUser: ApiUser): AnyUser {
       ...base,
       role: "creator",
       slug: slugify(apiUser.name, apiUser.id),
-      bioEn: profile?.bio?.en ?? "",
-      bioAr: profile?.bio?.ar ?? "",
+      // The local Creator type still carries separate bioEn/bioAr (shared
+      // with the old mock data system) — mirrored from the one real bio
+      // value on both, since there's only a single field on the wire now.
+      // Every real-API call site treats bioEn as "the" bio and ignores bioAr.
+      bioEn: profile?.bio ?? "",
+      bioAr: profile?.bio ?? "",
       coverAccent: DEFAULT_ACCENT,
       coverImage: profile?.cover_image ?? undefined,
       verified: false,
@@ -575,8 +578,8 @@ export function mapApiFavoriteEntry(entry: ApiFavoriteEntry): FavoriteItem {
 // coerced with String() either way rather than trusting it.
 export interface ApiCreatorCommunity {
   id: number;
-  name: { en: string; ar: string };
-  description: { en: string | null; ar: string | null } | null;
+  name: string;
+  description: string | null;
   cover_image: string | null;
   type: "public" | "private";
   is_free: boolean;
@@ -588,10 +591,8 @@ export interface ApiCreatorCommunity {
 
 export interface CreatorCommunity {
   id: string;
-  nameEn: string;
-  nameAr: string;
-  descriptionEn: string;
-  descriptionAr: string;
+  name: string;
+  description: string;
   coverImage?: string;
   type: "public" | "private";
   isFree: boolean;
@@ -605,10 +606,8 @@ export interface CreatorCommunity {
 export function mapApiCreatorCommunity(c: ApiCreatorCommunity): CreatorCommunity {
   return {
     id: String(c.id),
-    nameEn: c.name.en,
-    nameAr: c.name.ar,
-    descriptionEn: c.description?.en ?? "",
-    descriptionAr: c.description?.ar ?? "",
+    name: c.name,
+    description: c.description ?? "",
     coverImage: c.cover_image ?? undefined,
     type: c.type,
     isFree: c.is_free,
@@ -622,13 +621,13 @@ export function mapApiCreatorCommunity(c: ApiCreatorCommunity): CreatorCommunity
 
 // POST /creators/courses (create), POST /creators/courses/{id} (update),
 // GET /creators/courses (list), and GET /creators/courses/{id} (get one) —
-// added round 12 — all share this exact response/item shape. Unlike the
-// community endpoints, this one only ever returns ONE already-localized
-// title/description (whichever `lang` the request used), never an
-// {en, ar} pair — the double-fetch-per-locale trick is still needed to
-// prefill a bilingual edit/create form. No endpoint in this family (list,
-// get, create, or update) ever returns a category, so a course's current
-// category can never be recovered on edit — see EditCourseView's own note.
+// added round 12 — all share this exact response/item shape. Always a single
+// already-localized title/description string (never an {en, ar} pair) — the
+// backend later dropped the ar/en split on the request side too (create/
+// update now take one `title`/`description`, no more bracket-notation
+// fields). No endpoint in this family (list, get, create, or update) ever
+// returns a category, so a course's current category can never be recovered
+// on edit — see EditCourseView's own note.
 // The prose "Request Body" table and the worked curl example disagree
 // again on both create and update: the table lists
 // title/description/category_id/cover_image/price/is_free, but the actual
@@ -688,9 +687,9 @@ export function mapApiCreatorCourseUpdate(c: ApiCreatorCourseUpdate): CreatorCou
 // response both omit it entirely (server-assigned, apparently not
 // considered part of "this lesson's own data" on those two) — kept optional
 // here rather than assumed present. Like the course endpoints, only one
-// already-localized title/description comes back per request, never both;
-// the double-fetch-per-locale trick is used to prefill a bilingual edit
-// form. The prose "Request Body" table doesn't list `status` as an
+// already-localized title/description comes back per request, and the
+// create/update request side is likewise single-field now (no more ar/en
+// split). The prose "Request Body" table doesn't list `status` as an
 // updatable field at all, but the worked curl example sends
 // `status: "active"` and the response echoes it back — same
 // table-vs-example mismatch this project keeps hitting; treated as real and
@@ -1217,6 +1216,9 @@ export function mapApiCommunitySubscriber(s: ApiCommunitySubscriber): CommunityS
 // asked for only currency + the social links to ever be read out of this
 // endpoint (mapApiSettings below narrows to exactly that).
 export interface ApiSettings {
+  site_name?: string;
+  site_logo?: string | null;
+  site_favicon?: string | null;
   currency: string;
   facebook_url: string | null;
   instagram_url: string | null;
@@ -1225,9 +1227,24 @@ export interface ApiSettings {
   linkedin_url: string | null;
   tiktok_url: string | null;
   whatsapp_number: string | null;
+  contact_email?: string | null;
+  contact_phone?: string | null;
+  contact_address?: string | null;
+  // The live backend currently returns one flat `site_description` (same
+  // text regardless of the `lang` header) rather than the locale-split
+  // `site_description_en`/`site_description_ar` pair described separately —
+  // both shapes are read, split preferred when present, so this keeps
+  // working either way once/if the backend switches.
+  site_description?: string | null;
+  site_description_en?: string | null;
+  site_description_ar?: string | null;
+  last_updated?: string;
 }
 
 export interface PlatformSettings {
+  siteName?: string;
+  siteLogo?: string;
+  siteFavicon?: string;
   currency: string;
   facebookUrl?: string;
   instagramUrl?: string;
@@ -1236,10 +1253,19 @@ export interface PlatformSettings {
   linkedinUrl?: string;
   tiktokUrl?: string;
   whatsappNumber?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  contactAddress?: string;
+  descriptionEn?: string;
+  descriptionAr?: string;
+  lastUpdated?: string;
 }
 
 export function mapApiSettings(s: ApiSettings): PlatformSettings {
   return {
+    siteName: s.site_name || undefined,
+    siteLogo: s.site_logo ?? undefined,
+    siteFavicon: s.site_favicon ?? undefined,
     currency: s.currency,
     facebookUrl: s.facebook_url ?? undefined,
     instagramUrl: s.instagram_url ?? undefined,
@@ -1247,7 +1273,13 @@ export function mapApiSettings(s: ApiSettings): PlatformSettings {
     youtubeUrl: s.youtube_url ?? undefined,
     linkedinUrl: s.linkedin_url ?? undefined,
     tiktokUrl: s.tiktok_url ?? undefined,
-    whatsappNumber: s.whatsapp_number ?? undefined
+    whatsappNumber: s.whatsapp_number ?? undefined,
+    contactEmail: s.contact_email ?? undefined,
+    contactPhone: s.contact_phone ?? undefined,
+    contactAddress: s.contact_address ?? undefined,
+    descriptionEn: s.site_description_en ?? s.site_description ?? undefined,
+    descriptionAr: s.site_description_ar ?? s.site_description ?? undefined,
+    lastUpdated: s.last_updated ?? undefined
   };
 }
 

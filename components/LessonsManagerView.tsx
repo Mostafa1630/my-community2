@@ -10,10 +10,8 @@ import { ApiError } from "@/lib/api-client";
 import { lessonFormSchema, collectIssues, apiFieldErrors } from "@/lib/validation/creatorForms";
 
 const API_FIELD_MAP: Record<string, string> = {
-  "title.en": "titleEn",
-  "title.ar": "titleAr",
-  "description.en": "descriptionEn",
-  "description.ar": "descriptionAr",
+  title: "title",
+  description: "description",
   video_url: "videoUrl",
   duration: "duration",
   order: "order"
@@ -25,10 +23,8 @@ import PageLoader from "./PageLoader";
 
 interface LessonRow {
   id: string;
-  titleEn: string;
-  titleAr: string;
-  descriptionEn: string;
-  descriptionAr: string;
+  title: string;
+  description: string;
   url: string;
   isFree: boolean;
   order?: number;
@@ -36,10 +32,8 @@ interface LessonRow {
 }
 
 interface LessonFormState {
-  titleEn: string;
-  titleAr: string;
-  descriptionEn: string;
-  descriptionAr: string;
+  title: string;
+  description: string;
   videoUrl: string;
   duration: string;
   order: string;
@@ -48,10 +42,8 @@ interface LessonFormState {
 }
 
 const emptyForm: LessonFormState = {
-  titleEn: "",
-  titleAr: "",
-  descriptionEn: "",
-  descriptionAr: "",
+  title: "",
+  description: "",
   videoUrl: "",
   duration: "",
   order: "",
@@ -61,11 +53,10 @@ const emptyForm: LessonFormState = {
 
 // GET /creators/courses/{id}/lessons (round 12) replaced reusing the
 // lessons array embedded in the public GET /courses/details/{id} (round
-// 11's workaround). Fetched twice in parallel (locale "en"/"ar") to build
-// bilingual rows, same as every other creator-dashboard list in this app.
-// `duration` is still write-only — no GET anywhere on this backend ever
-// returns it (not the list, not the single-lesson GET, not the create
-// response) — so it's never prefilled, only sent if the creator types one.
+// 11's workaround). `duration` is still write-only — no GET anywhere on
+// this backend ever returns it (not the list, not the single-lesson GET,
+// not the create response) — so it's never prefilled, only sent if the
+// creator types one.
 export default function LessonsManagerView({
   courseId,
   locale,
@@ -107,27 +98,19 @@ export default function LessonsManagerView({
       return;
     }
     setCourseTitle(course.title);
-    const [enLessons, arLessons] = await Promise.all([
-      getLessonsByCourse(courseId, "en"),
-      getLessonsByCourse(courseId, "ar")
-    ]);
-    const merged: LessonRow[] = enLessons
-      .map((en) => {
-        const ar = arLessons.find((l) => l.id === en.id);
-        return {
-          id: en.id,
-          titleEn: en.title,
-          titleAr: ar?.title ?? en.title,
-          descriptionEn: en.description,
-          descriptionAr: ar?.description ?? en.description,
-          url: en.videoUrl,
-          isFree: en.isFree,
-          order: en.order,
-          status: en.status
-        };
-      })
+    const items = await getLessonsByCourse(courseId, locale);
+    const sorted: LessonRow[] = items
+      .map((l) => ({
+        id: l.id,
+        title: l.title,
+        description: l.description,
+        url: l.videoUrl,
+        isFree: l.isFree,
+        order: l.order,
+        status: l.status
+      }))
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    setLessons(merged);
+    setLessons(sorted);
     setLoading(false);
   }
 
@@ -159,17 +142,15 @@ export default function LessonsManagerView({
     setFieldErrors({});
     setFormError("");
     setModalLoading(true);
-    const [en, ar] = await Promise.all([getLessonByCreator(lesson.id, "en"), getLessonByCreator(lesson.id, "ar")]);
+    const fresh = await getLessonByCreator(lesson.id, locale);
     setForm({
-      titleEn: en?.title ?? lesson.titleEn,
-      titleAr: ar?.title ?? lesson.titleAr,
-      descriptionEn: en?.description ?? lesson.descriptionEn,
-      descriptionAr: ar?.description ?? lesson.descriptionAr,
-      videoUrl: en?.videoUrl ?? lesson.url,
+      title: fresh?.title ?? lesson.title,
+      description: fresh?.description ?? lesson.description,
+      videoUrl: fresh?.videoUrl ?? lesson.url,
       duration: "",
       order: String(lesson.order ?? ""),
-      isFree: en?.isFree ?? lesson.isFree,
-      status: (en?.status ?? lesson.status) === "inactive" ? "inactive" : "active"
+      isFree: fresh?.isFree ?? lesson.isFree,
+      status: (fresh?.status ?? lesson.status) === "inactive" ? "inactive" : "active"
     });
     setModalLoading(false);
   }
@@ -188,8 +169,7 @@ export default function LessonsManagerView({
       invalidUrl: dict.validation.invalidUrl
     });
     const parsed = schema.safeParse({
-      titleEn: form.titleEn,
-      titleAr: form.titleAr,
+      title: form.title,
       videoUrl: form.videoUrl,
       duration: form.duration ? Number(form.duration) : undefined,
       order: form.order ? Number(form.order) : undefined
@@ -206,10 +186,8 @@ export default function LessonsManagerView({
         await createLesson(
           courseId,
           {
-            titleEn: form.titleEn,
-            titleAr: form.titleAr,
-            descriptionEn: form.descriptionEn || undefined,
-            descriptionAr: form.descriptionAr || undefined,
+            title: form.title,
+            description: form.description || undefined,
             videoUrl: form.videoUrl,
             duration: parsed.data.duration,
             order: parsed.data.order,
@@ -221,10 +199,8 @@ export default function LessonsManagerView({
         await updateLessonByCreator(
           editingId,
           {
-            titleEn: form.titleEn,
-            titleAr: form.titleAr,
-            descriptionEn: form.descriptionEn,
-            descriptionAr: form.descriptionAr,
+            title: form.title,
+            description: form.description,
             videoUrl: form.videoUrl,
             duration: parsed.data.duration,
             order: parsed.data.order,
@@ -287,9 +263,7 @@ export default function LessonsManagerView({
                 {i + 1}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-ink">
-                  {locale === "ar" ? lesson.titleAr : lesson.titleEn}
-                </p>
+                <p className="truncate text-sm font-medium text-ink">{lesson.title}</p>
                 <p className="truncate text-xs text-ink/65">{lesson.url}</p>
               </div>
               {lesson.status === "inactive" && (
@@ -326,43 +300,22 @@ export default function LessonsManagerView({
               {modalMode === "create" ? dict.creatorDash.addLesson : dict.creatorDash.editLesson}
             </h3>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormField label={dict.creatorDash.fieldLessonTitleEn} error={fieldErrors.titleEn}>
-                <input
-                  value={form.titleEn}
-                  onChange={(e) => setForm({ ...form, titleEn: e.target.value })}
-                  className={fieldInputClass(!!fieldErrors.titleEn)}
-                />
-              </FormField>
-              <FormField label={dict.creatorDash.fieldLessonTitleAr} error={fieldErrors.titleAr}>
-                <input
-                  dir="rtl"
-                  value={form.titleAr}
-                  onChange={(e) => setForm({ ...form, titleAr: e.target.value })}
-                  className={fieldInputClass(!!fieldErrors.titleAr)}
-                />
-              </FormField>
-            </div>
+            <FormField label={dict.creatorDash.fieldLessonTitle} error={fieldErrors.title}>
+              <input
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                className={fieldInputClass(!!fieldErrors.title)}
+              />
+            </FormField>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormField label={dict.creatorDash.fieldLessonDescEn}>
-                <textarea
-                  rows={2}
-                  value={form.descriptionEn}
-                  onChange={(e) => setForm({ ...form, descriptionEn: e.target.value })}
-                  className={`${fieldInputClass()} resize-none`}
-                />
-              </FormField>
-              <FormField label={dict.creatorDash.fieldLessonDescAr}>
-                <textarea
-                  dir="rtl"
-                  rows={2}
-                  value={form.descriptionAr}
-                  onChange={(e) => setForm({ ...form, descriptionAr: e.target.value })}
-                  className={`${fieldInputClass()} resize-none`}
-                />
-              </FormField>
-            </div>
+            <FormField label={dict.creatorDash.fieldLessonDesc}>
+              <textarea
+                rows={2}
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                className={`${fieldInputClass()} resize-none`}
+              />
+            </FormField>
 
             <FormField label={dict.creatorDash.fieldYoutubeUrl} error={fieldErrors.videoUrl}>
               <input

@@ -213,7 +213,7 @@ export default function CommunitiesExplorer({
       </p>
 
       {filtered.length === 0 ? (
-        <EmptyState icon={Search} title={dict.communities.noResults} />
+        <EmptyState image="/images/no-data.jpg" title={dict.communities.noResults} />
       ) : (
         <div
           className={

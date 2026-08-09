@@ -8,6 +8,7 @@ import {
   mapApiCommunitySummary,
   mapApiCommunityDetails,
   mapApiCourseDetails,
+  mapApiSettings,
   type ApiCategory,
   type ApiCreatorSummary,
   type ApiCreatorDetails,
@@ -18,7 +19,9 @@ import {
   type CommunitySummary,
   type CommunityDetails,
   type ApiCourseDetails,
-  type CourseDetails
+  type CourseDetails,
+  type ApiSettings,
+  type PlatformSettings
 } from "./api-types";
 
 // Public content endpoints connected to the real backend (no auth required).
@@ -139,5 +142,38 @@ export async function getCourseDetails(id: string, locale: Locale): Promise<Cour
     return mapApiCourseDetails(res.data);
   } catch {
     return null;
+  }
+}
+
+export async function getSettings(locale: Locale): Promise<PlatformSettings | null> {
+  try {
+    const res = await apiFetch<{ data: ApiSettings }>("/settings", { method: "GET", locale, auth: false });
+    return mapApiSettings(res.data);
+  } catch {
+    return null;
+  }
+}
+
+export interface LegalSectionItem {
+  id: number;
+  icon: string;
+  title: string;
+  content: string;
+  order: number;
+}
+
+export async function getLegalSections(
+  type: "terms-conditions" | "privacy-policy",
+  locale: Locale
+): Promise<LegalSectionItem[]> {
+  try {
+    const res = await apiFetch<{ data: LegalSectionItem[] }>(`/legal-sections/${type}`, {
+      method: "GET",
+      locale,
+      auth: false
+    });
+    return [...res.data].sort((a, b) => a.order - b.order);
+  } catch {
+    return [];
   }
 }
