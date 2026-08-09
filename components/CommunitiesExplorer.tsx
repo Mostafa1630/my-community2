@@ -226,7 +226,7 @@ export default function CommunitiesExplorer({
                   priority={i < 4}
                 />
               ))}
-              itemClassName="w-full"
+              itemClassName="w-[66.67%]"
               centered
             />
           </div>

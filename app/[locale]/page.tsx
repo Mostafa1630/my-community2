@@ -76,8 +76,8 @@ export default async function HomePage({ params }: { params: { locale: string } 
         </div>
       </section>
 
-      <TermsSection dict={dict} />
-      <PrivacyPolicySection dict={dict} />
+      <TermsSection locale={locale} dict={dict} />
+      <PrivacyPolicySection locale={locale} dict={dict} />
       <ContactSection locale={locale} dict={dict} />
     </div>
   );

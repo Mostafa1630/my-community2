@@ -108,9 +108,9 @@ export default function Slider({
 
       <div
         ref={trackRef}
-        className={`scrollbar-hide flex flex-1 snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth py-1 ${
-          centered ? "px-[16.67%]" : ""
-        }`}
+        className={
+          "scrollbar-hide flex flex-1 snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth py-1"
+        }
       >
         {items.map((item, i) =>
           animateIn ? (
