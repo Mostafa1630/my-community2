@@ -8,7 +8,14 @@ import type { CreatorCoupon } from "@/lib/api-types";
 import { couponExpiryToInputValue, couponExpiryToApiValue } from "@/lib/api-types";
 import { useAuth } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api-client";
-import { couponFormSchema, collectIssues } from "@/lib/validation/creatorForms";
+import { couponFormSchema, collectIssues, apiFieldErrors } from "@/lib/validation/creatorForms";
+
+const API_FIELD_MAP: Record<string, string> = {
+  code: "code",
+  discount_percentage: "discountPercentage",
+  limit_uses: "limitUses",
+  expired_at: "expiredAt"
+};
 import { Table, Thead, Th, Tr, Td } from "./Table";
 import Badge from "./Badge";
 import EmptyState from "./EmptyState";
@@ -140,7 +147,12 @@ export default function CreatorCouponsView({ locale, dict }: { locale: Locale; d
       closeModal();
       await load();
     } catch (err) {
-      setFormError(err instanceof ApiError ? err.message : dict.creatorDash.couponError);
+      if (err instanceof ApiError) {
+        setFieldErrors((prev) => ({ ...prev, ...apiFieldErrors(err.fieldErrors, API_FIELD_MAP) }));
+        setFormError(err.message);
+      } else {
+        setFormError(dict.creatorDash.couponError);
+      }
     } finally {
       setSaving(false);
     }

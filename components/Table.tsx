@@ -18,7 +18,7 @@ export function Thead({ children }: { children: ReactNode }) {
   );
 }
 
-export function Th({ children }: { children: ReactNode }) {
+export function Th({ children }: { children?: ReactNode }) {
   return <th className="whitespace-nowrap px-4 py-3 text-start font-medium">{children}</th>;
 }
 

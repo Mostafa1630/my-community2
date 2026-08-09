@@ -36,7 +36,13 @@ export default function ForgotPasswordForm({ locale, dict }: { locale: Locale; d
       await forgotPassword(result.data.email, locale);
       setSent(true);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : dict.auth.genericError);
+      if (err instanceof ApiError) {
+        const apiEmailError = err.fieldError("email");
+        if (apiEmailError) setFieldError(apiEmailError);
+        setError(err.message);
+      } else {
+        setError(dict.auth.genericError);
+      }
     } finally {
       setSubmitting(false);
     }

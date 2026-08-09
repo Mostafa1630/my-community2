@@ -9,7 +9,13 @@ import type { Dictionary } from "@/lib/i18n/getDictionary";
 import { useAuth } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api-client";
 import { resetPasswordSchema } from "@/lib/validation/auth";
+import { apiFieldErrors } from "@/lib/validation/creatorForms";
 import Seal from "./Seal";
+
+const API_FIELD_MAP: Record<string, string> = {
+  password: "password",
+  password_confirmation: "passwordConfirmation"
+};
 
 export default function ResetPasswordForm({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const router = useRouter();
@@ -68,7 +74,12 @@ export default function ResetPasswordForm({ locale, dict }: { locale: Locale; di
       await resetPassword({ email, token, password: result.data.password, passwordConfirmation: result.data.passwordConfirmation }, locale);
       router.push(`/${locale}/login?registered=1`);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : dict.auth.genericError);
+      if (err instanceof ApiError) {
+        setFieldErrors(apiFieldErrors(err.fieldErrors, API_FIELD_MAP));
+        setError(err.message);
+      } else {
+        setError(dict.auth.genericError);
+      }
     } finally {
       setSubmitting(false);
     }

@@ -7,7 +7,17 @@ import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import { useAuth } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api-client";
-import { lessonFormSchema, collectIssues } from "@/lib/validation/creatorForms";
+import { lessonFormSchema, collectIssues, apiFieldErrors } from "@/lib/validation/creatorForms";
+
+const API_FIELD_MAP: Record<string, string> = {
+  "title.en": "titleEn",
+  "title.ar": "titleAr",
+  "description.en": "descriptionEn",
+  "description.ar": "descriptionAr",
+  video_url: "videoUrl",
+  duration: "duration",
+  order: "order"
+};
 import EmptyState from "./EmptyState";
 import Modal from "./motion/Modal";
 import FormField, { fieldInputClass } from "./FormField";
@@ -228,7 +238,12 @@ export default function LessonsManagerView({
       setLoading(true);
       await load();
     } catch (err) {
-      setFormError(err instanceof ApiError ? err.message : dict.creatorDash.lessonError);
+      if (err instanceof ApiError) {
+        setFieldErrors((prev) => ({ ...prev, ...apiFieldErrors(err.fieldErrors, API_FIELD_MAP) }));
+        setFormError(err.message);
+      } else {
+        setFormError(dict.creatorDash.lessonError);
+      }
     } finally {
       setSaving(false);
     }

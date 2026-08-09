@@ -48,6 +48,19 @@ import type {
   ApiFeedReaction,
   FeedReaction,
   ReactionType,
+  ApiCreatorDashboard,
+  CreatorDashboardSummary,
+  ApiCreatorEarningsSummary,
+  CreatorEarningsSummary,
+  ApiCreatorSale,
+  CreatorSale,
+  ApiCreatorWithdrawal,
+  CreatorWithdrawal,
+  ApiCreatorWithdrawalDetails,
+  CreatorWithdrawalDetails,
+  PayoutMethod,
+  ApiCommunitySubscriber,
+  CommunitySubscriber,
 } from "./api-types";
 import {
   mapApiUserToLocal,
@@ -60,6 +73,12 @@ import {
   mapApiFeedPost,
   mapApiFeedComment,
   mapApiFeedReaction,
+  mapApiCreatorDashboard,
+  mapApiCreatorEarningsSummary,
+  mapApiCreatorSale,
+  mapApiCreatorWithdrawal,
+  mapApiCreatorWithdrawalDetails,
+  mapApiCommunitySubscriber,
 } from "./api-types";
 
 interface RegisterApiInput {
@@ -108,6 +127,10 @@ interface AuthContextValue {
     },
     locale: Locale,
   ) => Promise<void>;
+  submitContactUs: (
+    input: { name: string; email: string; phone?: string; message: string },
+    locale: Locale,
+  ) => Promise<string>;
   checkCoupon: (
     input: { creatorId: string; code: string },
     locale: Locale,
@@ -295,6 +318,28 @@ interface AuthContextValue {
   }>;
   addReaction: (postId: string, type: ReactionType, locale: Locale) => Promise<void>;
   removeReaction: (postId: string, locale: Locale) => Promise<void>;
+  getCreatorDashboard: (locale: Locale) => Promise<CreatorDashboardSummary>;
+  getEarningsSummary: (locale: Locale) => Promise<CreatorEarningsSummary>;
+  getEarningsSales: (
+    locale: Locale,
+    page?: number,
+  ) => Promise<{ items: CreatorSale[]; total: number; currentPage: number; lastPage: number; perPage: number }>;
+  getWithdrawBalance: (locale: Locale) => Promise<number>;
+  getWithdrawals: (
+    locale: Locale,
+    page?: number,
+  ) => Promise<{ items: CreatorWithdrawal[]; total: number; currentPage: number; lastPage: number; perPage: number }>;
+  createWithdrawal: (
+    input: { amount: number; payoutMethod: PayoutMethod; payoutAccountNumber: string },
+    locale: Locale,
+  ) => Promise<void>;
+  getWithdrawalDetails: (withdrawId: string, locale: Locale) => Promise<CreatorWithdrawalDetails | null>;
+  deleteWithdrawal: (withdrawId: string, locale: Locale) => Promise<void>;
+  getCommunitySubscribers: (
+    communityId: string,
+    locale: Locale,
+    page?: number,
+  ) => Promise<{ items: CommunitySubscriber[]; total: number; currentPage: number; lastPage: number; perPage: number }>;
   isSubscribed: (communityId: string) => boolean;
   ownsCourseStandalone: (courseId: string) => boolean;
   subscribeToCommunity: (communityId: string, couponCode?: string) => void;
@@ -566,6 +611,32 @@ export function AuthProvider({
         locale: requestLocale,
         auth: false,
       });
+    },
+    [],
+  );
+
+  // POST /contact-us — no Authentication section in the spec, so this is
+  // callable while logged out (matches how it's actually used, from the
+  // public home page). Returns the backend's own success message, which
+  // the caller shows verbatim in a confirmation popup rather than a
+  // client-authored one.
+  const submitContactUs = useCallback(
+    async (
+      input: { name: string; email: string; phone?: string; message: string },
+      requestLocale: Locale,
+    ) => {
+      const form = new FormData();
+      form.set("name", input.name);
+      form.set("email", input.email);
+      if (input.phone) form.set("phone", input.phone);
+      form.set("message", input.message);
+      const res = await apiFetch<{ message: string }>("/contact-us", {
+        method: "POST",
+        body: form,
+        locale: requestLocale,
+        auth: false,
+      });
+      return res.message;
     },
     [],
   );
@@ -1362,6 +1433,103 @@ export function AuthProvider({
     await apiFetch(`/posts/${postId}/reactions`, { method: "DELETE", locale: requestLocale });
   }, []);
 
+  // GET /creators/dashboard — the general overview stats page. "Recent
+  // sales" used to live on this page too (still does in the UI copy), but
+  // that data properly belongs to the Earnings page's own sales list, which
+  // is a real, paginated, per-sale breakdown — showing a second, different
+  // "recent sales" here was redundant with it.
+  const getCreatorDashboard = useCallback(async (requestLocale: Locale) => {
+    const res = await apiFetch<{ data: ApiCreatorDashboard }>("/creators/dashboard", {
+      method: "GET",
+      locale: requestLocale,
+    });
+    return mapApiCreatorDashboard(res.data);
+  }, []);
+
+  const getEarningsSummary = useCallback(async (requestLocale: Locale) => {
+    const res = await apiFetch<{ data: ApiCreatorEarningsSummary }>("/creators/earnings", {
+      method: "GET",
+      locale: requestLocale,
+    });
+    return mapApiCreatorEarningsSummary(res.data);
+  }, []);
+
+  const getEarningsSales = useCallback(async (requestLocale: Locale, page = 1) => {
+    const res = await apiFetch<{
+      data: { items: ApiCreatorSale[]; total: number; currentPage: number; lastPage: number; perPage: number };
+    }>(`/creators/earnings/sales?page=${page}`, {
+      method: "GET",
+      locale: requestLocale,
+    });
+    return { ...res.data, items: res.data.items.map(mapApiCreatorSale) };
+  }, []);
+
+  const getWithdrawBalance = useCallback(async (requestLocale: Locale) => {
+    const res = await apiFetch<{ data: { balance: number } }>("/creators/withdraws/balance", {
+      method: "GET",
+      locale: requestLocale,
+    });
+    return res.data.balance;
+  }, []);
+
+  const getWithdrawals = useCallback(async (requestLocale: Locale, page = 1) => {
+    const res = await apiFetch<{
+      data: { items: ApiCreatorWithdrawal[]; total: number; currentPage: number; lastPage: number; perPage: number };
+    }>(`/creators/withdraws?page=${page}`, {
+      method: "GET",
+      locale: requestLocale,
+    });
+    return { ...res.data, items: res.data.items.map(mapApiCreatorWithdrawal) };
+  }, []);
+
+  // POST /creators/withdraws — the response only carries a slim
+  // {id, amount, status, requested_at} confirmation, not the full row
+  // shape the list endpoint returns, so callers reload the list afterward
+  // rather than trying to splice this partial shape into it.
+  const createWithdrawal = useCallback(
+    async (
+      input: { amount: number; payoutMethod: PayoutMethod; payoutAccountNumber: string },
+      requestLocale: Locale,
+    ) => {
+      const form = new FormData();
+      form.set("amount", String(input.amount));
+      form.set("payout_method", input.payoutMethod);
+      form.set("payout_account_number", input.payoutAccountNumber);
+      await apiFetch("/creators/withdraws", {
+        method: "POST",
+        body: form,
+        locale: requestLocale,
+      });
+    },
+    [],
+  );
+
+  const getWithdrawalDetails = useCallback(async (withdrawId: string, requestLocale: Locale) => {
+    try {
+      const res = await apiFetch<{ data: ApiCreatorWithdrawalDetails }>(
+        `/creators/withdraws/details/${withdrawId}`,
+        { method: "GET", locale: requestLocale },
+      );
+      return mapApiCreatorWithdrawalDetails(res.data);
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const deleteWithdrawal = useCallback(async (withdrawId: string, requestLocale: Locale) => {
+    await apiFetch(`/creators/withdraws/${withdrawId}`, { method: "DELETE", locale: requestLocale });
+  }, []);
+
+  const getCommunitySubscribers = useCallback(async (communityId: string, requestLocale: Locale, page = 1) => {
+    const res = await apiFetch<{
+      data: { items: ApiCommunitySubscriber[]; total: number; currentPage: number; lastPage: number; perPage: number };
+    }>(`/creators/communities/${communityId}/subscriptions?page=${page}`, {
+      method: "GET",
+      locale: requestLocale,
+    });
+    return { ...res.data, items: res.data.items.map(mapApiCommunitySubscriber) };
+  }, []);
+
   const user = useMemo(() => {
     if (!hydrated || !apiUser) return null;
     return mapApiUserToLocal(apiUser);
@@ -1611,6 +1779,7 @@ export function AuthProvider({
     forgotPassword,
     resetPassword,
     updateProfile,
+    submitContactUs,
     checkCoupon,
     createReview,
     saveCommunity,
@@ -1649,6 +1818,15 @@ export function AuthProvider({
     getPostReactions,
     addReaction,
     removeReaction,
+    getCreatorDashboard,
+    getEarningsSummary,
+    getEarningsSales,
+    getWithdrawBalance,
+    getWithdrawals,
+    createWithdrawal,
+    getWithdrawalDetails,
+    deleteWithdrawal,
+    getCommunitySubscribers,
     isSubscribed,
     ownsCourseStandalone,
     subscribeToCommunity,

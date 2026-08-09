@@ -8,7 +8,20 @@ import type { Dictionary } from "@/lib/i18n/getDictionary";
 import type { Category } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api-client";
-import { communityFormSchema, collectIssues } from "@/lib/validation/creatorForms";
+import { communityFormSchema, collectIssues, apiFieldErrors } from "@/lib/validation/creatorForms";
+
+const API_FIELD_MAP: Record<string, string> = {
+  category_id: "categoryId",
+  "name.en": "nameEn",
+  "name.ar": "nameAr",
+  "description.en": "descriptionEn",
+  "description.ar": "descriptionAr",
+  type: "type",
+  subscription_price: "subscriptionPrice",
+  discount_percentage: "discountPercentage",
+  subscription_duration_days: "subscriptionDurationDays",
+  cover_image: "coverImage"
+};
 import DashboardPageHeader from "./DashboardPageHeader";
 import FormField, { fieldInputClass } from "./FormField";
 
@@ -109,7 +122,12 @@ export default function NewCommunityView({
       );
       router.push(`/${locale}/creator/community`);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : dict.creatorDash.communityError);
+      if (err instanceof ApiError) {
+        setFieldErrors((prev) => ({ ...prev, ...apiFieldErrors(err.fieldErrors, API_FIELD_MAP) }));
+        setError(err.message);
+      } else {
+        setError(dict.creatorDash.communityError);
+      }
       setSaving(false);
     }
   }

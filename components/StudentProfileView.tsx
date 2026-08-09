@@ -11,6 +11,14 @@ import DashboardPageHeader from "./DashboardPageHeader";
 import FormField, { fieldInputClass } from "./FormField";
 import EmptyState from "./EmptyState";
 import PageLoader from "./PageLoader";
+import ImageCropper from "./ImageCropper";
+import { apiFieldErrors } from "@/lib/validation/creatorForms";
+
+const API_FIELD_MAP: Record<string, string> = {
+  name: "name",
+  email: "email",
+  phone_number: "phoneNumber"
+};
 
 // Edit-only form — the display-first view lives in StudentProfileDisplayView
 // (rendered at /profile), same list/display+edit split used for My Community
@@ -26,7 +34,9 @@ export default function StudentProfileView({ locale, dict }: { locale: Locale; d
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [cropSourceFile, setCropSourceFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -45,12 +55,18 @@ export default function StudentProfileView({ locale, dict }: { locale: Locale; d
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setFieldErrors({});
     setSubmitting(true);
     try {
       await updateProfile({ name, email, phoneNumber, image: avatarFile ?? undefined }, locale);
       router.push(`/${locale}/profile`);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : dict.changePassword.genericError);
+      if (err instanceof ApiError) {
+        setFieldErrors(apiFieldErrors(err.fieldErrors, API_FIELD_MAP));
+        setError(err.message);
+      } else {
+        setError(dict.changePassword.genericError);
+      }
       setSubmitting(false);
     }
   }
@@ -82,34 +98,34 @@ export default function StudentProfileView({ locale, dict }: { locale: Locale; d
             className="hidden"
             onChange={(e) => {
               const file = e.target.files?.[0] ?? null;
-              setAvatarFile(file);
-              setAvatarPreview(file ? URL.createObjectURL(file) : null);
+              if (file) setCropSourceFile(file);
+              e.target.value = "";
             }}
           />
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6 rounded-2xl border border-line bg-surface p-6 shadow-card sm:p-8">
-        <FormField label={dict.common.name}>
+        <FormField label={dict.common.name} error={fieldErrors.name}>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className={fieldInputClass()}
+            className={fieldInputClass(!!fieldErrors.name)}
           />
         </FormField>
-        <FormField label={dict.common.email}>
+        <FormField label={dict.common.email} error={fieldErrors.email}>
           <input
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className={fieldInputClass()}
+            className={fieldInputClass(!!fieldErrors.email)}
           />
         </FormField>
-        <FormField label={dict.common.phoneNumber}>
+        <FormField label={dict.common.phoneNumber} error={fieldErrors.phoneNumber}>
           <input
             value={phoneNumber}
             onChange={(e) => setPhoneNumber(e.target.value)}
             placeholder="+20 100 000 0000"
-            className={fieldInputClass()}
+            className={fieldInputClass(!!fieldErrors.phoneNumber)}
           />
         </FormField>
 
@@ -130,6 +146,23 @@ export default function StudentProfileView({ locale, dict }: { locale: Locale; d
           </button>
         </div>
       </form>
+
+      {cropSourceFile && (
+        <ImageCropper
+          file={cropSourceFile}
+          aspect={1}
+          shape="circle"
+          outputSize={{ width: 500, height: 500 }}
+          dict={dict}
+          onConfirm={(blob) => {
+            const file = new File([blob], "avatar.jpg", { type: "image/jpeg" });
+            setAvatarFile(file);
+            setAvatarPreview(URL.createObjectURL(blob));
+            setCropSourceFile(null);
+          }}
+          onCancel={() => setCropSourceFile(null)}
+        />
+      )}
     </div>
   );
 }

@@ -1029,3 +1029,183 @@ export function mapApiFeedReaction(r: ApiFeedReaction): FeedReaction {
     user: mapApiFeedUserRef(r.user)
   };
 }
+
+// ---- Creator dashboard / earnings / withdrawals / community subscribers ----
+
+export interface ApiCreatorDashboard {
+  published_courses: number;
+  free_courses: number;
+  paid_courses: number;
+  community_subscribers: number;
+  free_subscribers: number;
+  paid_subscribers: number;
+  course_students: number;
+  total_students: number;
+  total_balance: number;
+  current_balance: number;
+  pending_balance: number;
+}
+
+export interface CreatorDashboardSummary {
+  publishedCourses: number;
+  freeCourses: number;
+  paidCourses: number;
+  communitySubscribers: number;
+  freeSubscribers: number;
+  paidSubscribers: number;
+  courseStudents: number;
+  totalStudents: number;
+  totalBalance: number;
+  currentBalance: number;
+  pendingBalance: number;
+}
+
+export function mapApiCreatorDashboard(d: ApiCreatorDashboard): CreatorDashboardSummary {
+  return {
+    publishedCourses: d.published_courses,
+    freeCourses: d.free_courses,
+    paidCourses: d.paid_courses,
+    communitySubscribers: d.community_subscribers,
+    freeSubscribers: d.free_subscribers,
+    paidSubscribers: d.paid_subscribers,
+    courseStudents: d.course_students,
+    totalStudents: d.total_students,
+    totalBalance: d.total_balance,
+    currentBalance: d.current_balance,
+    pendingBalance: d.pending_balance
+  };
+}
+
+export interface ApiCreatorEarningsSummary {
+  total_sales: number;
+  platform_commission: number;
+  net_profit: number;
+  current_balance: number;
+  pending_balance: number;
+}
+
+export interface CreatorEarningsSummary {
+  totalSales: number;
+  platformCommission: number;
+  netProfit: number;
+  currentBalance: number;
+  pendingBalance: number;
+}
+
+export function mapApiCreatorEarningsSummary(e: ApiCreatorEarningsSummary): CreatorEarningsSummary {
+  return {
+    totalSales: e.total_sales,
+    platformCommission: e.platform_commission,
+    netProfit: e.net_profit,
+    currentBalance: e.current_balance,
+    pendingBalance: e.pending_balance
+  };
+}
+
+export interface ApiCreatorSale {
+  user: ApiFeedUserRef;
+  type: "course" | "community";
+  amount: number;
+  platform_commission: number;
+  net_profit: number;
+  created_at: string;
+}
+
+export interface CreatorSale {
+  user: FeedUserRef;
+  type: "course" | "community";
+  amount: number;
+  platformCommission: number;
+  netProfit: number;
+  createdAt: string;
+}
+
+export function mapApiCreatorSale(s: ApiCreatorSale): CreatorSale {
+  return {
+    user: mapApiFeedUserRef(s.user),
+    type: s.type,
+    amount: s.amount,
+    platformCommission: s.platform_commission,
+    netProfit: s.net_profit,
+    createdAt: s.created_at
+  };
+}
+
+// "wallet" is the current payout method (what the create-request form
+// sends); "vodafone_cash" is kept only because older withdrawal records
+// returned by GET /creators/withdraws can still carry that value — both
+// display as the same "Wallet" / "المحفظة" label.
+export type PayoutMethod = "wallet" | "vodafone_cash" | "instapay" | "bank_account";
+
+export interface ApiCreatorWithdrawal {
+  id: number;
+  amount: number | string;
+  payout_method: string;
+  payout_account_number: string;
+  status: string;
+  has_proof: boolean;
+  requested_at: string;
+  approved_at: string | null;
+  created_at: string;
+}
+
+export interface CreatorWithdrawal {
+  id: string;
+  amount: number;
+  // Normalized to lowercase — confirmed live that different endpoints
+  // return this with different casing ("wallet" from the list, "Wallet"
+  // from the create/details response), so comparisons against the literal
+  // PayoutMethod values need a consistent case to be reliable.
+  payoutMethod: PayoutMethod;
+  payoutAccountNumber: string;
+  status: string;
+  hasProof: boolean;
+  requestedAt: string;
+  approvedAt: string | null;
+  createdAt: string;
+}
+
+export function mapApiCreatorWithdrawal(w: ApiCreatorWithdrawal): CreatorWithdrawal {
+  return {
+    id: String(w.id),
+    amount: Number(w.amount),
+    payoutMethod: w.payout_method.toLowerCase() as PayoutMethod,
+    payoutAccountNumber: w.payout_account_number,
+    status: w.status.toLowerCase(),
+    hasProof: w.has_proof,
+    requestedAt: w.requested_at,
+    approvedAt: w.approved_at,
+    createdAt: w.created_at
+  };
+}
+
+export interface ApiCreatorWithdrawalDetails extends ApiCreatorWithdrawal {
+  admin_payment_proof?: string | null;
+}
+
+export interface CreatorWithdrawalDetails extends CreatorWithdrawal {
+  adminPaymentProof?: string;
+}
+
+export function mapApiCreatorWithdrawalDetails(w: ApiCreatorWithdrawalDetails): CreatorWithdrawalDetails {
+  return {
+    ...mapApiCreatorWithdrawal(w),
+    adminPaymentProof: w.admin_payment_proof ?? undefined
+  };
+}
+
+export interface ApiCommunitySubscriber {
+  id: number;
+  name: string;
+  profile_image: string | null;
+}
+
+export interface CommunitySubscriber {
+  id: string;
+  name: string;
+  profileImage?: string;
+}
+
+export function mapApiCommunitySubscriber(s: ApiCommunitySubscriber): CommunitySubscriber {
+  return { id: String(s.id), name: s.name, profileImage: s.profile_image ?? undefined };
+}

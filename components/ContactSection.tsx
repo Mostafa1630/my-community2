@@ -1,35 +1,47 @@
 "use client";
 
 import { useState } from "react";
-import { AlertCircle, Mail, Phone, Send, User } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, Mail, Phone, Send, User } from "lucide-react";
+import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
+import { useAuth } from "@/lib/auth-context";
+import { ApiError } from "@/lib/api-client";
 import SectionHeading from "./SectionHeading";
+import Modal from "./motion/Modal";
 
-// No contact-form backend endpoint exists yet, so submitting composes a
-// mailto: link (opens the visitor's own email app with the message
-// pre-filled) rather than silently pretending to send it somewhere real —
-// swap this for a real API call once a backend endpoint/address exists.
-const CONTACT_EMAIL = "hello@nadi-community.com";
-
-export default function ContactSection({ dict }: { dict: Dictionary }) {
+export default function ContactSection({ locale, dict }: { locale: Locale; dict: Dictionary }) {
+  const { submitContactUs } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim() || !email.trim() || !message.trim()) {
       setError(dict.legal.contactRequiredError);
       return;
     }
     setError("");
-    const body = [`${dict.legal.contactName}: ${name}`, phone.trim() && `${dict.legal.contactPhone}: ${phone}`, "", message]
-      .filter(Boolean)
-      .join("\n");
-    const mailto = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(`${dict.legal.contactTitle} — ${name}`)}&body=${encodeURIComponent(body)}`;
-    window.location.href = mailto;
+    setSubmitting(true);
+    try {
+      const apiMessage = await submitContactUs(
+        { name: name.trim(), email: email.trim(), phone: phone.trim() || undefined, message: message.trim() },
+        locale
+      );
+      setSuccessMessage(apiMessage);
+      setName("");
+      setEmail("");
+      setPhone("");
+      setMessage("");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : dict.legal.contactError);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -98,14 +110,30 @@ export default function ContactSection({ dict }: { dict: Dictionary }) {
 
           <button
             type="submit"
-            className="mt-5 flex items-center gap-1.5 rounded-full bg-primary-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-600"
+            disabled={submitting}
+            className="mt-5 flex items-center gap-1.5 rounded-full bg-primary-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-600 disabled:opacity-60"
           >
-            <Send size={14} className="rtl:-scale-x-100" />
+            {submitting ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} className="rtl:-scale-x-100" />}
             {dict.legal.contactSubmit}
           </button>
-          <p className="mt-2.5 text-xs leading-5 text-ink/50">{dict.legal.contactOpensEmail}</p>
         </form>
       </div>
+
+      <Modal open={successMessage !== null} onClose={() => setSuccessMessage(null)}>
+        <div className="text-center">
+          <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-success/10 text-success">
+            <CheckCircle2 size={24} />
+          </span>
+          <p className="text-sm leading-6 text-ink/80">{successMessage}</p>
+          <button
+            type="button"
+            onClick={() => setSuccessMessage(null)}
+            className="mt-5 rounded-full bg-primary-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-primary-600"
+          >
+            {dict.common.close}
+          </button>
+        </div>
+      </Modal>
     </section>
   );
 }

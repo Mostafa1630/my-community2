@@ -8,7 +8,19 @@ import type { Dictionary } from "@/lib/i18n/getDictionary";
 import type { Category } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api-client";
-import { courseFormSchema, collectIssues } from "@/lib/validation/creatorForms";
+import { courseFormSchema, collectIssues, apiFieldErrors } from "@/lib/validation/creatorForms";
+
+const API_FIELD_MAP: Record<string, string> = {
+  category_id: "categoryId",
+  "title.en": "titleEn",
+  "title.ar": "titleAr",
+  "description.en": "descriptionEn",
+  "description.ar": "descriptionAr",
+  price: "price",
+  discount_percentage: "discountPercentage",
+  intro_video_url: "introVideoUrl",
+  image: "image"
+};
 import EmptyState from "./EmptyState";
 import FormField, { fieldInputClass } from "./FormField";
 import PageLoader from "./PageLoader";
@@ -150,7 +162,12 @@ export default function EditCourseView({
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : dict.creatorDash.courseError);
+      if (err instanceof ApiError) {
+        setFieldErrors((prev) => ({ ...prev, ...apiFieldErrors(err.fieldErrors, API_FIELD_MAP) }));
+        setError(err.message);
+      } else {
+        setError(dict.creatorDash.courseError);
+      }
     } finally {
       setSaving(false);
     }

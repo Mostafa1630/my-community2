@@ -12,6 +12,7 @@ import { initials } from "@/lib/accents";
 import Badge from "@/components/Badge";
 import DashboardPageHeader from "@/components/DashboardPageHeader";
 import PageLoader from "@/components/PageLoader";
+import CommunitySubscribersList from "@/components/CommunitySubscribersList";
 
 // A creator only ever has one community (per the create endpoint's own
 // business rule) — this page shows it as a single profile-style display with
@@ -151,6 +152,8 @@ export default function CreatorCommunitiesView({ locale, dict }: { locale: Local
           </div>
         </div>
       )}
+
+      {community && <CommunitySubscribersList communityId={community.id} locale={locale} dict={dict} />}
     </div>
   );
 }

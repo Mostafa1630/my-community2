@@ -8,8 +8,17 @@ import type { Dictionary } from "@/lib/i18n/getDictionary";
 import { useAuth } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api-client";
 import { initials } from "@/lib/accents";
+import { apiFieldErrors } from "@/lib/validation/creatorForms";
 import DashboardPageHeader from "./DashboardPageHeader";
 import FormField, { fieldInputClass } from "./FormField";
+import ImageCropper from "./ImageCropper";
+
+const API_FIELD_MAP: Record<string, string> = {
+  name: "name",
+  phone_number: "phoneNumber",
+  "bio.en": "bioEn",
+  "bio.ar": "bioAr"
+};
 
 // Edit-only form — the display-first view lives in CreatorProfileDisplayView
 // (rendered at /creator/profile), same list/display+edit split as My Community.
@@ -31,7 +40,13 @@ export default function CreatorProfileView({ locale, dict }: { locale: Locale; d
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [coverFailed, setCoverFailed] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  // The raw picked file waits here until the crop/reposition step is
+  // confirmed — avatarFile/coverFile (what actually gets uploaded) only get
+  // set from the cropper's output, never directly from the <input>.
+  const [cropTarget, setCropTarget] = useState<"avatar" | "cover" | null>(null);
+  const [cropSourceFile, setCropSourceFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (user && user.role === "creator") {
@@ -44,9 +59,25 @@ export default function CreatorProfileView({ locale, dict }: { locale: Locale; d
 
   if (!user || user.role !== "creator") return null;
 
+  function handleCropConfirm(blob: Blob) {
+    const file = new File([blob], `${cropTarget}.jpg`, { type: "image/jpeg" });
+    const url = URL.createObjectURL(blob);
+    if (cropTarget === "avatar") {
+      setAvatarFile(file);
+      setAvatarPreview(url);
+    } else if (cropTarget === "cover") {
+      setCoverFile(file);
+      setCoverPreview(url);
+      setCoverFailed(false);
+    }
+    setCropTarget(null);
+    setCropSourceFile(null);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setFieldErrors({});
     setSubmitting(true);
     try {
       await updateProfile(
@@ -62,7 +93,12 @@ export default function CreatorProfileView({ locale, dict }: { locale: Locale; d
       );
       router.push(`/${locale}/creator/profile`);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : dict.changePassword.genericError);
+      if (err instanceof ApiError) {
+        setFieldErrors(apiFieldErrors(err.fieldErrors, API_FIELD_MAP));
+        setError(err.message);
+      } else {
+        setError(dict.changePassword.genericError);
+      }
       setSubmitting(false);
     }
   }
@@ -107,9 +143,11 @@ export default function CreatorProfileView({ locale, dict }: { locale: Locale; d
             className="hidden"
             onChange={(e) => {
               const file = e.target.files?.[0] ?? null;
-              setCoverFile(file);
-              setCoverPreview(file ? URL.createObjectURL(file) : null);
-              setCoverFailed(false);
+              if (file) {
+                setCropSourceFile(file);
+                setCropTarget("cover");
+              }
+              e.target.value = "";
             }}
           />
         </div>
@@ -136,8 +174,11 @@ export default function CreatorProfileView({ locale, dict }: { locale: Locale; d
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0] ?? null;
-                setAvatarFile(file);
-                setAvatarPreview(file ? URL.createObjectURL(file) : null);
+                if (file) {
+                  setCropSourceFile(file);
+                  setCropTarget("avatar");
+                }
+                e.target.value = "";
               }}
             />
           </div>
@@ -146,39 +187,39 @@ export default function CreatorProfileView({ locale, dict }: { locale: Locale; d
 
       <form onSubmit={handleSubmit} className="space-y-6 rounded-2xl border border-line bg-surface p-6 shadow-card sm:p-8">
         <div className="grid gap-5 sm:grid-cols-2">
-          <FormField label={dict.common.name}>
+          <FormField label={dict.common.name} error={fieldErrors.name}>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className={fieldInputClass()}
+              className={fieldInputClass(!!fieldErrors.name)}
             />
           </FormField>
-          <FormField label={dict.common.phoneNumber}>
+          <FormField label={dict.common.phoneNumber} error={fieldErrors.phoneNumber}>
             <input
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
               placeholder="+20 100 000 0000"
-              className={fieldInputClass()}
+              className={fieldInputClass(!!fieldErrors.phoneNumber)}
             />
           </FormField>
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2">
-          <FormField label={locale === "ar" ? "السيرة الذاتية (إنجليزي)" : "Bio (English)"}>
+          <FormField label={locale === "ar" ? "السيرة الذاتية (إنجليزي)" : "Bio (English)"} error={fieldErrors.bioEn}>
             <textarea
               rows={4}
               value={bioEn}
               onChange={(e) => setBioEn(e.target.value)}
-              className={`${fieldInputClass()} resize-none`}
+              className={`${fieldInputClass(!!fieldErrors.bioEn)} resize-none`}
             />
           </FormField>
-          <FormField label={locale === "ar" ? "السيرة الذاتية (عربي)" : "Bio (Arabic)"}>
+          <FormField label={locale === "ar" ? "السيرة الذاتية (عربي)" : "Bio (Arabic)"} error={fieldErrors.bioAr}>
             <textarea
               dir="rtl"
               rows={4}
               value={bioAr}
               onChange={(e) => setBioAr(e.target.value)}
-              className={`${fieldInputClass()} resize-none`}
+              className={`${fieldInputClass(!!fieldErrors.bioAr)} resize-none`}
             />
           </FormField>
         </div>
@@ -200,6 +241,21 @@ export default function CreatorProfileView({ locale, dict }: { locale: Locale; d
           </button>
         </div>
       </form>
+
+      {cropTarget && cropSourceFile && (
+        <ImageCropper
+          file={cropSourceFile}
+          aspect={cropTarget === "avatar" ? 1 : 3}
+          shape={cropTarget === "avatar" ? "circle" : "rect"}
+          outputSize={cropTarget === "avatar" ? { width: 500, height: 500 } : { width: 1200, height: 400 }}
+          dict={dict}
+          onConfirm={handleCropConfirm}
+          onCancel={() => {
+            setCropTarget(null);
+            setCropSourceFile(null);
+          }}
+        />
+      )}
     </div>
   );
 }

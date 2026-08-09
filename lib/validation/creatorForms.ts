@@ -134,3 +134,22 @@ export function collectIssues(issues: { path: PropertyKey[]; message: string }[]
   }
   return errors;
 }
+
+// Client-side zod validation (collectIssues, above) only catches what it
+// knows to check for — a 422 the backend rejects for a reason the schema
+// doesn't model (a duplicate value, a cross-field rule, ...) was previously
+// only ever shown as one generic banner message, with no indication of
+// *which* field it was actually about. This distributes Laravel's
+// {field: [messages]} error shape onto the same fieldErrors state collectIssues
+// already populates, keyed by the LOCAL (camelCase form-state) field name via
+// `fieldMap`, so a backend-side rejection lights up the same inline field
+// error as a client-side one would. Laravel returns nested fields
+// (`title[en]` on the wire) as dotted keys ("title.en") in `errors`.
+export function apiFieldErrors(fieldErrors: Record<string, string[]>, fieldMap: Record<string, string>) {
+  const errors: Record<string, string> = {};
+  for (const [backendKey, messages] of Object.entries(fieldErrors)) {
+    const localKey = fieldMap[backendKey];
+    if (localKey && messages[0]) errors[localKey] = messages[0];
+  }
+  return errors;
+}
