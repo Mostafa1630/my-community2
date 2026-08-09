@@ -19,6 +19,7 @@ import { useAuth } from "@/lib/auth-context";
 import { initials } from "@/lib/accents";
 import { setStoredLocale } from "@/lib/locale-storage";
 import Seal from "./Seal";
+import NotificationBell from "./NotificationBell";
 
 export default function Navbar({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const pathname = usePathname();
@@ -113,6 +114,8 @@ export default function Navbar({ locale, dict }: { locale: Locale; dict: Diction
               {locale === "ar" ? "انجليزي" : "EN"}
             </Link>
           </div>
+
+          {user && <NotificationBell locale={locale} dict={dict} />}
 
           {user ? (
             <div className="relative hidden sm:block">

@@ -19,7 +19,7 @@ export default function RealCommunitySubscribeCard({
   locale: Locale;
   dict: Dictionary;
 }) {
-  const { role, user, hydrated, checkCoupon } = useAuth();
+  const { role, user, hydrated, checkCoupon, settings } = useAuth();
   const [couponCode, setCouponCode] = useState("");
   const [checking, setChecking] = useState(false);
   const [couponResult, setCouponResult] = useState<{ discountPercentage: number } | null>(null);
@@ -54,11 +54,11 @@ export default function RealCommunitySubscribeCard({
     <div className="rounded-2xl border border-line bg-surface p-5 shadow-card">
       <div className="flex flex-wrap items-baseline gap-2">
         <p className="font-mono text-2xl font-bold text-ink">
-          {community.isFree ? dict.common.free : formatPrice(finalWithCoupon, locale)}
+          {community.isFree ? dict.common.free : formatPrice(finalWithCoupon, locale, settings?.currency)}
         </p>
         {showOldPrice && (
           <p className="font-mono text-sm text-ink/65 line-through">
-            {formatPrice(community.subscriptionPrice, locale)}
+            {formatPrice(community.subscriptionPrice, locale, settings?.currency)}
           </p>
         )}
         {hasCommunityDiscount && (

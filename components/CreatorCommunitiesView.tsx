@@ -20,7 +20,7 @@ import CommunitySubscribersList from "@/components/CommunitySubscribersList";
 // list with a Create button always visible; that only made sense while this
 // was still (incorrectly) treated as a one-to-many relationship.
 export default function CreatorCommunitiesView({ locale, dict }: { locale: Locale; dict: Dictionary }) {
-  const { user, getMyCommunities } = useAuth();
+  const { user, getMyCommunities, settings } = useAuth();
   const [loading, setLoading] = useState(true);
   const [community, setCommunity] = useState<CreatorCommunity | null>(null);
   // Falls back to the gradient placeholder if `coverImage` is set but the URL
@@ -139,7 +139,7 @@ export default function CreatorCommunitiesView({ locale, dict }: { locale: Local
               <div className="rounded-xl border border-line bg-paper p-4 sm:p-5">
                 <p className="mb-2 text-xs font-medium tracking-wide text-ink/55">{dict.common.price}</p>
                 <p className="font-mono text-sm font-semibold text-ink">
-                  {community.isFree ? dict.common.free : formatPrice(community.finalPrice, locale)}
+                  {community.isFree ? dict.common.free : formatPrice(community.finalPrice, locale, settings?.currency)}
                 </p>
               </div>
               <div className="rounded-xl border border-line bg-paper p-4 sm:p-5">

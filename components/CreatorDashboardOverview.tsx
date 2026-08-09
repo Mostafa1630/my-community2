@@ -17,7 +17,7 @@ import PageLoader from "@/components/PageLoader";
 // properly the Earnings page's job (a real, paginated, per-sale list), and
 // having a second different "recent sales" here was redundant with it.
 export default function CreatorDashboardOverview({ locale, dict }: { locale: Locale; dict: Dictionary }) {
-  const { user, getCreatorDashboard } = useAuth();
+  const { user, getCreatorDashboard, settings } = useAuth();
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState<CreatorDashboardSummary | null>(null);
 
@@ -55,7 +55,7 @@ export default function CreatorDashboardOverview({ locale, dict }: { locale: Loc
             <StatCard icon={BookOpen} label={dict.creatorDash.statCourses} value={formatNumber(summary.publishedCourses, locale)} />
             <StatCard icon={Users2} label={dict.creatorDash.statSubscribers} value={formatNumber(summary.communitySubscribers, locale)} />
             <StatCard icon={Users} label={dict.creatorDash.statStudents} value={formatNumber(summary.totalStudents, locale)} />
-            <StatCard icon={Wallet} label={dict.creatorDash.statBalance} value={formatPrice(summary.currentBalance, locale)} tone="accent" />
+            <StatCard icon={Wallet} label={dict.creatorDash.statBalance} value={formatPrice(summary.currentBalance, locale, settings?.currency)} tone="accent" />
           </div>
 
           <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -64,8 +64,8 @@ export default function CreatorDashboardOverview({ locale, dict }: { locale: Loc
             <StatCard label={dict.creatorDash.statFreeSubscribers} value={formatNumber(summary.freeSubscribers, locale)} compact />
             <StatCard label={dict.creatorDash.statPaidSubscribers} value={formatNumber(summary.paidSubscribers, locale)} compact />
             <StatCard label={dict.creatorDash.statCourseStudents} value={formatNumber(summary.courseStudents, locale)} compact />
-            <StatCard label={dict.creatorDash.statTotalBalance} value={formatPrice(summary.totalBalance, locale)} compact />
-            <StatCard label={dict.creatorDash.statPendingBalance} value={formatPrice(summary.pendingBalance, locale)} compact />
+            <StatCard label={dict.creatorDash.statTotalBalance} value={formatPrice(summary.totalBalance, locale, settings?.currency)} compact />
+            <StatCard label={dict.creatorDash.statPendingBalance} value={formatPrice(summary.pendingBalance, locale, settings?.currency)} compact />
           </div>
         </>
       )}

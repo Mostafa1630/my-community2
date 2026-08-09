@@ -35,7 +35,7 @@ export default function CommunitiesExplorer({
   initialCommunities,
   categories,
   locale,
-  dict
+  dict,
 }: {
   initialCommunities: CommunitiesPage;
   categories: Category[];
@@ -48,7 +48,8 @@ export default function CommunitiesExplorer({
   const [communitiesPage, setCommunitiesPage] = useState(initialCommunities);
   const [page, setPage] = useState(initialCommunities.currentPage);
   const [loading, setLoading] = useState(false);
-  const [visibleCategoryCount, setVisibleCategoryCount] = useState(CATEGORY_PAGE_SIZE);
+  const [visibleCategoryCount, setVisibleCategoryCount] =
+    useState(CATEGORY_PAGE_SIZE);
 
   // GET /communities takes `page` and an optional `category_id` — both are
   // real, server-side filters, unlike creators (which had neither). Search
@@ -61,7 +62,10 @@ export default function CommunitiesExplorer({
     }
     let cancelled = false;
     setLoading(true);
-    getCommunities(locale, { page, categoryId: category === "all" ? undefined : category }).then((result) => {
+    getCommunities(locale, {
+      page,
+      categoryId: category === "all" ? undefined : category,
+    }).then((result) => {
       if (!cancelled) {
         setCommunitiesPage(result);
         setLoading(false);
@@ -83,11 +87,18 @@ export default function CommunitiesExplorer({
 
     if (query.trim()) {
       const q = query.trim().toLowerCase();
-      list = list.filter((c) => [c.name, c.creator.name, c.categoryName].some((field) => field.toLowerCase().includes(q)));
+      list = list.filter((c) =>
+        [c.name, c.creator.name, c.categoryName].some((field) =>
+          field.toLowerCase().includes(q),
+        ),
+      );
     }
 
     if (sort !== "newest") {
-      const comparators: Record<Exclude<SortKey, "newest">, (a: (typeof list)[number], b: (typeof list)[number]) => number> = {
+      const comparators: Record<
+        Exclude<SortKey, "newest">,
+        (a: (typeof list)[number], b: (typeof list)[number]) => number
+      > = {
         "price-asc": (a, b) => a.finalPrice - b.finalPrice,
         "price-desc": (a, b) => b.finalPrice - a.finalPrice,
         "rating-desc": (a, b) => b.ratingAvg - a.ratingAvg,
@@ -95,7 +106,7 @@ export default function CommunitiesExplorer({
         "courses-desc": (a, b) => b.coursesCount - a.coursesCount,
         "courses-asc": (a, b) => a.coursesCount - b.coursesCount,
         "students-desc": (a, b) => b.subscriptionsCount - a.subscriptionsCount,
-        "students-asc": (a, b) => a.subscriptionsCount - b.subscriptionsCount
+        "students-asc": (a, b) => a.subscriptionsCount - b.subscriptionsCount,
       };
       list = [...list].sort(comparators[sort]);
     }
@@ -107,7 +118,10 @@ export default function CommunitiesExplorer({
     <div>
       <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <Search size={16} className="absolute top-1/2 -translate-y-1/2 text-ink/35 start-3.5" />
+          <Search
+            size={16}
+            className="absolute top-1/2 -translate-y-1/2 text-ink/35 start-3.5"
+          />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -116,7 +130,10 @@ export default function CommunitiesExplorer({
           />
         </div>
         <div className="relative flex items-center">
-          <SlidersHorizontal size={15} className="pointer-events-none absolute text-primary-600 start-4" />
+          <SlidersHorizontal
+            size={15}
+            className="pointer-events-none absolute text-primary-600 start-4"
+          />
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value as SortKey)}
@@ -126,14 +143,27 @@ export default function CommunitiesExplorer({
             <option value="newest">{dict.communities.sortNewest}</option>
             <option value="price-asc">{dict.communities.sortPriceAsc}</option>
             <option value="price-desc">{dict.communities.sortPriceDesc}</option>
-            <option value="rating-desc">{dict.communities.sortRatingDesc}</option>
+            <option value="rating-desc">
+              {dict.communities.sortRatingDesc}
+            </option>
             <option value="rating-asc">{dict.communities.sortRatingAsc}</option>
-            <option value="courses-desc">{dict.communities.sortCoursesDesc}</option>
-            <option value="courses-asc">{dict.communities.sortCoursesAsc}</option>
-            <option value="students-desc">{dict.communities.sortStudentsDesc}</option>
-            <option value="students-asc">{dict.communities.sortStudentsAsc}</option>
+            <option value="courses-desc">
+              {dict.communities.sortCoursesDesc}
+            </option>
+            <option value="courses-asc">
+              {dict.communities.sortCoursesAsc}
+            </option>
+            <option value="students-desc">
+              {dict.communities.sortStudentsDesc}
+            </option>
+            <option value="students-asc">
+              {dict.communities.sortStudentsAsc}
+            </option>
           </select>
-          <ChevronDown size={15} className="pointer-events-none absolute text-ink/65 end-3.5" />
+          <ChevronDown
+            size={15}
+            className="pointer-events-none absolute text-ink/65 end-3.5"
+          />
         </div>
       </div>
 
@@ -163,7 +193,9 @@ export default function CommunitiesExplorer({
         ))}
         {visibleCategoryCount < categories.length && (
           <button
-            onClick={() => setVisibleCategoryCount((n) => n + CATEGORY_PAGE_SIZE)}
+            onClick={() =>
+              setVisibleCategoryCount((n) => n + CATEGORY_PAGE_SIZE)
+            }
             className="rounded-full border border-dashed border-line px-3.5 py-1.5 text-xs font-medium text-primary-700 hover:border-primary-300"
           >
             {dict.common.loadMore}
@@ -171,16 +203,28 @@ export default function CommunitiesExplorer({
         )}
       </div>
 
-      <p className="mb-5 text-sm text-ink/65">{t(dict.communities.resultsCount, { count: communitiesPage.total })}</p>
+      <p className="mb-5 text-sm text-ink/65">
+        {t(dict.communities.resultsCount, { count: communitiesPage.total })}
+      </p>
 
       {filtered.length === 0 ? (
         <EmptyState icon={Search} title={dict.communities.noResults} />
       ) : (
-        <div className={loading ? "opacity-60 transition-opacity" : "transition-opacity"}>
+        <div
+          className={
+            loading ? "opacity-60 transition-opacity" : "transition-opacity"
+          }
+        >
           <div className="sm:hidden">
             <Slider
               items={filtered.map((community, i) => (
-                <RealCommunityCard key={community.id} community={community} locale={locale} dict={dict} priority={i < 4} />
+                <RealCommunityCard
+                  key={community.id}
+                  community={community}
+                  locale={locale}
+                  dict={dict}
+                  priority={i < 4}
+                />
               ))}
               itemClassName="w-full"
               centered
@@ -189,14 +233,24 @@ export default function CommunitiesExplorer({
           <div className="hidden sm:grid sm:grid-cols-2 gap-5 lg:grid-cols-4">
             {filtered.map((community, i) => (
               <Reveal key={community.id} index={i}>
-                <RealCommunityCard community={community} locale={locale} dict={dict} priority={i < 4} />
+                <RealCommunityCard
+                  community={community}
+                  locale={locale}
+                  dict={dict}
+                  priority={i < 4}
+                />
               </Reveal>
             ))}
           </div>
         </div>
       )}
 
-      <Pagination page={page} totalPages={communitiesPage.lastPage} onChange={setPage} dict={dict} />
+      <Pagination
+        page={page}
+        totalPages={communitiesPage.lastPage}
+        onChange={setPage}
+        dict={dict}
+      />
     </div>
   );
 }

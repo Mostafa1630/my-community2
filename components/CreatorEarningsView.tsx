@@ -20,7 +20,7 @@ import DashboardPageHeader from "./DashboardPageHeader";
 // the client's own explicit spec: total sales, then platform commission,
 // then net profit, then current balance.
 export default function CreatorEarningsView({ locale, dict }: { locale: Locale; dict: Dictionary }) {
-  const { user, getEarningsSummary, getEarningsSales } = useAuth();
+  const { user, getEarningsSummary, getEarningsSales, settings } = useAuth();
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState<CreatorEarningsSummary | null>(null);
   const [sales, setSales] = useState<CreatorSale[]>([]);
@@ -61,10 +61,10 @@ export default function CreatorEarningsView({ locale, dict }: { locale: Locale; 
       ) : (
         <>
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <StatCard icon={TrendingUp} label={dict.creatorDash.earningsTotalSales} value={formatPrice(summary.totalSales, locale)} />
-            <StatCard icon={Percent} label={dict.creatorDash.earningsCommission} value={formatPrice(summary.platformCommission, locale)} />
-            <StatCard icon={PiggyBank} label={dict.creatorDash.earningsNetProfit} value={formatPrice(summary.netProfit, locale)} />
-            <StatCard icon={Wallet} label={dict.creatorDash.earningsBalance} value={formatPrice(summary.currentBalance, locale)} tone="accent" />
+            <StatCard icon={TrendingUp} label={dict.creatorDash.earningsTotalSales} value={formatPrice(summary.totalSales, locale, settings?.currency)} />
+            <StatCard icon={Percent} label={dict.creatorDash.earningsCommission} value={formatPrice(summary.platformCommission, locale, settings?.currency)} />
+            <StatCard icon={PiggyBank} label={dict.creatorDash.earningsNetProfit} value={formatPrice(summary.netProfit, locale, settings?.currency)} />
+            <StatCard icon={Wallet} label={dict.creatorDash.earningsBalance} value={formatPrice(summary.currentBalance, locale, settings?.currency)} tone="accent" />
           </div>
 
           <h2 className="mb-3 mt-10 text-lg font-bold text-ink">{dict.creatorDash.earningsSalesTitle}</h2>
@@ -97,9 +97,9 @@ export default function CreatorEarningsView({ locale, dict }: { locale: Locale; 
                           {s.type === "course" ? dict.creatorDash.saleTypeCourse : dict.creatorDash.saleTypeCommunity}
                         </Badge>
                       </Td>
-                      <Td className="font-mono">{formatPrice(s.amount, locale)}</Td>
-                      <Td className="font-mono text-ink/65">-{formatPrice(s.platformCommission, locale)}</Td>
-                      <Td className="font-mono">{formatPrice(s.netProfit, locale)}</Td>
+                      <Td className="font-mono">{formatPrice(s.amount, locale, settings?.currency)}</Td>
+                      <Td className="font-mono text-ink/65">-{formatPrice(s.platformCommission, locale, settings?.currency)}</Td>
+                      <Td className="font-mono">{formatPrice(s.netProfit, locale, settings?.currency)}</Td>
                       <Td>{s.createdAt}</Td>
                     </Tr>
                   ))}

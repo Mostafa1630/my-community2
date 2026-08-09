@@ -24,7 +24,7 @@ export default function CommunityCheckoutView({
   initialCouponCode?: string;
 }) {
   const router = useRouter();
-  const { checkCoupon } = useAuth();
+  const { checkCoupon, settings } = useAuth();
   const [couponResult, setCouponResult] = useState<{ discountPercentage: number } | null>(null);
   const [checkingCoupon, setCheckingCoupon] = useState(!!initialCouponCode);
   const [confirming, setConfirming] = useState(false);
@@ -76,11 +76,11 @@ export default function CommunityCheckoutView({
         ) : (
           <div className="mt-2 flex flex-wrap items-baseline justify-center gap-2">
             <p className="font-mono text-4xl font-bold text-ink">
-              {community.isFree ? dict.common.free : formatPrice(finalWithCoupon, locale)}
+              {community.isFree ? dict.common.free : formatPrice(finalWithCoupon, locale, settings?.currency)}
             </p>
             {showOldPrice && (
               <p className="font-mono text-base text-ink/65 line-through">
-                {formatPrice(community.subscriptionPrice, locale)}
+                {formatPrice(community.subscriptionPrice, locale, settings?.currency)}
               </p>
             )}
           </div>

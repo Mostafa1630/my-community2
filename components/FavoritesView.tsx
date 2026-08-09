@@ -16,7 +16,7 @@ import PageLoader from "./PageLoader";
 type Tab = "communities" | "courses";
 
 export default function FavoritesView({ locale, dict }: { locale: Locale; dict: Dictionary }) {
-  const { user, favorites, favoritesLoading } = useAuth();
+  const { user, favorites, favoritesLoading, settings } = useAuth();
   const [tab, setTab] = useState<Tab>("communities");
 
   if (!user) {
@@ -85,7 +85,7 @@ export default function FavoritesView({ locale, dict }: { locale: Locale; dict: 
                     <p className="mt-1.5 text-sm text-ink/65">{fav.creator.name}</p>
                     <div className="mt-5 flex items-center justify-between gap-2 border-t border-line pt-3.5">
                       <span className="whitespace-nowrap font-mono text-[11px] font-bold tracking-wide text-accent-700 sm:text-xs">
-                        {fav.isFree ? dict.common.free : formatPrice(fav.finalPrice, locale)}
+                        {fav.isFree ? dict.common.free : formatPrice(fav.finalPrice, locale, settings?.currency)}
                       </span>
                       <span className="shrink-0 rounded-full border border-primary-200 px-2.5 py-1 text-[11px] font-medium text-primary-800 sm:text-xs">
                         {dict.common.viewDetails}

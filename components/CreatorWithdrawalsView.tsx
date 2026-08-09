@@ -33,7 +33,7 @@ const statusLabel = (dict: Dictionary, status: string) =>
   status === "approved" ? dict.common.approved : status === "rejected" ? dict.common.rejected : dict.common.pending;
 
 export default function CreatorWithdrawalsView({ locale, dict }: { locale: Locale; dict: Dictionary }) {
-  const { user, getWithdrawBalance, getWithdrawals, createWithdrawal, getWithdrawalDetails, deleteWithdrawal } = useAuth();
+  const { user, getWithdrawBalance, getWithdrawals, createWithdrawal, getWithdrawalDetails, deleteWithdrawal, settings } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [balance, setBalance] = useState(0);
@@ -141,7 +141,7 @@ export default function CreatorWithdrawalsView({ locale, dict }: { locale: Local
         <>
           <div className="mb-6 rounded-2xl border border-line bg-surface p-5 shadow-card">
             <p className="text-xs font-medium tracking-wide text-ink/55">{dict.creatorDash.withdrawAvailableBalance}</p>
-            <p className="mt-1.5 font-mono text-2xl font-bold text-ink">{formatPrice(balance, locale)}</p>
+            <p className="mt-1.5 font-mono text-2xl font-bold text-ink">{formatPrice(balance, locale, settings?.currency)}</p>
           </div>
 
           {rows.length === 0 ? (
@@ -159,7 +159,7 @@ export default function CreatorWithdrawalsView({ locale, dict }: { locale: Local
                 <tbody>
                   {rows.map((w) => (
                     <Tr key={w.id}>
-                      <Td className="font-mono">{formatPrice(w.amount, locale)}</Td>
+                      <Td className="font-mono">{formatPrice(w.amount, locale, settings?.currency)}</Td>
                       <Td>{methodLabel(dict, w.payoutMethod)}</Td>
                       <Td>{w.createdAt}</Td>
                       <Td>
@@ -200,7 +200,7 @@ export default function CreatorWithdrawalsView({ locale, dict }: { locale: Local
       <Modal open={createOpen} onClose={() => setCreateOpen(false)}>
         <h3 className="text-base font-bold text-ink">{dict.creatorDash.newWithdrawal}</h3>
         <p className="mt-2 text-xs text-ink/65">
-          {dict.creatorDash.withdrawAvailableBalance}: {formatPrice(balance, locale)}
+          {dict.creatorDash.withdrawAvailableBalance}: {formatPrice(balance, locale, settings?.currency)}
         </p>
         <label className="mb-1.5 mt-4 block text-xs font-semibold tracking-wide text-ink/70">
           {dict.creatorDash.withdrawAmountLabel}
@@ -268,7 +268,7 @@ export default function CreatorWithdrawalsView({ locale, dict }: { locale: Local
           <div className="mt-4 space-y-3 text-sm">
             <div className="flex items-center justify-between">
               <span className="text-ink/55">{dict.common.amount}</span>
-              <span className="font-mono font-semibold text-ink">{formatPrice(details.amount, locale)}</span>
+              <span className="font-mono font-semibold text-ink">{formatPrice(details.amount, locale, settings?.currency)}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-ink/55">{dict.creatorDash.fieldPayoutMethod}</span>

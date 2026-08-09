@@ -206,15 +206,21 @@
     "registerSuccessLoginPrompt": "Account created! Login with your new password.",
     "submitting": "Please wait…",
     "forgotPasswordTitle": "Reset your password",
-    "forgotPasswordSubtitle": "Enter your account email and we'll send you a reset link.",
-    "sendResetLink": "Send reset link",
-    "resetLinkSent": "If an account exists for that email, a reset link is on its way.",
+    "forgotPasswordSubtitle": "Enter your account email and we'll send you a 5-digit code to reset your password.",
+    "sendResetCode": "Send code",
     "backToLogin": "Back to login",
+    "enterCodeTitle": "Enter the code",
+    "enterCodeSubtitle": "We've sent a 5-digit code to {email}",
+    "verifyingCode": "Checking code…",
+    "codeVerified": "Code verified",
+    "resendCode": "Resend code",
+    "resendCodeIn": "Resend code in {seconds}s",
+    "resendCodeSent": "A new code is on its way.",
     "resetPasswordTitle": "Choose a new password",
     "resetPasswordSubtitle": "Enter a new password for your account.",
     "resetButton": "Reset password",
-    "resetSuccess": "Password reset — login with your new password.",
-    "invalidResetLink": "This reset link is invalid or has expired. Request a new one."
+    "resetSuccessTitle": "Password reset",
+    "resetSuccess": "Your password was reset — login with your new password."
   },
   "changePassword": {
     "title": "Change password",
@@ -499,6 +505,13 @@
     "contactSubmit": "Send message",
     "contactRequiredError": "Please fill in your name, email, and message.",
     "contactError": "Couldn't send your message — please try again."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all as read",
+    "empty": "No notifications yet.",
+    "newCourseFallback": "A new course was added to a community you're subscribed to.",
+    "newLessonFallback": "A new lesson was added to a course you're enrolled in."
   },
   "footer": {
     "about": "Nadi Community is a learning platform built around communities, where content creators build a community and publish courses inside it.",

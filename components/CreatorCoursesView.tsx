@@ -22,7 +22,7 @@ import PageLoader from "@/components/PageLoader";
 // ever came from the public GET /courses/details/{id}, dropped here since
 // it's not worth an extra fetch per row just for one column).
 export default function CreatorCoursesView({ locale, dict }: { locale: Locale; dict: Dictionary }) {
-  const { user, getMyCourses, deleteCourseByCreator } = useAuth();
+  const { user, getMyCourses, deleteCourseByCreator, settings } = useAuth();
   const [loading, setLoading] = useState(true);
   const [courses, setCourses] = useState<{ id: string; title: string; price: number; isFree: boolean; status: string }[]>(
     []
@@ -101,7 +101,7 @@ export default function CreatorCoursesView({ locale, dict }: { locale: Locale; d
             {courses.map((course) => (
               <Tr key={course.id}>
                 <Td className="max-w-[220px] truncate font-medium text-ink">{course.title}</Td>
-                <Td className="font-mono">{course.isFree ? dict.common.free : formatPrice(course.price, locale)}</Td>
+                <Td className="font-mono">{course.isFree ? dict.common.free : formatPrice(course.price, locale, settings?.currency)}</Td>
                 <Td>
                   <Badge tone={course.status === "published" ? "success" : "pending"}>
                     {course.status === "published"

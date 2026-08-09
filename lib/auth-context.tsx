@@ -61,6 +61,10 @@ import type {
   PayoutMethod,
   ApiCommunitySubscriber,
   CommunitySubscriber,
+  ApiSettings,
+  PlatformSettings,
+  ApiNotification,
+  AppNotification,
 } from "./api-types";
 import {
   mapApiUserToLocal,
@@ -79,6 +83,8 @@ import {
   mapApiCreatorWithdrawal,
   mapApiCreatorWithdrawalDetails,
   mapApiCommunitySubscriber,
+  mapApiSettings,
+  mapApiNotification,
 } from "./api-types";
 
 interface RegisterApiInput {
@@ -98,10 +104,11 @@ interface AuthContextValue {
   register: (input: RegisterApiInput, locale: Locale) => Promise<AnyUser>;
   logout: (locale: Locale) => void;
   forgotPassword: (email: string, locale: Locale) => Promise<void>;
+  verifyResetCode: (email: string, code: string, locale: Locale) => Promise<void>;
   resetPassword: (
     input: {
       email: string;
-      token: string;
+      code: string;
       password: string;
       passwordConfirmation: string;
     },
@@ -355,6 +362,15 @@ interface AuthContextValue {
     favoritableType: "course" | "community",
     favoritableId: string,
   ) => boolean;
+  settings: PlatformSettings | null;
+  unreadNotificationsCount: number;
+  refreshUnreadNotificationsCount: (locale: Locale) => Promise<void>;
+  getNotifications: (
+    locale: Locale,
+    page?: number,
+  ) => Promise<{ items: AppNotification[]; total: number; currentPage: number; lastPage: number; perPage: number }>;
+  markNotificationRead: (id: string, locale: Locale) => Promise<void>;
+  markAllNotificationsRead: (locale: Locale) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -382,6 +398,8 @@ export function AuthProvider({
   const [hydrated, setHydrated] = useState(initialUser !== null);
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const [favoritesLoading, setFavoritesLoading] = useState(false);
+  const [settings, setSettings] = useState<PlatformSettings | null>(null);
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
 
   // On mount, hydrate synchronously from the cached profile first (no network
   // wait) so a page refresh renders the logged-in UI immediately instead of
@@ -454,6 +472,80 @@ export function AuthProvider({
     if (apiUser) setCachedUser(apiUser);
     else clearCachedUser();
   }, [apiUser]);
+
+  // Public, unauthenticated, fetched once on mount and cached for the whole
+  // session — per the client's explicit instruction, only currency + the
+  // social links are ever pulled out of this response (mapApiSettings drops
+  // everything else, see lib/api-types.ts).
+  useEffect(() => {
+    let cancelled = false;
+    apiFetch<{ data: ApiSettings }>("/settings", { method: "GET", locale, auth: false })
+      .then((res) => {
+        if (!cancelled) setSettings(mapApiSettings(res.data));
+      })
+      .catch(() => {
+        // Settings are cosmetic (currency label, footer social icons) —
+        // silently keep the defaults rather than surfacing an error.
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const getUnreadNotificationsCount = useCallback(async (requestLocale: Locale) => {
+    const res = await apiFetch<{ data: { unread_count: number } }>(
+      "/notifications/unread-count",
+      { method: "GET", locale: requestLocale },
+    );
+    return res.data.unread_count;
+  }, []);
+
+  const refreshUnreadNotificationsCount = useCallback(
+    async (requestLocale: Locale) => {
+      if (!apiUser) {
+        setUnreadNotificationsCount(0);
+        return;
+      }
+      try {
+        setUnreadNotificationsCount(await getUnreadNotificationsCount(requestLocale));
+      } catch {
+        // Badge just doesn't update this cycle — not worth surfacing.
+      }
+    },
+    [apiUser, getUnreadNotificationsCount],
+  );
+
+  // Polls the unread badge while someone's logged in, on top of the
+  // immediate refreshes triggered by opening the bell / marking things read
+  // — a "professional" notifications bell reacting to a lesson/course
+  // published elsewhere without needing a manual page refresh.
+  useEffect(() => {
+    if (!hydrated || !apiUser) {
+      setUnreadNotificationsCount(0);
+      return;
+    }
+    refreshUnreadNotificationsCount(locale);
+    const interval = setInterval(() => refreshUnreadNotificationsCount(locale), 60000);
+    return () => clearInterval(interval);
+  }, [hydrated, apiUser, locale, refreshUnreadNotificationsCount]);
+
+  const getNotifications = useCallback(async (requestLocale: Locale, page = 1) => {
+    const res = await apiFetch<{
+      data: { items: ApiNotification[]; total: number; currentPage: number; lastPage: number; perPage: number };
+    }>(`/notifications?page=${page}`, { method: "GET", locale: requestLocale });
+    return { ...res.data, items: res.data.items.map(mapApiNotification) };
+  }, []);
+
+  const markNotificationRead = useCallback(async (id: string, requestLocale: Locale) => {
+    await apiFetch(`/notifications/${id}/read`, { method: "PUT", locale: requestLocale });
+    setUnreadNotificationsCount((c) => Math.max(0, c - 1));
+  }, []);
+
+  const markAllNotificationsRead = useCallback(async (requestLocale: Locale) => {
+    await apiFetch("/notifications/mark-all-read", { method: "PUT", locale: requestLocale });
+    setUnreadNotificationsCount(0);
+  }, []);
 
   const login = useCallback(
     async (email: string, password: string, requestLocale: Locale) => {
@@ -568,14 +660,10 @@ export function AuthProvider({
     [],
   );
 
-  // NOT part of the documented Auth sub-folders (register/login/logout/profile/
-  // change-password) — the client asked for a "forgot password" link and its
-  // own reset page without sending a spec for it. Guessed at endpoints
-  // following the same `/auth/*` + multipart-form-data + snake_case pattern
-  // every other Auth endpoint in this project actually uses, and the standard
-  // Laravel password-broker shape (email+token+password+password_confirmation
-  // for the reset step). Flagged back to the client — these two need real
-  // confirmation once they have the actual routes.
+  // Code-based reset flow: forgot-password emails a 5-digit code (not a
+  // link+token), verify-reset-code is an optional pre-check the UI uses to
+  // validate the code before revealing the new-password fields, and
+  // reset-password itself takes the code directly rather than a token.
   const forgotPassword = useCallback(
     async (email: string, requestLocale: Locale) => {
       const form = new FormData();
@@ -590,11 +678,26 @@ export function AuthProvider({
     [],
   );
 
+  const verifyResetCode = useCallback(
+    async (email: string, code: string, requestLocale: Locale) => {
+      const form = new FormData();
+      form.set("email", email);
+      form.set("code", code);
+      await apiFetch("/auth/verify-reset-code", {
+        method: "POST",
+        body: form,
+        locale: requestLocale,
+        auth: false,
+      });
+    },
+    [],
+  );
+
   const resetPassword = useCallback(
     async (
       input: {
         email: string;
-        token: string;
+        code: string;
         password: string;
         passwordConfirmation: string;
       },
@@ -602,7 +705,7 @@ export function AuthProvider({
     ) => {
       const form = new FormData();
       form.set("email", input.email);
-      form.set("token", input.token);
+      form.set("code", input.code);
       form.set("password", input.password);
       form.set("password_confirmation", input.passwordConfirmation);
       await apiFetch("/auth/reset-password", {
@@ -1777,6 +1880,7 @@ export function AuthProvider({
     logout,
     changePassword,
     forgotPassword,
+    verifyResetCode,
     resetPassword,
     updateProfile,
     submitContactUs,
@@ -1835,6 +1939,12 @@ export function AuthProvider({
     favoritesLoading,
     toggleFavorite,
     isFavorited,
+    settings,
+    unreadNotificationsCount,
+    refreshUnreadNotificationsCount,
+    getNotifications,
+    markNotificationRead,
+    markAllNotificationsRead,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1209,3 +1209,91 @@ export interface CommunitySubscriber {
 export function mapApiCommunitySubscriber(s: ApiCommunitySubscriber): CommunitySubscriber {
   return { id: String(s.id), name: s.name, profileImage: s.profile_image ?? undefined };
 }
+
+// ---- Public settings ----
+
+// The raw response also carries site_name/site_logo/site_favicon/
+// site_description — intentionally not declared here, since the client
+// asked for only currency + the social links to ever be read out of this
+// endpoint (mapApiSettings below narrows to exactly that).
+export interface ApiSettings {
+  currency: string;
+  facebook_url: string | null;
+  instagram_url: string | null;
+  twitter_url: string | null;
+  youtube_url: string | null;
+  linkedin_url: string | null;
+  tiktok_url: string | null;
+  whatsapp_number: string | null;
+}
+
+export interface PlatformSettings {
+  currency: string;
+  facebookUrl?: string;
+  instagramUrl?: string;
+  twitterUrl?: string;
+  youtubeUrl?: string;
+  linkedinUrl?: string;
+  tiktokUrl?: string;
+  whatsappNumber?: string;
+}
+
+export function mapApiSettings(s: ApiSettings): PlatformSettings {
+  return {
+    currency: s.currency,
+    facebookUrl: s.facebook_url ?? undefined,
+    instagramUrl: s.instagram_url ?? undefined,
+    twitterUrl: s.twitter_url ?? undefined,
+    youtubeUrl: s.youtube_url ?? undefined,
+    linkedinUrl: s.linkedin_url ?? undefined,
+    tiktokUrl: s.tiktok_url ?? undefined,
+    whatsappNumber: s.whatsapp_number ?? undefined
+  };
+}
+
+// ---- Notifications ----
+
+export type NotificationType = "new_course_in_community" | "new_lesson_in_course";
+
+export interface ApiNotificationData {
+  course_id?: number;
+  community_id?: number;
+  lesson_id?: number;
+}
+
+// `message`/`title` aren't nailed down to one exact field name in the spec's
+// list example, so both are read defensively (mapApiNotification falls back
+// to a locally-generated sentence per `type` if neither comes back).
+export interface ApiNotification {
+  id: number;
+  type: NotificationType;
+  message?: string | null;
+  title?: string | null;
+  data: ApiNotificationData;
+  read_at: string | null;
+  created_at: string;
+}
+
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  message: string | null;
+  courseId?: string;
+  communityId?: string;
+  lessonId?: string;
+  read: boolean;
+  createdAt: string;
+}
+
+export function mapApiNotification(n: ApiNotification): AppNotification {
+  return {
+    id: String(n.id),
+    type: n.type,
+    message: n.message ?? n.title ?? null,
+    courseId: n.data?.course_id != null ? String(n.data.course_id) : undefined,
+    communityId: n.data?.community_id != null ? String(n.data.community_id) : undefined,
+    lessonId: n.data?.lesson_id != null ? String(n.data.lesson_id) : undefined,
+    read: n.read_at !== null,
+    createdAt: n.created_at
+  };
+}

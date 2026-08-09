@@ -56,7 +56,7 @@ export default function Slider({
   items,
   itemClassName = "w-[46%] sm:w-[31%] lg:w-[18%]",
   animateIn = true,
-  centered = false
+  centered = false,
 }: {
   items: ReactNode[];
   itemClassName?: string;
@@ -69,11 +69,16 @@ export default function Slider({
   // all — NO_LCP — while every other page measured normally).
   animateIn?: boolean;
   // Swaps the scroll-snap alignment from the default (each card's start edge
-  // snaps to the track's start edge) to centered — combined with side padding
-  // on the track, this is what makes a peek of the previous/next card show
-  // symmetrically on both edges at rest, instead of only ever peeking on one
-  // side. Opt-in since most callers actually want the plain start-aligned
-  // layout.
+  // snaps to the track's start edge) to centered. Deliberately NOT paired
+  // with side padding on the track — padding would sit in view at rest
+  // (scrollLeft can't go negative to "reveal" it for the first item), reading
+  // as dead empty space before the first card ever loads. Without padding,
+  // the browser just clamps: item 1's snap-center target computes negative
+  // and clamps to 0, so it naturally sits flush at the start showing a
+  // generous peek of item 2 (no wasted space) — then item 2 onward centers
+  // for real, using the actual neighboring cards' own content (scrolled
+  // partway off-screen) as the peek, not padding. Opt-in since most callers
+  // actually want the plain start-aligned layout.
   centered?: boolean;
 }) {
   const trackRef = useRef<HTMLDivElement>(null);
@@ -82,7 +87,10 @@ export default function Slider({
     const track = trackRef.current;
     if (!track) return;
     const rtl = getComputedStyle(track).direction === "rtl";
-    track.scrollBy({ left: track.clientWidth * 0.85 * (rtl ? -direction : direction), behavior: "smooth" });
+    track.scrollBy({
+      left: track.clientWidth * 0.85 * (rtl ? -direction : direction),
+      behavior: "smooth",
+    });
   }
 
   return (
@@ -117,10 +125,13 @@ export default function Slider({
               {item}
             </motion.div>
           ) : (
-            <div key={i} className={`flex min-w-0 self-stretch shrink-0 ${centered ? "snap-center" : "snap-start"} ${itemClassName}`}>
+            <div
+              key={i}
+              className={`flex min-w-0 self-stretch shrink-0 ${centered ? "snap-center" : "snap-start"} ${itemClassName}`}
+            >
               {item}
             </div>
-          )
+          ),
         )}
       </div>
 
