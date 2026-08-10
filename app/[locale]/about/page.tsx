@@ -7,7 +7,6 @@ import { localizedAlternates } from "@/lib/seo";
 import { getSettings } from "@/lib/api-content";
 import { formatDate } from "@/lib/format";
 import { TikTokIcon, WhatsAppIcon } from "@/components/BrandIcons";
-import AboutLogo from "@/components/AboutLogo";
 
 export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
   const locale: Locale = isLocale(params.locale) ? params.locale : "ar";
@@ -57,15 +56,10 @@ export default async function AboutPage({ params }: { params: { locale: string }
   return (
     <div>
       <div className="relative overflow-hidden bg-gradient-to-br from-primary-500 via-primary-600 to-primary-800 pb-20 pt-16 sm:pb-24 sm:pt-20">
-        <div className="pointer-events-none absolute -end-16 -top-16 h-64 w-64 rounded-full border-2 border-dashed border-white/10" />
-        <div className="pointer-events-none absolute -start-20 -bottom-24 h-72 w-72 rounded-full border-2 border-dashed border-white/10" />
         <div className="container-page relative z-10 flex flex-col items-center text-center">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3.5 py-1.5 text-xs font-semibold text-white backdrop-blur">
             {dict.about.eyebrow}
           </span>
-          <div className="mt-6 flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-white/10 shadow-raised sm:h-24 sm:w-24">
-            <AboutLogo src={settings?.siteLogo} alt={siteName} />
-          </div>
           <h1 className="mt-5 text-3xl font-extrabold text-white sm:text-4xl">{t(dict.about.title, { name: siteName })}</h1>
           <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-white/85 sm:text-base">{description}</p>
         </div>
@@ -90,19 +84,19 @@ export default async function AboutPage({ params }: { params: { locale: string }
         )}
 
         {contactRows.length > 0 && (
-          <div className="mx-auto max-w-3xl">
+          <div className="mx-auto max-w-4xl">
             <h2 className="mb-5 text-center text-xl font-bold text-ink">{dict.about.contactTitle}</h2>
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-5 sm:grid-cols-3">
               {contactRows.map((row) => {
                 const Icon = row.icon;
                 const content = (
                   <>
-                    <span className="flex h-11 w-11 items-center justify-center rounded-full bg-primary-500/10 text-primary-600">
-                      <Icon size={20} />
+                    <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-primary-500/10 text-primary-600">
+                      <Icon size={28} />
                     </span>
                     <div className="min-w-0">
                       <p className="text-xs font-semibold uppercase tracking-wide text-ink/50">{row.label}</p>
-                      <p className="mt-0.5 truncate text-sm font-medium text-ink" dir="ltr">
+                      <p className="mt-1 truncate text-base font-semibold text-ink" dir="ltr">
                         {row.value}
                       </p>
                     </div>
@@ -112,12 +106,12 @@ export default async function AboutPage({ params }: { params: { locale: string }
                   <a
                     key={row.label}
                     href={row.href}
-                    className="hover-lift flex items-center gap-3 rounded-2xl border border-line bg-surface p-4 shadow-card hover:border-primary-200"
+                    className="hover-lift flex items-center gap-4 rounded-2xl border border-line bg-surface p-6 shadow-card hover:border-primary-200"
                   >
                     {content}
                   </a>
                 ) : (
-                  <div key={row.label} className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-4 shadow-card">
+                  <div key={row.label} className="flex items-center gap-4 rounded-2xl border border-line bg-surface p-6 shadow-card">
                     {content}
                   </div>
                 );

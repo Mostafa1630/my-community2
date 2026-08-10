@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { CheckCircle2, Lock, PlayCircle } from "lucide-react";
 import type { CourseDetails } from "@/lib/api-types";
@@ -10,14 +9,12 @@ import { t } from "@/lib/i18n/t";
 import { useAuth } from "@/lib/auth-context";
 import VideoPlayer from "./VideoPlayer";
 
-// Real per-lesson access control lives entirely on the frontend — GET
-// /courses/details/{id} is a public endpoint that returns every lesson's real
-// video url regardless of who's asking, only `is_free` says what's actually
-// meant to be watchable. `isSubscribed` reads local mock subscription state
-// (real community subscriptions aren't connected yet — see
-// RealCommunitySubscribeCard), so it's always false for a real student today;
-// this becomes real automatically once subscribing is wired up, same
-// forward-compatible shape as every other partial-migration seam here.
+// Real per-lesson access control lives entirely on the frontend for the
+// lock/unlock display here — GET /courses/details/{id} is a public endpoint
+// that only tells us each lesson's title/order/is_free, never its real video
+// url. The real url only ever comes from the authenticated GET /lessons/{id},
+// fetched by the dedicated per-lesson watch page this list links out to
+// (never inline here) — see LessonWatchView for why.
 export default function RealCourseAccess({
   course,
   locale,
@@ -34,18 +31,12 @@ export default function RealCourseAccess({
     role === "admin" ||
     (role === "student" && isSubscribed(course.community.id));
 
-  const firstOpenLesson = course.lessons.find((l) => unlocked || l.isFree) ?? null;
-  const [activeLessonId, setActiveLessonId] = useState<string | null>(firstOpenLesson?.id ?? null);
-  const activeLesson = course.lessons.find((l) => l.id === activeLessonId) ?? null;
-  const activeUrl = activeLesson?.url ?? course.introVideo;
-  const activeTitle = activeLesson?.title ?? course.title;
-
   return (
     <div className="grid gap-8 lg:grid-cols-[1.6fr,1fr]">
       <div>
         <h2 className="mb-3 text-lg font-bold text-ink">{dict.courseDetails.curriculum}</h2>
-        {activeUrl ? (
-          <VideoPlayer url={activeUrl} title={activeTitle} />
+        {course.introVideo ? (
+          <VideoPlayer url={course.introVideo} title={course.title} />
         ) : (
           <div className="flex aspect-video items-center justify-center rounded-2xl border border-line bg-ink/5 text-sm text-ink/65">
             {dict.common.empty}
@@ -55,17 +46,8 @@ export default function RealCourseAccess({
         <div className="mt-5 divide-y divide-line rounded-2xl border border-line bg-surface shadow-card">
           {course.lessons.map((lesson, i) => {
             const open = unlocked || lesson.isFree;
-            const active = lesson.id === activeLessonId;
-            return (
-              <button
-                key={lesson.id}
-                type="button"
-                disabled={!open}
-                onClick={() => setActiveLessonId(lesson.id)}
-                className={`flex w-full items-center gap-3 px-4 py-3.5 text-start transition ${
-                  open ? "hover:bg-primary-50/60" : "cursor-not-allowed opacity-70"
-                } ${active ? "bg-primary-50/70" : ""}`}
-              >
+            const row = (
+              <>
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-50 font-mono text-xs font-semibold text-primary-700">
                   {i + 1}
                 </span>
@@ -74,11 +56,27 @@ export default function RealCourseAccess({
                   {!open && <span className="block text-xs text-ink/65">{dict.courseDetails.lessonLocked}</span>}
                 </span>
                 {open ? (
-                  <PlayCircle size={18} className={active ? "text-primary-600" : "text-primary-500"} />
+                  <PlayCircle size={18} className="text-primary-500" />
                 ) : (
                   <Lock size={16} className="text-ink/65" />
                 )}
-              </button>
+              </>
+            );
+            return open ? (
+              <Link
+                key={lesson.id}
+                href={`/${locale}/courses/${course.id}/lessons/${lesson.id}`}
+                className="flex w-full items-center gap-3 px-4 py-3.5 text-start transition hover:bg-primary-50/60"
+              >
+                {row}
+              </Link>
+            ) : (
+              <span
+                key={lesson.id}
+                className="flex w-full cursor-not-allowed items-center gap-3 px-4 py-3.5 text-start opacity-70"
+              >
+                {row}
+              </span>
             );
           })}
         </div>

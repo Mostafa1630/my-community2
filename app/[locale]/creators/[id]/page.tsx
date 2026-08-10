@@ -53,7 +53,7 @@ export default async function CreatorProfilePage({ params }: { params: { locale:
           </>
         )}
         <div className="container-page relative flex flex-col items-center gap-4 py-14 text-center text-white">
-          <span className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full border-2 border-dashed border-white/50 bg-white/10">
+          <span className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full bg-white/15">
             {creator.profileImage ? (
               <img src={creator.profileImage} alt={creator.name} className="h-full w-full object-cover" />
             ) : (

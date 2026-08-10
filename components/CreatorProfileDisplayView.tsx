@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Pencil, Phone, User } from "lucide-react";
+import { Mail, Pencil, Phone, User } from "lucide-react";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import { useAuth } from "@/lib/auth-context";
-import { initials } from "@/lib/accents";
 import DashboardPageHeader from "./DashboardPageHeader";
 
 // Read-only display of the creator's own profile — same list/display+edit
@@ -45,11 +44,7 @@ export default function CreatorProfileDisplayView({ locale, dict }: { locale: Lo
               onError={() => setCoverFailed(true)}
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700">
-              <span className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-dashed border-white/50 text-xl font-bold text-white">
-                {initials(user.name)}
-              </span>
-            </div>
+            <div className="h-full w-full bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700" />
           )}
         </div>
 
@@ -72,6 +67,13 @@ export default function CreatorProfileDisplayView({ locale, dict }: { locale: Lo
               <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
                 <User size={13} className="shrink-0 text-primary-600" />
                 {user.name}
+              </p>
+            </div>
+            <div className="rounded-xl border border-line bg-paper p-4 sm:p-5">
+              <p className="mb-2 text-xs font-medium tracking-wide text-ink/55">{dict.common.email}</p>
+              <p className="flex items-center gap-1.5 text-sm font-semibold text-ink" dir="ltr">
+                <Mail size={13} className="shrink-0 text-primary-600" />
+                {user.email}
               </p>
             </div>
             <div className="rounded-xl border border-line bg-paper p-4 sm:p-5">

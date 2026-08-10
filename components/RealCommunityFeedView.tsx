@@ -8,6 +8,7 @@ import type { FeedPost, ReactionType } from "@/lib/api-types";
 import { useAuth } from "@/lib/auth-context";
 import PostComposer from "./feed/PostComposer";
 import PostCard from "./feed/PostCard";
+import CommunitySubscribersList from "./CommunitySubscribersList";
 import EmptyState from "./EmptyState";
 import PageLoader from "./PageLoader";
 
@@ -202,8 +203,8 @@ export default function RealCommunityFeedView({
     );
   }
 
-  return (
-    <div className="mx-auto max-w-2xl space-y-4">
+  const feed = (
+    <div className="mx-auto w-full max-w-2xl space-y-4">
       {canInteract && user && (
         <div className="rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-5">
           <PostComposer
@@ -242,6 +243,31 @@ export default function RealCommunityFeedView({
           )}
         </>
       )}
+    </div>
+  );
+
+  // Only the community's own creator can call GET
+  // /creators/communities/{id}/subscriptions, so the "active members"
+  // sidebar only ever renders for them — shown here rather than by each
+  // page that embeds this feed, so it appears consistently wherever a
+  // creator views their own community's posts (their dashboard's "Community
+  // feed" page and the same public feed route a student would see).
+  if (!isCommunityCreator) return feed;
+
+  return (
+    <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-center">
+      <div className="min-w-0 lg:flex-1">{feed}</div>
+      <aside className="lg:w-72 lg:shrink-0">
+        <div className="lg:sticky lg:top-24">
+          <CommunitySubscribersList
+            communityId={communityId}
+            locale={locale}
+            dict={dict}
+            title={dict.creatorDash.activeMembersTitle}
+            compact
+          />
+        </div>
+      </aside>
     </div>
   );
 }

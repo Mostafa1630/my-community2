@@ -16,7 +16,7 @@ export default function RealCommunityCard({
   community,
   locale,
   dict,
-  priority = false
+  priority = false,
 }: {
   community: CommunitySummary;
   locale: Locale;
@@ -45,8 +45,10 @@ export default function RealCommunityCard({
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
         ) : (
-          <div className={`flex h-full w-full items-center justify-center bg-gradient-to-br ${accent.gradient}`}>
-            <span className="seal-ring h-14 w-14 border-white/50 text-white text-lg font-bold">
+          <div
+            className={`flex h-full w-full items-center justify-center bg-gradient-to-br ${accent.gradient}`}
+          >
+            <span className="seal-ring h-14 w-14 bg-white/15 text-white text-lg font-bold">
               {initials(community.name)}
             </span>
           </div>
@@ -57,7 +59,11 @@ export default function RealCommunityCard({
           </span>
         )}
         <div className="absolute top-3 end-3 flex flex-col items-end gap-1.5">
-          <FavoriteButton favoritableType="community" favoritableId={community.id} locale={locale} />
+          <FavoriteButton
+            favoritableType="community"
+            favoritableId={community.id}
+            locale={locale}
+          />
         </div>
       </div>
 
@@ -89,17 +95,28 @@ export default function RealCommunityCard({
         <div className="mt-2.5">
           <span
             className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
-              community.type === "private" ? "bg-danger/10 text-danger" : "bg-primary-500/10 text-primary-700"
+              community.type === "private"
+                ? "bg-danger/10 text-danger"
+                : "bg-primary-500/10 text-primary-700"
             }`}
           >
-            {community.type === "private" ? <Lock size={11} /> : <Unlock size={11} />}
-            {community.type === "private" ? dict.communities.privateBadge : dict.communities.publicBadge}
+            {community.type === "private" ? (
+              <Lock size={11} />
+            ) : (
+              <Unlock size={11} />
+            )}
+
+            {community.type === "private"
+              ? dict.communities.privateBadge
+              : dict.communities.publicBadge}
           </span>
         </div>
 
         <div className="mt-5 flex items-center justify-between gap-2 border-t border-line pt-3.5">
           <span className="whitespace-nowrap font-mono text-[11px] font-bold tracking-wide text-accent-700 sm:text-xs">
-            {community.isFree ? dict.communities.freeBadge : formatPrice(community.finalPrice, locale)}
+            {community.isFree
+              ? dict.communities.freeBadge
+              : formatPrice(community.finalPrice, locale)}
           </span>
           <span className="shrink-0 whitespace-nowrap rounded-full border border-primary-200 px-2.5 py-1 text-center text-[11px] font-medium text-primary-800 transition-colors duration-200 group-hover:border-primary-300 group-hover:bg-primary-50 sm:px-3 sm:text-xs">
             {dict.common.viewDetails}

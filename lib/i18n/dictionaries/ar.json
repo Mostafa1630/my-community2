@@ -176,7 +176,9 @@
     "subscribeToUnlock": "يتطلب الوصول إلى جميع دروس هذه الدورة الاشتراك في مجتمع {name}.",
     "partOfCommunity": "الدورة جزء من مجتمع {name}",
     "lessonResourceTitle": "ملف مرفق مع الدرس",
-    "downloadResource": "تحميل الملف"
+    "downloadResource": "تحميل الملف",
+    "backToCourse": "العودة إلى الدورة",
+    "lessonLoadError": "تعذّر تحميل هذا الدرس. تأكد من أنك مسجّل الدخول ومشترك في المجتمع."
   },
   "creator": {
     "aboutTitle": "عن منشئ المحتوى",
@@ -398,10 +400,11 @@
     "statFreeSubscribers": "المشتركون المجانيون",
     "statPaidSubscribers": "المشتركون المدفوعون",
     "statCourseStudents": "طلاب الدورات",
-    "statTotalBalance": "إجمالي الرصيد (منذ البداية)",
+    "statTotalBalance": "إجمالي الرصيد",
     "statPendingBalance": "الرصيد المعلّق",
     "subscribersTitle": "المشتركون",
     "subscribersEmpty": "لا يوجد مشتركون حتى الآن",
+    "activeMembersTitle": "الأعضاء النشطون",
     "communityModTitle": "منشورات — {name}",
     "profileSubtitle": "حدّث بيانات ملفك الشخصي كمنشئ محتوى",
     "profileEditCta": "تعديل بياناتك الشخصية",

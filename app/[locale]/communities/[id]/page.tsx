@@ -55,7 +55,7 @@ export default async function CommunityDetailsPage({ params }: { params: { local
           <FavoriteButton favoritableType="community" favoritableId={community.id} locale={locale} />
         </div>
         <div className="container-page relative flex flex-col items-center gap-4 py-14 text-center text-white">
-          <span className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full border-2 border-dashed border-white/50 bg-white/10">
+          <span className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full bg-white/15">
             {community.creator.profileImage ? (
               <img src={community.creator.profileImage} alt={community.name} className="h-full w-full object-cover" />
             ) : (

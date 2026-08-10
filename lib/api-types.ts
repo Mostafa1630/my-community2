@@ -388,11 +388,17 @@ export interface ApiCourseDetails {
   lessons: ApiCourseLesson[];
 }
 
+// Deliberately no `url` field — the public course-details endpoint this maps
+// from does return one, but it's the real (unlocked-or-not) video link, and
+// this type flows straight into a Client Component's props, which Next.js
+// serializes into the page's own HTML/flight payload. Dropping it here means
+// it never reaches the browser for this page at all; the real url is only
+// ever fetched by the dedicated per-lesson watch page, from the authenticated
+// GET /lessons/{id} — see LessonWatchView.
 export interface CourseLesson {
   id: string;
   title: string;
   description: string;
-  url: string;
   isFree: boolean;
   order: number;
   status: string;
@@ -453,12 +459,65 @@ export function mapApiCourseDetails(c: ApiCourseDetails): CourseDetails {
         id: String(l.id),
         title: l.title,
         description: l.description,
-        url: l.url,
         isFree: Boolean(l.is_free),
         order: l.order,
         status: l.status
       })),
     accent: accentForId(c.id)
+  };
+}
+
+// GET /lessons/{id} — authenticated (unlike the public course-details
+// endpoint above, which leaks every lesson's real video url to anyone,
+// locked or not). This is the endpoint the actual "watch this lesson" page
+// calls, fetched client-side on demand rather than embedded in any
+// server-rendered page, so the real url never sits in a page's static HTML.
+export interface ApiLessonAttachment {
+  media_path: string;
+  media_name: string;
+  media_type: string;
+  media_size: string;
+}
+
+export interface ApiLessonVideo {
+  id: number;
+  slug: string | null;
+  title: string;
+  description: string;
+  is_free: boolean;
+  video_url: string;
+  attachments: ApiLessonAttachment[];
+}
+
+export interface LessonAttachment {
+  path: string;
+  name: string;
+  type: string;
+  size: string;
+}
+
+export interface LessonVideo {
+  id: string;
+  title: string;
+  description: string;
+  isFree: boolean;
+  videoUrl: string;
+  attachments: LessonAttachment[];
+}
+
+export function mapApiLessonVideo(l: ApiLessonVideo): LessonVideo {
+  return {
+    id: String(l.id),
+    title: l.title,
+    description: l.description,
+    isFree: l.is_free,
+    videoUrl: l.video_url,
+    attachments: l.attachments.map((a) => ({
+      path: a.media_path,
+      name: a.media_name,
+      type: a.media_type,
+      size: a.media_size
+    }))
   };
 }
 

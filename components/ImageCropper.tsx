@@ -5,7 +5,14 @@ import { Check, ZoomIn } from "lucide-react";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import Modal from "./motion/Modal";
 
-const CONTAINER_SIZE = 320;
+// Bigger window to actually judge a crop by, especially the wide 3:1 cover
+// shape — at the old fixed 320px width that rendered barely 107px tall,
+// too cramped to see what was actually being kept. Sized per shape rather
+// than one fixed constant: the circle avatar window grows modestly (it was
+// already reasonably readable), the rect cover window grows a lot more
+// since it's the one that was genuinely too small.
+const AVATAR_CONTAINER_SIZE = 380;
+const COVER_CONTAINER_WIDTH = 600;
 
 // Facebook-style "drag to reposition, pinch/slide to zoom" picker — not a
 // freeform crop tool. The container is a fixed-size window (circle for
@@ -41,8 +48,8 @@ export default function ImageCropper({
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const draggingRef = useRef<{ startX: number; startY: number; startOffsetX: number; startOffsetY: number } | null>(null);
 
-  const containerWidth = CONTAINER_SIZE;
-  const containerHeight = CONTAINER_SIZE / aspect;
+  const containerWidth = shape === "circle" ? AVATAR_CONTAINER_SIZE : COVER_CONTAINER_WIDTH;
+  const containerHeight = containerWidth / aspect;
 
   useEffect(() => {
     const url = URL.createObjectURL(file);
@@ -131,7 +138,7 @@ export default function ImageCropper({
   }
 
   return (
-    <Modal open onClose={onCancel} maxWidth="max-w-md">
+    <Modal open onClose={onCancel} maxWidth={shape === "circle" ? "max-w-md" : "max-w-2xl"}>
       <h3 className="mb-4 text-base font-bold text-ink">{dict.common.repositionImage}</h3>
 
       <div

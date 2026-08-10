@@ -78,7 +78,7 @@ export default function Navbar({ locale, dict }: { locale: Locale; dict: Diction
             <Link
               href={`/${locale}/creator/dashboard`}
               className={`flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium transition ${
-                pathname.startsWith(`/${locale}/creator`)
+                pathname.startsWith(`/${locale}/creator/`)
                   ? "bg-primary-500 text-white"
                   : "text-ink/70 hover:bg-primary-50 hover:text-primary-700"
               }`}
@@ -228,7 +228,7 @@ export default function Navbar({ locale, dict }: { locale: Locale; dict: Diction
                 href={`/${locale}/creator/dashboard`}
                 onClick={() => setMobileOpen(false)}
                 className={`rounded-lg px-3 py-2 text-sm font-medium ${
-                  pathname.startsWith(`/${locale}/creator`)
+                  pathname.startsWith(`/${locale}/creator/`)
                     ? "bg-primary-500 text-white"
                     : "text-ink/80 hover:bg-primary-50"
                 }`}

@@ -3,7 +3,7 @@ import { PlayCircle } from "lucide-react";
 import type { Metadata } from "next";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/getDictionary";
-import { getCategories, getTopCreatorsApi, getCommunities } from "@/lib/api-content";
+import { getCategories, getTopCreatorsApi, getCommunities, getSettings } from "@/lib/api-content";
 import CreatorCard from "@/components/CreatorCard";
 import SectionHeading from "@/components/SectionHeading";
 import Slider from "@/components/motion/Slider";
@@ -27,6 +27,7 @@ export default async function HomePage({ params }: { params: { locale: string } 
   const topCreators = await getTopCreatorsApi(locale);
   const categories = await getCategories(locale);
   const initialCommunities = await getCommunities(locale);
+  const settings = await getSettings(locale);
 
   return (
     <div>
@@ -62,9 +63,7 @@ export default async function HomePage({ params }: { params: { locale: string } 
 
       {/* CTA banner */}
       <section className="container-page pb-14 sm:pb-16">
-        <div className="relative overflow-hidden rounded-3xl bg-ink px-6 py-12 text-center sm:px-16 sm:py-14">
-          <div className="pointer-events-none absolute -end-10 -top-10 h-52 w-52 rounded-full border-2 border-dashed border-white/10" />
-          <div className="pointer-events-none absolute -start-16 -bottom-16 h-64 w-64 rounded-full border-2 border-dashed border-white/10" />
+        <div className="rounded-3xl bg-ink px-6 py-12 text-center sm:px-16 sm:py-14">
           <PlayCircle className="mx-auto mb-4 text-accent-400" size={32} />
           <h2 className="mx-auto max-w-lg text-2xl font-bold text-white sm:text-3xl">
             {dict.home.ctaBannerTitle}
@@ -79,7 +78,7 @@ export default async function HomePage({ params }: { params: { locale: string } 
         </div>
       </section>
 
-      <ContactSection locale={locale} dict={dict} />
+      <ContactSection locale={locale} dict={dict} settings={settings} />
     </div>
   );
 }

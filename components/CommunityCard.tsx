@@ -44,7 +44,7 @@ export default function CommunityCard({
           />
         ) : (
           <div className={`flex h-full w-full items-center justify-center bg-gradient-to-br ${accent.gradient}`}>
-            <span className="seal-ring h-14 w-14 border-white/50 text-white text-lg font-bold">{initials(name)}</span>
+            <span className="seal-ring h-14 w-14 bg-white/15 text-white text-lg font-bold">{initials(name)}</span>
           </div>
         )}
         {category && (

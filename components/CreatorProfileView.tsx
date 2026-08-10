@@ -15,6 +15,7 @@ import ImageCropper from "./ImageCropper";
 
 const API_FIELD_MAP: Record<string, string> = {
   name: "name",
+  email: "email",
   phone_number: "phoneNumber",
   bio: "bio"
 };
@@ -30,6 +31,7 @@ export default function CreatorProfileView({ locale, dict }: { locale: Locale; d
   const coverInputRef = useRef<HTMLInputElement>(null);
 
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [bio, setBio] = useState("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -49,6 +51,7 @@ export default function CreatorProfileView({ locale, dict }: { locale: Locale; d
   useEffect(() => {
     if (user && user.role === "creator") {
       setName(user.name);
+      setEmail(user.email);
       setPhoneNumber(user.phoneNumber ?? "");
       setBio(user.bioEn);
     }
@@ -80,6 +83,7 @@ export default function CreatorProfileView({ locale, dict }: { locale: Locale; d
       await updateProfile(
         {
           name,
+          email,
           phoneNumber,
           bio,
           image: avatarFile ?? undefined,
@@ -113,11 +117,7 @@ export default function CreatorProfileView({ locale, dict }: { locale: Locale; d
               onError={() => setCoverFailed(true)}
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700">
-              <span className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-dashed border-white/50 text-xl font-bold text-white">
-                {initials(name || user.name)}
-              </span>
-            </div>
+            <div className="h-full w-full bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700" />
           )}
           <button
             type="button"
@@ -188,6 +188,15 @@ export default function CreatorProfileView({ locale, dict }: { locale: Locale; d
               value={name}
               onChange={(e) => setName(e.target.value)}
               className={fieldInputClass(!!fieldErrors.name)}
+            />
+          </FormField>
+          <FormField label={dict.common.email} error={fieldErrors.email}>
+            <input
+              dir="ltr"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className={fieldInputClass(!!fieldErrors.email)}
             />
           </FormField>
           <FormField label={dict.common.phoneNumber} error={fieldErrors.phoneNumber}>

@@ -65,7 +65,7 @@ export default function LegalSection({
       </div>
 
       <div className="container-page relative -mt-7 flex justify-center sm:justify-start">
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-4 py-2 text-xs font-semibold text-ink/70 shadow-raised">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-4 py-2 text-xs font-semibold text-ink/70">
           <Calendar size={14} className="text-primary-600" />
           {lastUpdatedLabel}: {lastUpdated}
         </span>
@@ -73,7 +73,7 @@ export default function LegalSection({
 
       <div className="container-page flex flex-col gap-6 py-10 sm:py-12 lg:flex-row lg:items-start">
         <aside className="lg:w-64 lg:shrink-0">
-          <div className="rounded-2xl border border-line bg-surface p-5 shadow-card lg:sticky lg:top-24">
+          <div className="rounded-2xl border border-line bg-surface p-5 lg:sticky lg:top-24">
             <h3 className="mb-3 text-sm font-bold text-ink">{sectionsLabel}</h3>
             <ul className="space-y-1">
               {items.map((item, i) => (
@@ -97,7 +97,7 @@ export default function LegalSection({
               <div
                 key={i}
                 id={`${id}-${i}`}
-                className="scroll-mt-24 rounded-2xl border border-line bg-surface p-5 shadow-card sm:p-6"
+                className="scroll-mt-24 rounded-2xl border border-line bg-surface p-5 sm:p-6"
               >
                 <div className="mb-3 flex items-center gap-3">
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-500/10 text-primary-600">

@@ -176,7 +176,9 @@
     "subscribeToUnlock": "Accessing all lessons in this course requires subscribing to {name}'s community",
     "partOfCommunity": "This course is part of {name}'s community",
     "lessonResourceTitle": "Attached lesson file",
-    "downloadResource": "Download file"
+    "downloadResource": "Download file",
+    "backToCourse": "Back to course",
+    "lessonLoadError": "Couldn't load this lesson. Make sure you're signed in and subscribed to the community."
   },
   "creator": {
     "aboutTitle": "About the content creator",
@@ -398,10 +400,11 @@
     "statFreeSubscribers": "Free subscribers",
     "statPaidSubscribers": "Paid subscribers",
     "statCourseStudents": "Course students",
-    "statTotalBalance": "Total balance (all-time)",
+    "statTotalBalance": "Total balance",
     "statPendingBalance": "Pending balance",
     "subscribersTitle": "Subscribers",
     "subscribersEmpty": "No subscribers yet",
+    "activeMembersTitle": "Active members",
     "communityModTitle": "Feed — {name}",
     "profileSubtitle": "Update your public content creator profile",
     "profileEditCta": "Edit your personal data",

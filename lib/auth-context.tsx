@@ -67,6 +67,8 @@ import type {
   PlatformSettings,
   ApiNotification,
   AppNotification,
+  ApiLessonVideo,
+  LessonVideo,
 } from "./api-types";
 import {
   mapApiUserToLocal,
@@ -87,6 +89,7 @@ import {
   mapApiCommunitySubscriber,
   mapApiSettings,
   mapApiNotification,
+  mapApiLessonVideo,
 } from "./api-types";
 
 interface RegisterApiInput {
@@ -210,6 +213,10 @@ interface AuthContextValue {
     lessonId: string,
     locale: Locale,
   ) => Promise<CreatorLessonUpdateResult | null>;
+  getLessonVideo: (
+    lessonId: string,
+    locale: Locale,
+  ) => Promise<LessonVideo | null>;
   createLesson: (
     courseId: string,
     input: {
@@ -1072,6 +1079,31 @@ export function AuthProvider({
     [],
   );
 
+  // GET /lessons/{id} — authenticated, student-facing "watch this lesson"
+  // endpoint. Deliberately called only from the dedicated per-lesson watch
+  // page's own client-side effect (never passed down as a prop from a
+  // server-rendered page) so the real video url never ends up in that page's
+  // static HTML — the closest practical mitigation to keeping it out of
+  // plain view, short of the URL never touching the browser at all, which
+  // isn't possible for a played-in-page YouTube embed.
+  const getLessonVideo = useCallback(
+    async (lessonId: string, requestLocale: Locale) => {
+      try {
+        const res = await apiFetch<{ data: ApiLessonVideo }>(
+          `/lessons/${lessonId}`,
+          {
+            method: "GET",
+            locale: requestLocale,
+          },
+        );
+        return mapApiLessonVideo(res.data);
+      } catch {
+        return null;
+      }
+    },
+    [],
+  );
+
   // POST /creators/courses/{id}/lessons — create, added round 12
   // (previously the "Add lesson" button just showed a "not connected"
   // notice). This is the one course/lesson endpoint pair this round where
@@ -1871,6 +1903,7 @@ export function AuthProvider({
     deleteCourseByCreator,
     getLessonsByCourse,
     getLessonByCreator,
+    getLessonVideo,
     createLesson,
     updateLessonByCreator,
     deleteLessonByCreator,

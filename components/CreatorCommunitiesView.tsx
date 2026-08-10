@@ -102,7 +102,7 @@ export default function CreatorCommunitiesView({ locale, dict }: { locale: Local
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700">
-                <span className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-dashed border-white/50 text-2xl font-bold text-white">
+                <span className="flex h-20 w-20 items-center justify-center rounded-full bg-white/15 text-2xl font-bold text-white">
                   {initials(name)}
                 </span>
               </div>

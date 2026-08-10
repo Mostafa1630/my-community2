@@ -55,7 +55,7 @@
   }
 
   .seal-ring {
-    @apply relative flex items-center justify-center rounded-full border-2 border-dashed;
+    @apply relative flex items-center justify-center rounded-full;
   }
 
   /* Animated underline for plain text links (e.g. "See all", footer links).

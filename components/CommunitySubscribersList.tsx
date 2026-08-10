@@ -12,14 +12,21 @@ import Pagination from "./Pagination";
 
 // GET /creators/communities/{id}/subscriptions — paginated list of a
 // creator's own community subscribers (avatar + name only, per the spec).
+// `compact` renders a narrower single-column sidebar widget (used next to
+// the community feed's posts, labeled "active members" there) instead of
+// the wider multi-column card (used standalone on the "My Community" page).
 export default function CommunitySubscribersList({
   communityId,
   locale,
-  dict
+  dict,
+  title,
+  compact = false
 }: {
   communityId: string;
   locale: Locale;
   dict: Dictionary;
+  title?: string;
+  compact?: boolean;
 }) {
   const { getCommunitySubscribers } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -48,10 +55,10 @@ export default function CommunitySubscribersList({
   }, [communityId, locale, page]);
 
   return (
-    <div className="mt-6 rounded-2xl border border-line bg-surface p-6 shadow-card sm:p-8">
-      <h2 className="mb-5 flex items-center gap-2 text-lg font-bold text-ink">
-        <Users2 size={18} className="text-primary-600" />
-        {dict.creatorDash.subscribersTitle}
+    <div className={compact ? "rounded-2xl border border-line bg-surface p-5" : "mt-6 rounded-2xl border border-line bg-surface p-6 shadow-card sm:p-8"}>
+      <h2 className={`mb-5 flex items-center gap-2 font-bold text-ink ${compact ? "text-base" : "text-lg"}`}>
+        <Users2 size={compact ? 16 : 18} className="text-primary-600" />
+        {title ?? dict.creatorDash.subscribersTitle}
         {total > 0 && <span className="font-mono text-sm font-normal text-ink/55">({total})</span>}
       </h2>
 
@@ -61,7 +68,7 @@ export default function CommunitySubscribersList({
         <EmptyState icon={Users2} title={dict.creatorDash.subscribersEmpty} />
       ) : (
         <>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className={compact ? "space-y-2" : "grid gap-3 sm:grid-cols-2 lg:grid-cols-3"}>
             {subscribers.map((s) => (
               <div key={s.id} className="flex items-center gap-3 rounded-xl border border-line bg-paper px-3.5 py-2.5">
                 <img
