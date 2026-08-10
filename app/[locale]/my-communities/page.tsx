@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/getDictionary";
-import { getCategories } from "@/lib/api-content";
 import MyCommunitiesView from "@/components/MyCommunitiesView";
 
 export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
@@ -13,14 +12,13 @@ export async function generateMetadata({ params }: { params: { locale: string } 
 export default async function MyCommunitiesPage({ params }: { params: { locale: string } }) {
   const locale: Locale = isLocale(params.locale) ? params.locale : "ar";
   const dict = getDictionary(locale);
-  const categories = await getCategories(locale);
   return (
     <div className="container-page py-12">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-ink">{dict.student.myCommunitiesTitle}</h1>
         <p className="mt-1.5 text-sm text-ink/65">{dict.student.myCommunitiesSubtitle}</p>
       </div>
-      <MyCommunitiesView locale={locale} dict={dict} categories={categories} />
+      <MyCommunitiesView locale={locale} dict={dict} />
     </div>
   );
 }

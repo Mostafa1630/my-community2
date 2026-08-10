@@ -263,6 +263,69 @@ export function mapApiCommunitySummary(c: ApiCommunitySummary): CommunitySummary
   };
 }
 
+// GET /courses/my-courses — the enrolled-standalone-courses list shown on
+// the student's own "My Courses" page. The real backend hadn't returned any
+// populated items to confirm the exact item shape against at the time this
+// was written (only ever an empty list, no real enrollment to inspect), so
+// every field is read defensively (optional chaining / fallbacks) rather
+// than assumed present — modeled on the closest sibling shape that IS
+// confirmed (GET /courses/details/{id}) plus the community-summary
+// pattern's own field-naming conventions, so this degrades gracefully
+// (blank/zero values, never a crash) if the real shape differs slightly.
+export interface ApiCourseSummary {
+  id: number;
+  slug?: string | null;
+  title: string;
+  description?: string | null;
+  image?: string | null;
+  price?: number;
+  discount_percentage?: number;
+  final_price?: number;
+  is_free?: boolean | number;
+  lessons_count?: number;
+  students_count?: number;
+  creator?: { id: number; name: string; profile_image?: string | null } | null;
+  community?: { community_id?: number; id?: number; name: string } | null;
+}
+
+export interface CourseSummary {
+  id: string;
+  title: string;
+  description: string;
+  image?: string;
+  price: number;
+  discountPercentage: number;
+  finalPrice: number;
+  isFree: boolean;
+  lessonsCount: number;
+  studentsCount: number;
+  creator?: { id: string; name: string; profileImage?: string };
+  communityId?: string;
+  communityName?: string;
+  accent: AccentKey;
+}
+
+export function mapApiCourseSummary(c: ApiCourseSummary): CourseSummary {
+  return {
+    id: String(c.id),
+    title: c.title,
+    description: c.description ?? "",
+    image: c.image ?? undefined,
+    price: c.price ?? 0,
+    discountPercentage: c.discount_percentage ?? 0,
+    finalPrice: c.final_price ?? c.price ?? 0,
+    isFree: Boolean(c.is_free),
+    lessonsCount: c.lessons_count ?? 0,
+    studentsCount: c.students_count ?? 0,
+    creator: c.creator
+      ? { id: String(c.creator.id), name: c.creator.name, profileImage: c.creator.profile_image ?? undefined }
+      : undefined,
+    communityId: c.community ? String(c.community.community_id ?? c.community.id ?? "") : undefined,
+    communityName: c.community?.name,
+    accent: accentForId(c.id)
+  };
+}
+
 export interface ApiCommunityCourse {
   id: number;
   title: string;
@@ -1339,6 +1402,41 @@ export function mapApiSettings(s: ApiSettings): PlatformSettings {
     descriptionEn: s.site_description_en ?? s.site_description ?? undefined,
     descriptionAr: s.site_description_ar ?? s.site_description ?? undefined,
     lastUpdated: s.last_updated ?? undefined
+  };
+}
+
+// ---- Payments ----
+
+// POST /communities/{id}/subscribe and POST /courses/{id}/enroll share this
+// exact response shape — a Kashier-hosted checkout session, not an
+// immediately-completed purchase. A 201 here only means "the session was
+// created", not "paid"; the actual subscription/enrollment only exists once
+// the student completes payment on `payment_url` (Kashier's own hosted
+// page), which is why the frontend's only job on success is to redirect
+// there — there's nothing to unlock locally yet.
+export interface ApiPaymentSession {
+  payment_id: number;
+  order_id: string;
+  amount: number;
+  currency: string;
+  payment_url: string;
+}
+
+export interface PaymentSession {
+  paymentId: string;
+  orderId: string;
+  amount: number;
+  currency: string;
+  paymentUrl: string;
+}
+
+export function mapApiPaymentSession(p: ApiPaymentSession): PaymentSession {
+  return {
+    paymentId: String(p.payment_id),
+    orderId: p.order_id,
+    amount: p.amount,
+    currency: p.currency,
+    paymentUrl: p.payment_url
   };
 }
 

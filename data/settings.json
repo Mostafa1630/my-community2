@@ -1,9 +1,0 @@
-[
-  { "id": "set-1", "key": "platform_name_en", "value": "Mujtamaaty", "type": "string", "group": "general", "isPublic": true },
-  { "id": "set-2", "key": "platform_name_ar", "value": "مجتمعاتي", "type": "string", "group": "general", "isPublic": true },
-  { "id": "set-3", "key": "logo_initials", "value": "مج", "type": "string", "group": "appearance", "isPublic": true },
-  { "id": "set-4", "key": "commission_rate", "value": "20", "type": "number", "group": "payment", "isPublic": false },
-  { "id": "set-5", "key": "default_language", "value": "ar", "type": "string", "group": "general", "isPublic": true },
-  { "id": "set-6", "key": "default_currency", "value": "EGP", "type": "string", "group": "payment", "isPublic": true },
-  { "id": "set-7", "key": "payment_gateway", "value": "Paymob", "type": "string", "group": "payment", "isPublic": false }
-]

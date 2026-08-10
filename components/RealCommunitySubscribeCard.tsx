@@ -19,7 +19,8 @@ export default function RealCommunitySubscribeCard({
   locale: Locale;
   dict: Dictionary;
 }) {
-  const { role, user, hydrated, checkCoupon, settings } = useAuth();
+  const { role, user, hydrated, checkCoupon, settings, isSubscribed } = useAuth();
+  const subscribed = role === "student" && isSubscribed(community.id);
   const [couponCode, setCouponCode] = useState("");
   const [checking, setChecking] = useState(false);
   const [couponResult, setCouponResult] = useState<{ discountPercentage: number } | null>(null);
@@ -73,7 +74,7 @@ export default function RealCommunitySubscribeCard({
         )}
       </div>
 
-      {!community.isFree && role === "student" && (
+      {!community.isFree && role === "student" && !subscribed && (
         <div className="mt-4 rounded-xl border border-accent-200 bg-accent-50/50 p-3.5">
           <label className="mb-1.5 flex items-center gap-1.5 text-sm font-semibold text-accent-800">
             <Tag size={14} />
@@ -124,6 +125,19 @@ export default function RealCommunitySubscribeCard({
         // this public page. A same-sized skeleton avoids both the wrong
         // link and any layout shift once hydrated resolves.
         <div className="mt-4 h-[46px] w-full animate-pulse rounded-full bg-line/60" />
+      ) : role === "student" && subscribed ? (
+        <>
+          <p className="mt-4 flex items-center justify-center gap-1.5 text-center text-xs font-medium text-success">
+            <CheckCircle2 size={13} />
+            {dict.communityDetails.alreadySubscribed}
+          </p>
+          <Link
+            href={`/${locale}/communities/${community.id}/feed`}
+            className="mt-2 flex w-full items-center justify-center rounded-full bg-primary-500 py-3 text-sm font-semibold text-white transition hover:bg-primary-600"
+          >
+            {dict.communityDetails.enterCommunity}
+          </Link>
+        </>
       ) : role === "student" ? (
         // Always through checkout, free or not — CommunityCheckoutView
         // itself is what skips straight into the feed once confirmed there
@@ -150,7 +164,7 @@ export default function RealCommunitySubscribeCard({
         </Link>
       )}
 
-      {community.type === "public" && (
+      {community.type === "public" && !subscribed && (
         <Link
           href={`/${locale}/communities/${community.id}/feed`}
           className="mt-2.5 flex w-full items-center justify-center rounded-full border border-line py-3 text-sm font-semibold text-ink/70 transition hover:border-primary-300 hover:text-primary-700"

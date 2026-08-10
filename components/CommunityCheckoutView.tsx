@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 import type { CommunityDetails } from "@/lib/api-types";
@@ -24,21 +23,32 @@ export default function CommunityCheckoutView({
   initialCouponCode?: string;
 }) {
   const router = useRouter();
-  const { checkCoupon, settings } = useAuth();
+  const { checkCoupon, createCommunitySubscription, settings } = useAuth();
   const [couponResult, setCouponResult] = useState<{ discountPercentage: number } | null>(null);
   const [checkingCoupon, setCheckingCoupon] = useState(!!initialCouponCode);
   const [confirming, setConfirming] = useState(false);
+  const [error, setError] = useState("");
 
-  function handleConfirm() {
-    // Nothing to actually pay for, so there's no reason to show the "online
-    // payment isn't available yet" holding message here either — same
-    // reasoning as skipping this whole page for free communities from the
-    // details page's own subscribe button.
-    if (community.isFree) {
-      router.push(`/${locale}/communities/${community.id}/feed`);
-      return;
-    }
+  async function handleConfirm() {
+    // Always goes through the real endpoint and redirects to whatever
+    // payment_url comes back — free communities still return one (e.g. a
+    // zero-amount confirmation session), so there's no local "nothing to
+    // pay, skip straight to the feed" shortcut here.
+    setError("");
     setConfirming(true);
+    try {
+      // Only sent once this page's own coupon check above already confirmed
+      // it's valid — never the raw, unverified code.
+      const session = await createCommunitySubscription(
+        community.id,
+        couponResult ? initialCouponCode : undefined,
+        locale
+      );
+      window.location.href = session.paymentUrl;
+    } catch {
+      setError(dict.communityDetails.paymentError);
+      setConfirming(false);
+    }
   }
 
   useEffect(() => {
@@ -58,13 +68,14 @@ export default function CommunityCheckoutView({
 
   return (
     <div className="mx-auto max-w-lg">
-      <Link
-        href={`/${locale}/communities/${community.id}`}
+      <button
+        type="button"
+        onClick={() => router.back()}
         className="mb-6 flex items-center gap-1.5 text-sm font-medium text-ink/65 hover:text-primary-700"
       >
         <BackIcon size={15} />
         {dict.communityDetails.backToCommunity}
-      </Link>
+      </button>
 
       <div className="rounded-2xl border border-line bg-surface p-6 shadow-card sm:p-8">
         <p className="text-center text-sm font-medium text-ink/65">{dict.communityDetails.amountDue}</p>
@@ -112,8 +123,8 @@ export default function CommunityCheckoutView({
         </div>
 
         {confirming ? (
-          <p className="flex items-start gap-2 rounded-xl bg-accent-50 px-3.5 py-3 text-sm text-accent-800">
-            <AlertCircle size={16} className="mt-0.5 shrink-0" />
+          <p className="flex items-center justify-center gap-2 rounded-xl bg-accent-50 px-3.5 py-3 text-sm text-accent-800">
+            <Loader2 size={16} className="shrink-0 animate-spin" />
             {dict.communityDetails.subscribeConfirmBody}
           </p>
         ) : (
@@ -125,6 +136,13 @@ export default function CommunityCheckoutView({
             <CheckCircle2 size={16} />
             {dict.communityDetails.confirmSubscribe}
           </button>
+        )}
+
+        {error && (
+          <p className="mt-3 flex items-start gap-2 rounded-xl bg-danger/10 px-3.5 py-2.5 text-xs text-danger">
+            <AlertCircle size={14} className="mt-0.5 shrink-0" />
+            {error}
+          </p>
         )}
       </div>
     </div>

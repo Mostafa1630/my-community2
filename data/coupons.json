@@ -1,6 +1,0 @@
-[
-  { "id": "coupon-1", "userId": "creator-1", "code": "BACKEND20", "discountPercentage": 20, "expiresAt": "2026-12-31T23:59:59Z", "createdAt": "2026-06-01T00:00:00Z" },
-  { "id": "coupon-2", "userId": "creator-2", "code": "FRONTEND15", "discountPercentage": 15, "expiresAt": "2026-12-31T23:59:59Z", "createdAt": "2026-06-01T00:00:00Z" },
-  { "id": "coupon-3", "userId": "creator-4", "code": "GROWTH25", "discountPercentage": 25, "expiresAt": "2026-06-01T23:59:59Z", "createdAt": "2026-04-01T00:00:00Z" },
-  { "id": "coupon-4", "userId": "creator-5", "code": "DATA30", "discountPercentage": 30, "expiresAt": "2026-12-31T23:59:59Z", "createdAt": "2026-06-01T00:00:00Z" }
-]

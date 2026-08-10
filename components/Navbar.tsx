@@ -44,6 +44,7 @@ export default function Navbar({ locale, dict }: { locale: Locale; dict: Diction
   ];
   if (role === "student") {
     navLinks.push({ href: `/${locale}/my-communities`, label: dict.nav.myCommunities });
+    navLinks.push({ href: `/${locale}/my-courses`, label: dict.nav.myCoursesLink });
   }
   if (role === "student" || role === "creator") {
     navLinks.push({ href: `/${locale}/favorites`, label: dict.nav.favorites });

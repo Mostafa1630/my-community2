@@ -24,5 +24,5 @@ export default function LessonWatchPage({
 }) {
   const locale: Locale = isLocale(params.locale) ? params.locale : "ar";
   const dict = getDictionary(locale);
-  return <LessonWatchView lessonId={params.lessonId} courseId={params.id} locale={locale} dict={dict} />;
+  return <LessonWatchView lessonId={params.lessonId} locale={locale} dict={dict} />;
 }

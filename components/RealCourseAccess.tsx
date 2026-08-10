@@ -7,6 +7,7 @@ import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import { t } from "@/lib/i18n/t";
 import { useAuth } from "@/lib/auth-context";
+import { formatPrice } from "@/lib/format";
 import VideoPlayer from "./VideoPlayer";
 
 // Real per-lesson access control lives entirely on the frontend for the
@@ -24,7 +25,7 @@ export default function RealCourseAccess({
   locale: Locale;
   dict: Dictionary;
 }) {
-  const { role, user, isSubscribed } = useAuth();
+  const { role, user, isSubscribed, settings } = useAuth();
 
   const unlocked =
     (role === "creator" && user?.id === course.creator.id) ||
@@ -101,6 +102,17 @@ export default function RealCourseAccess({
               >
                 {dict.communityDetails.backToCommunity}
               </Link>
+              {!course.isFree && role === "student" && (
+                <>
+                  <p className="mt-3 text-center text-xs text-ink/50">{dict.courseDetails.buyThisCourseOnly}</p>
+                  <Link
+                    href={`/${locale}/courses/${course.id}/checkout`}
+                    className="mt-2 flex w-full items-center justify-center rounded-full border border-line py-3 text-sm font-semibold text-ink/70 transition hover:border-primary-300 hover:text-primary-700"
+                  >
+                    {t(dict.courseDetails.buyThisCourseFor, { price: formatPrice(course.finalPrice, locale, settings?.currency) })}
+                  </Link>
+                </>
+              )}
             </>
           )}
         </div>

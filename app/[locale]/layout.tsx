@@ -7,7 +7,6 @@ import { locales, isLocale, dir, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/getDictionary";
 import { DEFAULT_OG_IMAGE } from "@/lib/seo";
 import { AuthProvider } from "@/lib/auth-context";
-import { PlatformStoreProvider } from "@/lib/platform-store";
 import { USER_CACHE_COOKIE, parseCachedUserCookie } from "@/lib/api-client";
 import type { ApiUser } from "@/lib/api-types";
 import Navbar from "@/components/Navbar";
@@ -129,16 +128,14 @@ export default function LocaleLayout({
             CSS prefers-reduced-motion block in globals.css only covers plain CSS
             transitions/animations, not these. */}
         <MotionConfig reducedMotion="user">
-          <PlatformStoreProvider>
-            <AuthProvider locale={locale} initialUser={initialUser}>
-              <div className="flex min-h-screen flex-col">
-                <Navbar locale={locale} dict={dictionary} />
-                <main className="flex-1">{children}</main>
-                <Footer locale={locale} dict={dictionary} />
-                <ScrollToTopButton />
-              </div>
-            </AuthProvider>
-          </PlatformStoreProvider>
+          <AuthProvider locale={locale} initialUser={initialUser}>
+            <div className="flex min-h-screen flex-col">
+              <Navbar locale={locale} dict={dictionary} />
+              <main className="flex-1">{children}</main>
+              <Footer locale={locale} dict={dictionary} />
+              <ScrollToTopButton />
+            </div>
+          </AuthProvider>
         </MotionConfig>
       </body>
     </html>

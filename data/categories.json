@@ -1,8 +1,0 @@
-[
-  { "id": "cat-1", "slug": "web-development", "nameEn": "Web Development", "nameAr": "تطوير الويب", "icon": "code", "image": "/images/category-web-development.jpg", "status": "active", "createdAt": "2023-01-01" },
-  { "id": "cat-2", "slug": "mobile-development", "nameEn": "Mobile Development", "nameAr": "تطوير تطبيقات الموبايل", "icon": "smartphone", "image": "/images/category-mobile-development.jpg", "status": "active", "createdAt": "2023-01-01" },
-  { "id": "cat-3", "slug": "ui-ux-design", "nameEn": "UI/UX Design", "nameAr": "تصميم واجهات وتجربة المستخدم", "icon": "figma", "image": "/images/category-ui-ux-design.jpg", "status": "active", "createdAt": "2023-01-01" },
-  { "id": "cat-4", "slug": "digital-marketing", "nameEn": "Digital Marketing", "nameAr": "التسويق الرقمي", "icon": "megaphone", "image": "/images/category-digital-marketing.jpg", "status": "active", "createdAt": "2023-01-01" },
-  { "id": "cat-5", "slug": "data-science", "nameEn": "Data Science", "nameAr": "علوم البيانات", "icon": "bar-chart", "image": "/images/category-data-science.jpg", "status": "active", "createdAt": "2023-01-01" },
-  { "id": "cat-6", "slug": "business", "nameEn": "Business", "nameAr": "إدارة الأعمال", "icon": "briefcase", "image": "/images/category-business.jpg", "status": "active", "createdAt": "2023-01-01" }
-]

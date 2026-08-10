@@ -9,10 +9,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { AnyUser, Role, Creator } from "./types";
+import type { AnyUser, Role } from "./types";
 import type { Locale } from "./i18n/config";
-import { usePlatformStore } from "./platform-store";
-import { resolveCommunityPrice } from "./data";
 import {
   apiFetch,
   setAuthToken,
@@ -69,6 +67,12 @@ import type {
   AppNotification,
   ApiLessonVideo,
   LessonVideo,
+  ApiPaymentSession,
+  PaymentSession,
+  ApiCommunitySummary,
+  CommunitySummary,
+  ApiCourseSummary,
+  CourseSummary,
 } from "./api-types";
 import {
   mapApiUserToLocal,
@@ -90,6 +94,9 @@ import {
   mapApiSettings,
   mapApiNotification,
   mapApiLessonVideo,
+  mapApiPaymentSession,
+  mapApiCommunitySummary,
+  mapApiCourseSummary,
 } from "./api-types";
 
 interface RegisterApiInput {
@@ -146,6 +153,24 @@ interface AuthContextValue {
     input: { creatorId: string; code: string },
     locale: Locale,
   ) => Promise<{ id: string; discountPercentage: number }>;
+  createCommunitySubscription: (
+    communityId: string,
+    couponCode: string | undefined,
+    locale: Locale,
+  ) => Promise<PaymentSession>;
+  createCourseEnrollment: (
+    courseId: string,
+    couponCode: string | undefined,
+    locale: Locale,
+  ) => Promise<PaymentSession>;
+  getMySubscriptions: (
+    locale: Locale,
+    page?: number,
+  ) => Promise<{ items: CommunitySummary[]; total: number; currentPage: number; lastPage: number; perPage: number }>;
+  getMyEnrolledCourses: (
+    locale: Locale,
+    page?: number,
+  ) => Promise<{ items: CourseSummary[]; total: number; currentPage: number; lastPage: number; perPage: number }>;
   createReview: (
     input: {
       id: string;
@@ -347,8 +372,6 @@ interface AuthContextValue {
   ) => Promise<{ items: CommunitySubscriber[]; total: number; currentPage: number; lastPage: number; perPage: number }>;
   isSubscribed: (communityId: string) => boolean;
   ownsCourseStandalone: (courseId: string) => boolean;
-  subscribeToCommunity: (communityId: string, couponCode?: string) => void;
-  purchaseCourse: (courseId: string) => void;
   favorites: FavoriteItem[];
   favoritesLoading: boolean;
   toggleFavorite: (
@@ -386,7 +409,6 @@ export function AuthProvider({
   // refresh flash rather than just racing to hide it after the fact.
   initialUser?: ApiUser | null;
 }) {
-  const store = usePlatformStore();
   const [apiUser, setApiUser] = useState<ApiUser | null>(initialUser);
   // A non-null initialUser means the server already made a definitive call
   // from the cookie — nothing left to resolve before first paint. A null
@@ -774,6 +796,80 @@ export function AuthProvider({
         id: String(res.data.id),
         discountPercentage: res.data.discount_percentage,
       };
+    },
+    [],
+  );
+
+  // POST /communities/{id}/subscribe and POST /courses/{id}/enroll both
+  // create a Kashier-hosted checkout session rather than completing a
+  // purchase directly — the caller's only job on a 201 is to redirect the
+  // browser to the returned payment_url, same coupon_code convention as
+  // /coupons/check (only sent at all once the checkout page's own coupon
+  // check already confirmed it's valid).
+  const createCommunitySubscription = useCallback(
+    async (
+      communityId: string,
+      couponCode: string | undefined,
+      requestLocale: Locale,
+    ) => {
+      const form = new FormData();
+      if (couponCode) form.set("coupon_code", couponCode);
+      const res = await apiFetch<{ data: ApiPaymentSession }>(
+        `/communities/${communityId}/subscribe`,
+        {
+          method: "POST",
+          body: form,
+          locale: requestLocale,
+        },
+      );
+      return mapApiPaymentSession(res.data);
+    },
+    [],
+  );
+
+  const createCourseEnrollment = useCallback(
+    async (
+      courseId: string,
+      couponCode: string | undefined,
+      requestLocale: Locale,
+    ) => {
+      const form = new FormData();
+      if (couponCode) form.set("coupon_code", couponCode);
+      const res = await apiFetch<{ data: ApiPaymentSession }>(
+        `/courses/${courseId}/enroll`,
+        {
+          method: "POST",
+          body: form,
+          locale: requestLocale,
+        },
+      );
+      return mapApiPaymentSession(res.data);
+    },
+    [],
+  );
+
+  // GET /communities/my-subscriptions — the student's own subscribed
+  // communities, same item shape as the public GET /communities list (per
+  // the client's own note), just scoped to "mine" and requiring auth.
+  const getMySubscriptions = useCallback(
+    async (requestLocale: Locale, page = 1) => {
+      const res = await apiFetch<{
+        data: { items: ApiCommunitySummary[]; total: number; currentPage: number; lastPage: number; perPage: number };
+      }>(`/communities/my-subscriptions?page=${page}`, { method: "GET", locale: requestLocale });
+      return { ...res.data, items: res.data.items.map(mapApiCommunitySummary) };
+    },
+    [],
+  );
+
+  // GET /courses/my-courses — the student's own individually-enrolled
+  // standalone courses (bought via POST /courses/{id}/enroll, not through a
+  // community subscription).
+  const getMyEnrolledCourses = useCallback(
+    async (requestLocale: Locale, page = 1) => {
+      const res = await apiFetch<{
+        data: { items: ApiCourseSummary[]; total: number; currentPage: number; lastPage: number; perPage: number };
+      }>(`/courses/my-courses?page=${page}`, { method: "GET", locale: requestLocale });
+      return { ...res.data, items: res.data.items.map(mapApiCourseSummary) };
     },
     [],
   );
@@ -1645,158 +1741,65 @@ export function AuthProvider({
     return mapApiUserToLocal(apiUser);
   }, [hydrated, apiUser]);
 
-  const isSubscribed = useCallback(
-    (communityId: string) => {
-      if (!user || user.role !== "student") return false;
-      return store.communitySubscriptions.all.some(
-        (s) =>
-          s.studentId === user.id &&
-          s.communityId === communityId &&
-          s.status === "active" &&
-          new Date(s.endsAt).getTime() > Date.now(),
-      );
+  // Real subscription/enrollment membership — GET /communities/my-subscriptions
+  // and GET /courses/my-courses are both paginated lists, not a single
+  // "am I subscribed to X" lookup, so the full set of ids is loaded once per
+  // session (looping through every page, same as favorites loads its full
+  // list once) and cached here; isSubscribed/ownsCourseStandalone below just
+  // check membership in that cached set, same synchronous-read shape the
+  // rest of the app already calls them with. A payment only actually grants
+  // access once the student completes checkout on Kashier's hosted page and
+  // returns — reloaded on every mount/locale change so a student coming back
+  // from a completed payment sees themselves unlocked without a hard refresh.
+  const [subscribedCommunityIds, setSubscribedCommunityIds] = useState<Set<string>>(new Set());
+  const [enrolledCourseIds, setEnrolledCourseIds] = useState<Set<string>>(new Set());
+
+  const loadMyAccess = useCallback(
+    async (requestLocale: Locale) => {
+      try {
+        const ids = new Set<string>();
+        for (let page = 1, lastPage = 1; page <= lastPage && page <= 20; page++) {
+          const res = await getMySubscriptions(requestLocale, page);
+          res.items.forEach((c) => ids.add(c.id));
+          lastPage = res.lastPage;
+        }
+        setSubscribedCommunityIds(ids);
+      } catch {
+        setSubscribedCommunityIds(new Set());
+      }
+      try {
+        const ids = new Set<string>();
+        for (let page = 1, lastPage = 1; page <= lastPage && page <= 20; page++) {
+          const res = await getMyEnrolledCourses(requestLocale, page);
+          res.items.forEach((c) => ids.add(c.id));
+          lastPage = res.lastPage;
+        }
+        setEnrolledCourseIds(ids);
+      } catch {
+        setEnrolledCourseIds(new Set());
+      }
     },
-    [user, store.communitySubscriptions.all],
+    [getMySubscriptions, getMyEnrolledCourses],
+  );
+
+  useEffect(() => {
+    if (user && user.role === "student") {
+      loadMyAccess(locale);
+    } else {
+      setSubscribedCommunityIds(new Set());
+      setEnrolledCourseIds(new Set());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, user?.role, locale]);
+
+  const isSubscribed = useCallback(
+    (communityId: string) => subscribedCommunityIds.has(communityId),
+    [subscribedCommunityIds],
   );
 
   const ownsCourseStandalone = useCallback(
-    (courseId: string) => {
-      if (!user || user.role !== "student") return false;
-      return store.enrollments.all.some(
-        (e) => e.studentId === user.id && e.courseId === courseId,
-      );
-    },
-    [user, store.enrollments.all],
-  );
-
-  const pay = useCallback(
-    (
-      payableType: "course" | "community",
-      payableId: string,
-      amount: number,
-    ) => {
-      if (!user) return null;
-      const now = new Date().toISOString();
-      const paymentId = `pay-local-${Date.now()}`;
-      store.payments.add({
-        id: paymentId,
-        studentId: user.id,
-        payableType,
-        payableId,
-        amount,
-        currency: "EGP",
-        paymobOrderId: `ord-local-${Date.now()}`,
-        paymobTransactionId: `txn-local-${Date.now()}`,
-        paymentMethod: "card",
-        status: "success",
-        paidAt: now,
-        createdAt: now,
-      });
-      return { paymentId, now };
-    },
-    [user, store.payments],
-  );
-
-  const creditCreator = useCallback(
-    (creatorId: string, creatorEarning: number, amount: number) => {
-      const creator = store.users.all.find(
-        (u) => u.id === creatorId && u.role === "creator",
-      ) as Creator | undefined;
-      if (!creator) return;
-      store.users.update(creator.id, {
-        balance: creator.balance + creatorEarning,
-        totalSales: creator.totalSales + amount,
-      } as Partial<Creator>);
-    },
-    [store.users],
-  );
-
-  const subscribeToCommunity = useCallback(
-    (communityId: string, couponCode?: string) => {
-      if (!user || user.role !== "student" || isSubscribed(communityId)) return;
-      const community = store.communities.all.find((c) => c.id === communityId);
-      if (!community) return;
-      const { amount } = resolveCommunityPrice(
-        community,
-        couponCode,
-        store.coupons.all,
-      );
-      const creator = store.users.all.find(
-        (u) => u.id === community.creatorId && u.role === "creator",
-      ) as Creator | undefined;
-      const commissionRate = creator?.commissionRate ?? 20;
-      const platformCommission = Math.round((amount * commissionRate) / 100);
-      const creatorEarning = amount - platformCommission;
-      const paid = pay("community", communityId, amount);
-      if (!paid) return;
-      const startsAt = new Date();
-      const endsAt = new Date(
-        startsAt.getTime() +
-          community.subscriptionDurationDays * 24 * 60 * 60 * 1000,
-      );
-      store.communitySubscriptions.add({
-        id: `cs-local-${Date.now()}`,
-        studentId: user.id,
-        communityId,
-        paymentId: paid.paymentId,
-        pricePaid: amount,
-        platformCommission,
-        creatorEarning,
-        startsAt: startsAt.toISOString(),
-        endsAt: endsAt.toISOString(),
-        status: "active",
-        createdAt: paid.now,
-      });
-      creditCreator(community.creatorId, creatorEarning, amount);
-    },
-    [
-      user,
-      store.communities.all,
-      store.users.all,
-      store.communitySubscriptions,
-      store.coupons.all,
-      isSubscribed,
-      pay,
-      creditCreator,
-    ],
-  );
-
-  const purchaseCourse = useCallback(
-    (courseId: string) => {
-      if (!user || user.role !== "student" || ownsCourseStandalone(courseId))
-        return;
-      const course = store.courses.all.find((c) => c.id === courseId);
-      if (!course) return;
-      const amount = course.price;
-      const creator = store.users.all.find(
-        (u) => u.id === course.creatorId && u.role === "creator",
-      ) as Creator | undefined;
-      const commissionRate = creator?.commissionRate ?? 20;
-      const platformCommission = Math.round((amount * commissionRate) / 100);
-      const creatorEarning = amount - platformCommission;
-      const paid = pay("course", courseId, amount);
-      if (!paid) return;
-      store.enrollments.add({
-        id: `en-local-${Date.now()}`,
-        studentId: user.id,
-        courseId,
-        paymentId: paid.paymentId,
-        pricePaid: amount,
-        platformCommission,
-        creatorEarning,
-        enrolledAt: paid.now,
-      });
-      creditCreator(course.creatorId, creatorEarning, amount);
-    },
-    [
-      user,
-      store.courses.all,
-      store.users.all,
-      store.enrollments,
-      ownsCourseStandalone,
-      pay,
-      creditCreator,
-    ],
+    (courseId: string) => enrolledCourseIds.has(courseId),
+    [enrolledCourseIds],
   );
 
   // GET /favorites and POST /favorites/toggle both require Bearer auth, so
@@ -1892,6 +1895,10 @@ export function AuthProvider({
     updateProfile,
     submitContactUs,
     checkCoupon,
+    createCommunitySubscription,
+    createCourseEnrollment,
+    getMySubscriptions,
+    getMyEnrolledCourses,
     createReview,
     saveCommunity,
     getMyCommunity,
@@ -1941,8 +1948,6 @@ export function AuthProvider({
     getCommunitySubscribers,
     isSubscribed,
     ownsCourseStandalone,
-    subscribeToCommunity,
-    purchaseCourse,
     favorites,
     favoritesLoading,
     toggleFavorite,

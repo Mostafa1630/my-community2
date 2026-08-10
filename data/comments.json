@@ -1,6 +1,0 @@
-[
-  { "id": "comment-1", "postId": "post-1", "userId": "creator-1", "parentId": null, "content": "That's exactly the moment this course is built for. Try batching next.", "createdAt": "2026-06-28T11:02:00Z" },
-  { "id": "comment-2", "postId": "post-3", "userId": "student-5", "parentId": null, "content": "Please share it, I'm stuck on the same part.", "createdAt": "2026-07-01T15:00:00Z" },
-  { "id": "comment-3", "postId": "post-3", "userId": "creator-2", "parentId": "comment-2", "content": "Love seeing this — drop it in the pinned thread so everyone can find it.", "createdAt": "2026-07-01T16:11:00Z" },
-  { "id": "comment-4", "postId": "post-5", "userId": "creator-5", "parentId": null, "content": "4% is a great start. Try adding seasonality next and see how much it tightens.", "createdAt": "2026-06-25T13:30:00Z" }
-]

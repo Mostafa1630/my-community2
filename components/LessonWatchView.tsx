@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AlertCircle, ArrowLeft, ArrowRight, Download, FileText } from "lucide-react";
 import type { Locale } from "@/lib/i18n/config";
 import { dir } from "@/lib/i18n/config";
@@ -18,15 +18,14 @@ import EmptyState from "./EmptyState";
 // showing up once an authenticated viewer actually opens this lesson.
 export default function LessonWatchView({
   lessonId,
-  courseId,
   locale,
   dict
 }: {
   lessonId: string;
-  courseId: string;
   locale: Locale;
   dict: Dictionary;
 }) {
+  const router = useRouter();
   const { hydrated, getLessonVideo } = useAuth();
   const [loading, setLoading] = useState(true);
   const [lesson, setLesson] = useState<LessonVideo | null>(null);
@@ -49,13 +48,14 @@ export default function LessonWatchView({
   }, [lessonId, locale, hydrated, getLessonVideo]);
 
   const backLink = (
-    <Link
-      href={`/${locale}/courses/${courseId}`}
+    <button
+      type="button"
+      onClick={() => router.back()}
       className="mb-5 flex items-center gap-1.5 text-sm font-semibold text-primary-600 hover:text-primary-700"
     >
       <BackIcon size={16} />
       {dict.courseDetails.backToCourse}
-    </Link>
+    </button>
   );
 
   if (!hydrated || loading) return <PageLoader />;

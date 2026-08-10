@@ -1,9 +1,0 @@
-[
-  { "id": "rev-1", "studentId": "student-1", "reviewableType": "course", "reviewableId": "course-1", "rating": 5, "comment": "أفضل شرح لـ Laravel اتعلمت منه، عملي جدًا وقريب من شغل حقيقي.", "createdAt": "2026-05-20T10:00:00Z" },
-  { "id": "rev-2", "studentId": "student-2", "reviewableType": "course", "reviewableId": "course-1", "rating": 5, "comment": "Amazing depth, real production patterns not toy examples.", "createdAt": "2026-05-29T09:00:00Z" },
-  { "id": "rev-3", "studentId": "student-1", "reviewableType": "course", "reviewableId": "course-2", "rating": 5, "comment": "Design system section changed how I write components.", "createdAt": "2026-06-15T09:00:00Z" },
-  { "id": "rev-4", "studentId": "student-5", "reviewableType": "course", "reviewableId": "course-6", "rating": 4, "comment": "Great intro to Flutter, wish there was more on state management.", "createdAt": "2026-06-22T09:00:00Z" },
-  { "id": "rev-5", "studentId": "student-3", "reviewableType": "course", "reviewableId": "course-3", "rating": 5, "comment": "بريف حقيقي وخطوات واضحة جدًا من أول وايرفريم لحد التسليم.", "createdAt": "2026-06-25T09:00:00Z" },
-  { "id": "rev-6", "studentId": "student-1", "reviewableType": "course", "reviewableId": "course-5", "rating": 5, "comment": "Practical SQL that I actually use at work every day.", "createdAt": "2026-07-02T09:00:00Z" },
-  { "id": "rev-7", "studentId": "student-1", "reviewableType": "community", "reviewableId": "community-1", "rating": 5, "comment": "المجتمع نفسه مفيد زي الكورسات، الأسئلة بترد عليها بسرعة.", "createdAt": "2026-07-03T09:00:00Z" }
-]

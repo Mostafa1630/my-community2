@@ -1,5 +1,0 @@
-[
-  { "id": "fav-1", "userId": "student-1", "favoritableType": "community", "favoritableId": "community-3", "createdAt": "2026-06-10T09:00:00Z" },
-  { "id": "fav-2", "userId": "student-1", "favoritableType": "course", "favoritableId": "course-10", "createdAt": "2026-06-12T09:00:00Z" },
-  { "id": "fav-3", "userId": "student-2", "favoritableType": "community", "favoritableId": "community-5", "createdAt": "2026-06-15T09:00:00Z" }
-]
