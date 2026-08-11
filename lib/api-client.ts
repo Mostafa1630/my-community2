@@ -112,6 +112,19 @@ export interface CachedMyAccess {
 
 const MY_ACCESS_CACHE_KEY = "mujtamaaty.myAccessCache.v1";
 
+// Mirrored into a cookie for the exact same reason USER_CACHE_COOKIE exists
+// alongside USER_CACHE_KEY: localStorage only exists client-side, so reading
+// it from a `useState` initializer still renders wrong-then-right on the
+// server-rendered HTML's first paint (server has no window, so it always
+// starts from "not loaded yet") — that server/client mismatch, not the
+// network fetch itself, was the actual remaining flicker on refresh even
+// after this cache existed. A cookie is readable during SSR via
+// next/headers' cookies(), so the very first HTML the browser receives can
+// already carry the last-known "subscribed" answer, same as it already does
+// for the signed-in user's own name/avatar.
+export const MY_ACCESS_CACHE_COOKIE = "mujtamaaty_cached_my_access";
+const MY_ACCESS_CACHE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+
 export function getCachedMyAccess(userId: string): CachedMyAccess | null {
   if (typeof window === "undefined") return null;
   const raw = window.localStorage.getItem(MY_ACCESS_CACHE_KEY);
@@ -127,12 +140,28 @@ export function getCachedMyAccess(userId: string): CachedMyAccess | null {
 
 export function setCachedMyAccess(data: CachedMyAccess) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(MY_ACCESS_CACHE_KEY, JSON.stringify(data));
+  const json = JSON.stringify(data);
+  window.localStorage.setItem(MY_ACCESS_CACHE_KEY, json);
+  document.cookie = `${MY_ACCESS_CACHE_COOKIE}=${encodeURIComponent(json)}; path=/; max-age=${MY_ACCESS_CACHE_COOKIE_MAX_AGE}; SameSite=Lax`;
 }
 
 export function clearCachedMyAccess() {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(MY_ACCESS_CACHE_KEY);
+  document.cookie = `${MY_ACCESS_CACHE_COOKIE}=; path=/; max-age=0`;
+}
+
+// Server-side counterpart of getCachedMyAccess — parses the same cookie's
+// raw value (via next/headers' cookies() in a Server Component) instead of
+// localStorage, which doesn't exist there. See parseCachedUserCookie below
+// for the identical reasoning.
+export function parseCachedMyAccessCookie(raw: string | undefined): CachedMyAccess | null {
+  if (!raw) return null;
+  try {
+    return JSON.parse(decodeURIComponent(raw)) as CachedMyAccess;
+  } catch {
+    return null;
+  }
 }
 
 // Server-side counterpart of getCachedUser — parses the same cookie's raw

@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import {
+  Download,
+  FileText,
   Heart,
   MessageCircle,
   MoreHorizontal,
@@ -257,20 +259,37 @@ export default function PostCard({
         <div
           className={`relative z-10 mt-3 grid gap-2 ${post.media.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}
         >
-          {post.media.map((m, i) =>
-            /\.(mp4|mov)(\?.*)?$/i.test(m.url) ? (
-              <video key={i} src={m.url} controls className="max-h-96 w-full rounded-xl object-cover" />
-            ) : (
-              <img
+          {post.media.map((m, i) => {
+            if (/\.(mp4|mov)(\?.*)?$/i.test(m.url)) {
+              return <video key={i} src={m.url} controls className="max-h-96 w-full rounded-xl object-cover" />;
+            }
+            if (/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(m.url)) {
+              return (
+                <img
+                  key={i}
+                  src={m.url}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className="max-h-96 w-full rounded-xl object-cover"
+                />
+              );
+            }
+            return (
+              <a
                 key={i}
-                src={m.url}
-                alt=""
-                loading="lazy"
-                decoding="async"
-                className="max-h-96 w-full rounded-xl object-cover"
-              />
-            )
-          )}
+                href={m.url}
+                target="_blank"
+                rel="noreferrer"
+                download
+                className="flex items-center gap-2.5 rounded-xl border border-line bg-paper px-4 py-3 text-sm hover:border-primary-200"
+              >
+                <FileText size={16} className="shrink-0 text-primary-600" />
+                <span className="min-w-0 flex-1 truncate text-ink">{m.url.split("/").pop()}</span>
+                <Download size={14} className="shrink-0 text-ink/50" />
+              </a>
+            );
+          })}
         </div>
       )}
 

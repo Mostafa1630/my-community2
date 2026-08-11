@@ -24,6 +24,7 @@ import {
   getCachedMyAccess,
   setCachedMyAccess,
   clearCachedMyAccess,
+  type CachedMyAccess,
   ApiError,
 } from "./api-client";
 import type {
@@ -405,6 +406,7 @@ export function AuthProvider({
   children,
   locale = "en",
   initialUser = null,
+  initialMyAccess = null,
 }: {
   children: ReactNode;
   locale?: Locale;
@@ -413,6 +415,16 @@ export function AuthProvider({
   // signed-in state instead of guest — this is what actually removes the
   // refresh flash rather than just racing to hide it after the fact.
   initialUser?: ApiUser | null;
+  // Same idea, one level down: the last-known subscribed-communities/
+  // enrolled-courses set, resolved server-side from its own cookie (see
+  // MY_ACCESS_CACHE_COOKIE) rather than only ever being available client-side
+  // via localStorage — reading localStorage from a useState initializer still
+  // renders "not loaded yet" in the server HTML (no window during SSR), then
+  // flips once the client hydrates and finds the real cache, which is its own
+  // visible flicker distinct from the network-fetch one. Sourcing the very
+  // first render from a cookie instead means server and client agree from
+  // the start, so there's nothing to flip.
+  initialMyAccess?: CachedMyAccess | null;
 }) {
   const [apiUser, setApiUser] = useState<ApiUser | null>(initialUser);
   // A non-null initialUser means the server already made a definitive call
@@ -1775,7 +1787,17 @@ export function AuthProvider({
   // in the background on every mount to reconcile against the real API
   // (a new subscription from another tab/device, an expiry, ...), it just no
   // longer has to be the ONLY source of truth before anything can render.
-  const initialMyAccessCache = initialUser && initialUser.type === "student" ? getCachedMyAccess(String(initialUser.id)) : null;
+  // Prefer the cookie-sourced prop (identical on server and client, so
+  // nothing to reconcile post-hydration) over the localStorage-only lookup —
+  // the latter is kept only as a fallback for the rare case the cookie
+  // didn't make it (e.g. it was set after this exact page's SSR pass) but a
+  // same-tab localStorage write already happened.
+  const initialMyAccessCache =
+    initialUser && initialUser.type === "student"
+      ? initialMyAccess && initialMyAccess.userId === String(initialUser.id)
+        ? initialMyAccess
+        : getCachedMyAccess(String(initialUser.id))
+      : null;
   const [subscribedCommunityIds, setSubscribedCommunityIds] = useState<Set<string>>(
     () => new Set(initialMyAccessCache?.subscribedCommunityIds ?? []),
   );

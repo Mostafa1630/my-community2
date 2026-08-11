@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ImagePlus, Loader2, X } from "lucide-react";
+import { FileText, ImagePlus, Loader2, X } from "lucide-react";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import { useAuth } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api-client";
@@ -9,10 +9,12 @@ import { ApiError } from "@/lib/api-client";
 // Shared by both "create a post" (feed composer) and "edit a post" (inline
 // in PostCard) — the backend only ever accepts up to two media files
 // (media[0]/media[1]), so this caps attachments at 2 rather than pretending
-// more are possible. Confirmed live: the media validation whitelist is
-// jpg/jpeg/png/mp4/mov — images and short videos, not arbitrary documents
-// (unlike lesson attachments, which do allow pdf/doc/etc on a different
-// endpoint) — accept/preview both file kinds accordingly.
+// more are possible. The live backend's media validation was last confirmed
+// to whitelist only jpg/jpeg/png/mp4/mov (documents got rejected with a
+// 422) — image/video/document is still accepted for picking here per an
+// explicit ask to build ahead of a planned backend update rather than gate
+// the UI on today's validation list; a document will 422 until that backend
+// change ships.
 export default function PostComposer({
   dict,
   initialContent = "",
@@ -93,8 +95,15 @@ export default function PostComposer({
             <div key={i} className="relative h-20 w-20 overflow-hidden rounded-xl border border-line">
               {mediaFiles[i]?.type.startsWith("video/") ? (
                 <video src={src} className="h-full w-full object-cover" muted playsInline />
-              ) : (
+              ) : mediaFiles[i]?.type.startsWith("image/") ? (
                 <img src={src} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-paper p-1.5 text-center">
+                  <FileText size={20} className="shrink-0 text-primary-600" />
+                  <span className="line-clamp-2 w-full break-all text-[9px] leading-tight text-ink/65">
+                    {mediaFiles[i]?.name}
+                  </span>
+                </div>
               )}
               <button
                 type="button"
@@ -115,7 +124,7 @@ export default function PostComposer({
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/jpeg,image/png,video/mp4,video/quicktime"
+          accept="image/jpeg,image/png,video/mp4,video/quicktime,application/pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip"
           multiple
           className="hidden"
           onChange={(e) => pickFiles(e.target.files)}
