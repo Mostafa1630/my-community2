@@ -21,6 +21,9 @@ import {
   clearCachedUser,
   getCachedSettings,
   setCachedSettings,
+  getCachedMyAccess,
+  setCachedMyAccess,
+  clearCachedMyAccess,
   ApiError,
 } from "./api-client";
 import type {
@@ -65,7 +68,6 @@ import type {
   PlatformSettings,
   ApiNotification,
   AppNotification,
-  ApiLessonVideo,
   LessonVideo,
   ApiPaymentSession,
   PaymentSession,
@@ -93,7 +95,6 @@ import {
   mapApiCommunitySubscriber,
   mapApiSettings,
   mapApiNotification,
-  mapApiLessonVideo,
   mapApiPaymentSession,
   mapApiCommunitySummary,
   mapApiCourseSummary,
@@ -251,6 +252,7 @@ interface AuthContextValue {
       duration?: number;
       order?: number;
       isFree?: boolean;
+      attachments?: File[];
     },
     locale: Locale,
   ) => Promise<CreatorLessonUpdateResult>;
@@ -264,6 +266,7 @@ interface AuthContextValue {
       order?: number;
       isFree?: boolean;
       status?: "active" | "inactive";
+      attachments?: File[];
     },
     locale: Locale,
   ) => Promise<CreatorLessonUpdateResult>;
@@ -372,6 +375,8 @@ interface AuthContextValue {
   ) => Promise<{ items: CommunitySubscriber[]; total: number; currentPage: number; lastPage: number; perPage: number }>;
   isSubscribed: (communityId: string) => boolean;
   ownsCourseStandalone: (courseId: string) => boolean;
+  getCommunitySubscriptionDates: (communityId: string) => { startAt: string; endAt: string } | null;
+  myAccessLoaded: boolean;
   favorites: FavoriteItem[];
   favoritesLoading: boolean;
   toggleFavorite: (
@@ -1176,23 +1181,26 @@ export function AuthProvider({
   );
 
   // GET /lessons/{id} — authenticated, student-facing "watch this lesson"
-  // endpoint. Deliberately called only from the dedicated per-lesson watch
-  // page's own client-side effect (never passed down as a prop from a
-  // server-rendered page) so the real video url never ends up in that page's
-  // static HTML — the closest practical mitigation to keeping it out of
-  // plain view, short of the URL never touching the browser at all, which
-  // isn't possible for a played-in-page YouTube embed.
+  // endpoint. The backend now returns video_url AES-256-CBC encrypted, so
+  // this goes through our own /api/lessons/{id} Route Handler instead of
+  // calling the backend directly — that handler holds the decryption key
+  // server-side and hands back an already-decrypted url. Still called only
+  // from the dedicated per-lesson watch page's own client-side effect
+  // (never passed down as a prop from a server-rendered page), same as
+  // before.
   const getLessonVideo = useCallback(
     async (lessonId: string, requestLocale: Locale) => {
       try {
-        const res = await apiFetch<{ data: ApiLessonVideo }>(
-          `/lessons/${lessonId}`,
-          {
-            method: "GET",
-            locale: requestLocale,
-          },
-        );
-        return mapApiLessonVideo(res.data);
+        const token = getAuthToken();
+        if (!token) return null;
+        const res = await fetch(`/api/lessons/${lessonId}?locale=${requestLocale}`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        });
+        if (!res.ok) return null;
+        const json = (await res.json()) as { data: LessonVideo };
+        return json.data;
       } catch {
         return null;
       }
@@ -1215,6 +1223,7 @@ export function AuthProvider({
         duration?: number;
         order?: number;
         isFree?: boolean;
+        attachments?: File[];
       },
       requestLocale: Locale,
     ) => {
@@ -1225,6 +1234,11 @@ export function AuthProvider({
       if (input.duration != null) form.set("duration", String(input.duration));
       if (input.order != null) form.set("order", String(input.order));
       if (input.isFree != null) form.set("is_free", input.isFree ? "1" : "0");
+      // Confirmed live: the backend validates each indexed attachments[N]
+      // file field individually (pdf/doc/docx/ppt/pptx/xls/xlsx/zip/jpg/
+      // jpeg/png only) — a single "attachments[]" array field is not what's
+      // expected here.
+      input.attachments?.forEach((file, i) => form.append(`attachments[${i}]`, file));
       const res = await apiFetch<{ data: ApiCreatorLessonUpdate }>(
         `/creators/courses/${courseId}/lessons`,
         {
@@ -1249,6 +1263,7 @@ export function AuthProvider({
         order?: number;
         isFree?: boolean;
         status?: "active" | "inactive";
+        attachments?: File[];
       },
       requestLocale: Locale,
     ) => {
@@ -1260,6 +1275,7 @@ export function AuthProvider({
       if (input.order != null) form.set("order", String(input.order));
       if (input.isFree != null) form.set("is_free", input.isFree ? "1" : "0");
       if (input.status) form.set("status", input.status);
+      input.attachments?.forEach((file, i) => form.append(`attachments[${i}]`, file));
       const res = await apiFetch<{ data: ApiCreatorLessonUpdate }>(
         `/creators/lessons/${lessonId}`,
         {
@@ -1751,21 +1767,68 @@ export function AuthProvider({
   // access once the student completes checkout on Kashier's hosted page and
   // returns — reloaded on every mount/locale change so a student coming back
   // from a completed payment sees themselves unlocked without a hard refresh.
-  const [subscribedCommunityIds, setSubscribedCommunityIds] = useState<Set<string>>(new Set());
-  const [enrolledCourseIds, setEnrolledCourseIds] = useState<Set<string>>(new Set());
+  // Cache-first, same pattern as getCachedUser/setCachedUser above: a
+  // previously-seen membership set is read synchronously off localStorage
+  // (keyed to this exact user id) so a repeat visit's very first render
+  // already has the right answer — no loading gap for isSubscribed()/
+  // ownsCourseStandalone() to fall through during. loadMyAccess still runs
+  // in the background on every mount to reconcile against the real API
+  // (a new subscription from another tab/device, an expiry, ...), it just no
+  // longer has to be the ONLY source of truth before anything can render.
+  const initialMyAccessCache = initialUser && initialUser.type === "student" ? getCachedMyAccess(String(initialUser.id)) : null;
+  const [subscribedCommunityIds, setSubscribedCommunityIds] = useState<Set<string>>(
+    () => new Set(initialMyAccessCache?.subscribedCommunityIds ?? []),
+  );
+  const [enrolledCourseIds, setEnrolledCourseIds] = useState<Set<string>>(
+    () => new Set(initialMyAccessCache?.enrolledCourseIds ?? []),
+  );
+  // GET /communities/my-subscriptions items carry subscription_start_at/
+  // subscription_end_at (confirmed live) — the actual window this specific
+  // subscription is valid for. Kept alongside the id set so any page that
+  // already knows a community is subscribed (via isSubscribed) can also show
+  // when that subscription started/ends without a second fetch.
+  const [communitySubscriptionDates, setCommunitySubscriptionDates] = useState<
+    Map<string, { startAt: string; endAt: string }>
+  >(() => new Map(initialMyAccessCache?.communitySubscriptionDates ?? []));
+  // Tracks whether the cached membership sets above reflect a real, resolved
+  // fetch (or "nothing to load, not a student") rather than their initial
+  // empty state — consumers (subscribe CTA, course access gate) gate on this
+  // rather than just `hydrated` before deciding "not subscribed", since
+  // `hydrated` only means the session/role is known, not that
+  // subscribedCommunityIds/enrolledCourseIds have finished loading yet. Reading
+  // isSubscribed()/ownsCourseStandalone() during that gap was returning a
+  // false negative that then flipped true once the fetch resolved — a visible
+  // "Subscribe" -> "Enter community" flicker on every refresh. Starting this
+  // true when a localStorage cache already answered the question skips that
+  // gap entirely on repeat visits; loadMyAccess below still quietly verifies.
+  const [myAccessLoaded, setMyAccessLoaded] = useState(initialMyAccessCache !== null);
 
   const loadMyAccess = useCallback(
-    async (requestLocale: Locale) => {
+    async (requestLocale: Locale, forUserId: string) => {
+      let finalIds = new Set<string>();
+      let finalDates = new Map<string, { startAt: string; endAt: string }>();
+      let finalCourseIds = new Set<string>();
       try {
         const ids = new Set<string>();
+        const dates = new Map<string, { startAt: string; endAt: string }>();
         for (let page = 1, lastPage = 1; page <= lastPage && page <= 20; page++) {
           const res = await getMySubscriptions(requestLocale, page);
-          res.items.forEach((c) => ids.add(c.id));
+          res.items.forEach((c) => {
+            ids.add(c.id);
+            if (c.subscriptionStartAt && c.subscriptionEndAt) {
+              dates.set(c.id, { startAt: c.subscriptionStartAt, endAt: c.subscriptionEndAt });
+            }
+          });
           lastPage = res.lastPage;
         }
+        finalIds = ids;
+        finalDates = dates;
         setSubscribedCommunityIds(ids);
+        setCommunitySubscriptionDates(dates);
       } catch {
-        setSubscribedCommunityIds(new Set());
+        // A failed refresh shouldn't wipe out a still-possibly-valid cached
+        // answer — leave subscribedCommunityIds/communitySubscriptionDates
+        // (and the cache write below) as whatever they already were.
       }
       try {
         const ids = new Set<string>();
@@ -1774,9 +1837,18 @@ export function AuthProvider({
           res.items.forEach((c) => ids.add(c.id));
           lastPage = res.lastPage;
         }
+        finalCourseIds = ids;
         setEnrolledCourseIds(ids);
       } catch {
-        setEnrolledCourseIds(new Set());
+        // Same as above — keep whatever was already loaded/cached.
+      } finally {
+        setMyAccessLoaded(true);
+        setCachedMyAccess({
+          userId: forUserId,
+          subscribedCommunityIds: [...finalIds],
+          enrolledCourseIds: [...finalCourseIds],
+          communitySubscriptionDates: [...finalDates.entries()],
+        });
       }
     },
     [getMySubscriptions, getMyEnrolledCourses],
@@ -1784,10 +1856,17 @@ export function AuthProvider({
 
   useEffect(() => {
     if (user && user.role === "student") {
-      loadMyAccess(locale);
+      // Only show the loading gap when there's truly nothing cached yet for
+      // this user — otherwise keep rendering the cached answer while this
+      // fetch quietly reconciles it in the background.
+      if (!getCachedMyAccess(user.id)) setMyAccessLoaded(false);
+      loadMyAccess(locale, user.id);
     } else {
       setSubscribedCommunityIds(new Set());
       setEnrolledCourseIds(new Set());
+      setCommunitySubscriptionDates(new Map());
+      setMyAccessLoaded(hydrated);
+      clearCachedMyAccess();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, user?.role, locale]);
@@ -1800,6 +1879,11 @@ export function AuthProvider({
   const ownsCourseStandalone = useCallback(
     (courseId: string) => enrolledCourseIds.has(courseId),
     [enrolledCourseIds],
+  );
+
+  const getCommunitySubscriptionDates = useCallback(
+    (communityId: string) => communitySubscriptionDates.get(communityId) ?? null,
+    [communitySubscriptionDates],
   );
 
   // GET /favorites and POST /favorites/toggle both require Bearer auth, so
@@ -1948,6 +2032,8 @@ export function AuthProvider({
     getCommunitySubscribers,
     isSubscribed,
     ownsCourseStandalone,
+    getCommunitySubscriptionDates,
+    myAccessLoaded,
     favorites,
     favoritesLoading,
     toggleFavorite,

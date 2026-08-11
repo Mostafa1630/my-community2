@@ -39,7 +39,7 @@ export default function RealPostDetailView({
   dict: Dictionary;
 }) {
   const router = useRouter();
-  const { user, role, hydrated, isSubscribed, getPost, updatePost, deletePost, togglePinPost, addReaction, removeReaction } =
+  const { user, role, hydrated, getPost, updatePost, deletePost, togglePinPost, addReaction, removeReaction } =
     useAuth();
   const [loading, setLoading] = useState(true);
   const [post, setPost] = useState<FeedPost | null>(null);
@@ -48,7 +48,6 @@ export default function RealPostDetailView({
 
   const isCommunityCreator = role === "creator" && user?.id === creatorId;
   const locked = communityType === "private" && !isCommunityCreator && role !== "admin";
-  const canInteract = isCommunityCreator || role === "admin" || (role === "student" && isSubscribed(communityId));
 
   useEffect(() => {
     // Same reasoning as RealCommunityFeedView — wait for the real session
@@ -142,7 +141,11 @@ export default function RealPostDetailView({
         onDelete={handleDelete}
         onTogglePin={handleTogglePin}
         detailMode
-        canInteract={canInteract}
+        // Any signed-in visitor sees the reaction control, even just
+        // previewing via "Explore community" without a real subscription —
+        // the backend's own 403 message shows inline if they actually try,
+        // rather than hiding the control outright.
+        canInteract={!!user}
       />
 
       <div className="mt-4 flex items-center gap-1 rounded-full border border-line bg-surface p-1">
@@ -171,7 +174,7 @@ export default function RealPostDetailView({
             locale={locale}
             dict={dict}
             canModerate={isCommunityCreator || post.isOwner}
-            canInteract={canInteract}
+            canInteract={!!user}
           />
         ) : (
           <ReactionsPanel postId={postId} locale={locale} dict={dict} />

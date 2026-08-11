@@ -95,7 +95,7 @@ export default function NotificationBell({ locale, dict }: { locale: Locale; dic
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: -4 }}
             transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute end-0 top-11 z-50 w-[22rem] max-w-[90vw] overflow-hidden rounded-xl border border-line bg-surface shadow-raised"
+            className="fixed inset-x-3 top-16 z-50 max-h-[calc(100vh-5rem)] overflow-hidden rounded-xl border border-line bg-surface shadow-raised sm:absolute sm:inset-x-auto sm:end-0 sm:top-11 sm:max-h-none sm:w-[22rem] sm:max-w-[90vw]"
           >
             <div className="flex items-center justify-between border-b border-line px-4 py-3">
               <p className="text-sm font-bold text-ink">{dict.notifications.title}</p>

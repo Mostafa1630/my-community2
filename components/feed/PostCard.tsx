@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import {
+  Heart,
   MessageCircle,
   MoreHorizontal,
   Pencil,
@@ -17,7 +18,6 @@ import { useAuth } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api-client";
 import ReactionPicker from "./ReactionPicker";
 import PostComposer from "./PostComposer";
-import { REACTION_EMOJI } from "./reactionConfig";
 
 // Shared between the feed list (compact, links out to the detail page for
 // comments/reactions) and the detail page itself (detailMode — same card,
@@ -114,20 +114,23 @@ export default function PostCard({
   const detailHref = `/${locale}/communities/${communityId}/posts/${post.id}`;
 
   // Reactions count and comments count each jump straight to their own tab
-  // on the detail page — clicking one shouldn't dump you on the other.
+  // on the detail page — clicking one shouldn't dump you on the other. Plain
+  // outline heart here (no fill, inherits the row's neutral ink color) —
+  // not the solid red heart emoji used inside the reaction picker itself,
+  // since this is just a tally, not "your reaction".
   const countsRow = (
     <div className="flex items-center gap-4 text-xs text-ink/65">
       {post.reactionsCount > 0 &&
         (detailMode ? (
-          <span className="flex items-center gap-1">
-            {REACTION_EMOJI.love} {post.reactionsCount}
+          <span className="flex items-center gap-1.5">
+            <Heart size={13} /> {post.reactionsCount}
           </span>
         ) : (
           <Link
             href={`${detailHref}?tab=reactions`}
-            className="flex items-center gap-1 hover:text-primary-700"
+            className="relative z-10 flex items-center gap-1.5 hover:text-primary-700"
           >
-            {REACTION_EMOJI.love} {post.reactionsCount}
+            <Heart size={13} /> {post.reactionsCount}
           </Link>
         ))}
       {detailMode ? (
@@ -147,12 +150,25 @@ export default function PostCard({
 
   return (
     <article
-      className={`rounded-2xl border p-4 shadow-card sm:p-5 ${
+      className={`relative rounded-2xl border p-4 shadow-card sm:p-5 ${
         post.isPinned
           ? "border-accent-300 bg-accent-50/30"
           : "border-line bg-surface"
       }`}
     >
+      {/* Stretched-link pattern: clicking anywhere on the post (not just the
+          comments/reactions counts) opens its detail page, same as clicking
+          those counts already did — sits under the interactive controls
+          below (menu, reaction picker, the counts' own links), which each
+          get position+z-index so they still intercept clicks over them. */}
+      {!detailMode && (
+        <Link
+          href={detailHref}
+          className="absolute inset-0 z-0 rounded-2xl"
+          aria-label={post.content || dict.community.viewPost}
+        />
+      )}
+
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
           <img
@@ -176,7 +192,7 @@ export default function PostCard({
         </div>
 
         {hasMenu && (
-          <div className="relative">
+          <div className="relative z-10">
             <button
               onClick={() => setMenuOpen((v) => !v)}
               className="rounded-full p-1.5 text-ink/65 hover:bg-ink/5"
@@ -239,22 +255,26 @@ export default function PostCard({
 
       {post.media.length > 0 && (
         <div
-          className={`mt-3 grid gap-2 ${post.media.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}
+          className={`relative z-10 mt-3 grid gap-2 ${post.media.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}
         >
-          {post.media.map((m, i) => (
-            <img
-              key={i}
-              src={m.url}
-              alt=""
-              loading="lazy"
-              decoding="async"
-              className="max-h-96 w-full rounded-xl object-cover"
-            />
-          ))}
+          {post.media.map((m, i) =>
+            /\.(mp4|mov)(\?.*)?$/i.test(m.url) ? (
+              <video key={i} src={m.url} controls className="max-h-96 w-full rounded-xl object-cover" />
+            ) : (
+              <img
+                key={i}
+                src={m.url}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                className="max-h-96 w-full rounded-xl object-cover"
+              />
+            )
+          )}
         </div>
       )}
 
-      <div className="mt-3 flex items-center justify-between border-t border-line pt-3">
+      <div className="relative z-10 mt-3 flex items-center justify-between border-t border-line pt-3">
         {canInteract ? (
           <ReactionPicker
             current={post.myReaction}

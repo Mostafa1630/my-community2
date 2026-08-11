@@ -6,6 +6,7 @@ import type { Dictionary } from "@/lib/i18n/getDictionary";
 import { getAccent, initials } from "@/lib/accents";
 import { formatPrice } from "@/lib/format";
 import FavoriteButton from "./FavoriteButton";
+import SubscriptionCountdown from "./SubscriptionCountdown";
 
 // Same visual design as CommunityCard.tsx, sourced from the real /communities
 // API shape instead of local mock data — kept as a separate component rather
@@ -17,6 +18,7 @@ export default function RealCommunityCard({
   locale,
   dict,
   priority = false,
+  subscribed = false,
 }: {
   community: CommunitySummary;
   locale: Locale;
@@ -27,6 +29,10 @@ export default function RealCommunityCard({
   // make Chrome's Largest Contentful Paint detection fail outright on that
   // page (confirmed directly via PerformanceObserver, not just Lighthouse).
   priority?: boolean;
+  // Set on "My Communities" cards, where showing the subscription price
+  // again makes no sense (you already paid it) — swaps the price/view-details
+  // footer for a countdown of how much of the subscription window is left.
+  subscribed?: boolean;
 }) {
   const accent = getAccent(community.accent);
 
@@ -112,16 +118,26 @@ export default function RealCommunityCard({
           </span>
         </div>
 
-        <div className="mt-5 flex items-center justify-between gap-2 border-t border-line pt-3.5">
-          <span className="whitespace-nowrap font-mono text-[11px] font-bold tracking-wide text-accent-700 sm:text-xs">
-            {community.isFree
-              ? dict.communities.freeBadge
-              : formatPrice(community.finalPrice, locale)}
-          </span>
-          <span className="shrink-0 whitespace-nowrap rounded-full border border-primary-200 px-2.5 py-1 text-center text-[11px] font-medium text-primary-800 transition-colors duration-200 group-hover:border-primary-300 group-hover:bg-primary-50 sm:px-3 sm:text-xs">
-            {dict.common.viewDetails}
-          </span>
-        </div>
+        {subscribed && community.subscriptionStartAt && community.subscriptionEndAt ? (
+          <div className="mt-5 border-t border-line pt-3.5">
+            <SubscriptionCountdown
+              startAt={community.subscriptionStartAt}
+              endAt={community.subscriptionEndAt}
+              dict={dict}
+            />
+          </div>
+        ) : (
+          <div className="mt-5 flex items-center justify-between gap-2 border-t border-line pt-3.5">
+            <span className="whitespace-nowrap font-mono text-[11px] font-bold tracking-wide text-accent-700 sm:text-xs">
+              {community.isFree
+                ? dict.communities.freeBadge
+                : formatPrice(community.finalPrice, locale)}
+            </span>
+            <span className="shrink-0 whitespace-nowrap rounded-full border border-primary-200 px-2.5 py-1 text-center text-[11px] font-medium text-primary-800 transition-colors duration-200 group-hover:border-primary-300 group-hover:bg-primary-50 sm:px-3 sm:text-xs">
+              {dict.common.viewDetails}
+            </span>
+          </div>
+        )}
       </div>
     </Link>
   );

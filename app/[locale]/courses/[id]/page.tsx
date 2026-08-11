@@ -7,6 +7,7 @@ import { getDictionary } from "@/lib/i18n/getDictionary";
 import { t } from "@/lib/i18n/t";
 import { localizedAlternates, DEFAULT_OG_IMAGE } from "@/lib/seo";
 import { getCourseDetails } from "@/lib/api-content";
+import { withDecryptedIntroVideo } from "@/lib/video";
 import { getAccent, initials } from "@/lib/accents";
 import RealCourseAccess from "@/components/RealCourseAccess";
 import FavoriteButton from "@/components/FavoriteButton";
@@ -40,8 +41,9 @@ export async function generateMetadata({
 export default async function CourseDetailsPage({ params }: { params: { locale: string; id: string } }) {
   const locale: Locale = isLocale(params.locale) ? params.locale : "ar";
   const dict = getDictionary(locale);
-  const course = await getCourseDetails(params.id, locale);
-  if (!course) notFound();
+  const rawCourse = await getCourseDetails(params.id, locale);
+  if (!rawCourse) notFound();
+  const course = await withDecryptedIntroVideo(rawCourse);
 
   const accent = getAccent(course.accent);
 

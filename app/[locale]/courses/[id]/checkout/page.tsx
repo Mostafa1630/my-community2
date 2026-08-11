@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/getDictionary";
 import { getCourseDetails } from "@/lib/api-content";
+import { withDecryptedIntroVideo } from "@/lib/video";
 import CourseCheckoutView from "@/components/CourseCheckoutView";
 
 export async function generateMetadata({
@@ -24,8 +25,9 @@ export default async function CourseCheckoutPage({
 }) {
   const locale: Locale = isLocale(params.locale) ? params.locale : "ar";
   const dict = getDictionary(locale);
-  const course = await getCourseDetails(params.id, locale);
-  if (!course) notFound();
+  const rawCourse = await getCourseDetails(params.id, locale);
+  if (!rawCourse) notFound();
+  const course = await withDecryptedIntroVideo(rawCourse);
 
   return (
     <div className="container-page py-12">

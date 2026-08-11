@@ -92,6 +92,49 @@ export function setCachedSettings(data: unknown) {
   window.localStorage.setItem(SETTINGS_CACHE_KEY, JSON.stringify({ data, fetchedAt: Date.now() }));
 }
 
+// Same "paint instantly from cache, quietly reconcile in the background"
+// pattern as the cached-user cookie above — GET /communities/my-subscriptions
+// and GET /courses/my-courses only ever resolve after a real network
+// round-trip, so a student's own subscribe/enter-community CTA was flashing
+// "Subscribe" then flipping to "Enter community" on every single refresh
+// while that fetch was in flight, even with a loading skeleton in between —
+// the skeleton-to-real-content swap itself still read as a visible flicker.
+// Caching the last known membership set per user id means a repeat visit can
+// render the *correct* CTA on the very first paint, with the real fetch only
+// ever silently correcting it if something actually changed (a new
+// subscription from another tab/device, an expiry) — never the reverse.
+export interface CachedMyAccess {
+  userId: string;
+  subscribedCommunityIds: string[];
+  enrolledCourseIds: string[];
+  communitySubscriptionDates: [string, { startAt: string; endAt: string }][];
+}
+
+const MY_ACCESS_CACHE_KEY = "mujtamaaty.myAccessCache.v1";
+
+export function getCachedMyAccess(userId: string): CachedMyAccess | null {
+  if (typeof window === "undefined") return null;
+  const raw = window.localStorage.getItem(MY_ACCESS_CACHE_KEY);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as CachedMyAccess;
+    if (parsed.userId !== userId) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export function setCachedMyAccess(data: CachedMyAccess) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(MY_ACCESS_CACHE_KEY, JSON.stringify(data));
+}
+
+export function clearCachedMyAccess() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(MY_ACCESS_CACHE_KEY);
+}
+
 // Server-side counterpart of getCachedUser — parses the same cookie's raw
 // value (as read via next/headers' cookies() in a Server Component) instead
 // of localStorage, which doesn't exist there. Only ever holds display data

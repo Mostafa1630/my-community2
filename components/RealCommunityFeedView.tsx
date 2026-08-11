@@ -233,7 +233,13 @@ export default function RealCommunityFeedView({
               onEdit={(content, media) => handleEdit(post, content, media)}
               onDelete={() => handleDelete(post)}
               onTogglePin={() => handleTogglePin(post)}
-              canInteract={canInteract}
+              // Reacting is shown to any signed-in visitor (not gated on real
+              // subscription like the post composer above) — someone
+              // previewing a public community via "Explore community" still
+              // sees the like button; tapping it surfaces the backend's own
+              // "not allowed" 403 message inline instead of hiding the
+              // control outright, same pattern as the comment box.
+              canInteract={!!user}
             />
           ))}
           {hasMore && (
@@ -246,13 +252,15 @@ export default function RealCommunityFeedView({
     </div>
   );
 
-  // Only the community's own creator can call GET
-  // /creators/communities/{id}/subscriptions, so the "active members"
-  // sidebar only ever renders for them — shown here rather than by each
-  // page that embeds this feed, so it appears consistently wherever a
-  // creator views their own community's posts (their dashboard's "Community
-  // feed" page and the same public feed route a student would see).
-  if (!isCommunityCreator) return feed;
+  // GET /creators/communities/{id}/subscriptions turned out NOT to be
+  // creator-only despite the URL prefix — confirmed live, a subscribed
+  // student's own token can call it too and gets back the same members list
+  // (naturally just themselves if they're the only subscriber). Shown here
+  // rather than by each page that embeds this feed, so it appears
+  // consistently wherever the feed itself does — the creator's dashboard
+  // "Community feed" page and the same public feed route a student sees.
+  const showMembersSidebar = isCommunityCreator || (role === "student" && isSubscribed(communityId));
+  if (!showMembersSidebar) return feed;
 
   return (
     <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-center">

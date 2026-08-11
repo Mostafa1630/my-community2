@@ -19,7 +19,7 @@ export default function CommunityReviewForm({
   dict: Dictionary;
 }) {
   const router = useRouter();
-  const { role, user, hydrated, createReview } = useAuth();
+  const { role, user, hydrated, isSubscribed, myAccessLoaded, createReview } = useAuth();
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState("");
@@ -30,8 +30,9 @@ export default function CommunityReviewForm({
   // Same bug class as the old RoleGuard flash: deciding "not a student" off
   // `role` before the real session is confirmed showed a logged-in student
   // a "please log in" link instead of the review form. Rendering nothing
-  // until hydrated is a safer default than guessing either way.
-  if (!hydrated) return null;
+  // until hydrated (and, for a student, until membership is loaded too — see
+  // myAccessLoaded) is a safer default than guessing either way.
+  if (!hydrated || (role === "student" && !myAccessLoaded)) return null;
 
   if (role !== "student") {
     // Signed in as something else (creator/admin) is a different situation
@@ -54,6 +55,11 @@ export default function CommunityReviewForm({
       </Link>
     );
   }
+
+  // Reviewing a community you're not subscribed to isn't something the
+  // product wants shown at all (not even a hint) — the rating form is a
+  // member-only feature, not just a member-only action.
+  if (!isSubscribed(communityId)) return null;
 
   if (submitted) {
     return (

@@ -213,12 +213,21 @@ export interface ApiCommunitySummary {
   subscription_price: number;
   discount_percentage: number;
   final_price: number;
+  // How long a subscription stays active once purchased — set by the
+  // creator (see EditCommunityView/NewCommunityView's `subscriptionDurationDays`
+  // field) and echoed back on every community summary, confirmed live.
+  subscription_duration_days: number;
   category_name: string;
   creator: ApiCommunityCreatorRef;
   reviews_count: number | null;
   rating_avg: number | null;
   courses_count: number;
   subscriptions_count: number;
+  // Only present on GET /communities/my-subscriptions items (confirmed live)
+  // — the actual window this particular subscription is valid for, not
+  // present at all on the public /communities list or /communities/details.
+  subscription_start_at?: string;
+  subscription_end_at?: string;
 }
 
 export interface CommunitySummary {
@@ -230,12 +239,15 @@ export interface CommunitySummary {
   subscriptionPrice: number;
   discountPercentage: number;
   finalPrice: number;
+  subscriptionDurationDays: number;
   categoryName: string;
   creator: { id: string; name: string; profileImage?: string };
   reviewsCount: number;
   ratingAvg: number;
   coursesCount: number;
   subscriptionsCount: number;
+  subscriptionStartAt?: string;
+  subscriptionEndAt?: string;
   accent: AccentKey;
 }
 
@@ -249,6 +261,7 @@ export function mapApiCommunitySummary(c: ApiCommunitySummary): CommunitySummary
     subscriptionPrice: c.subscription_price,
     discountPercentage: c.discount_percentage,
     finalPrice: c.final_price,
+    subscriptionDurationDays: c.subscription_duration_days ?? 30,
     categoryName: c.category_name,
     creator: {
       id: String(c.creator.id),
@@ -259,6 +272,8 @@ export function mapApiCommunitySummary(c: ApiCommunitySummary): CommunitySummary
     ratingAvg: c.rating_avg ?? 0,
     coursesCount: c.courses_count,
     subscriptionsCount: c.subscriptions_count,
+    subscriptionStartAt: c.subscription_start_at ?? undefined,
+    subscriptionEndAt: c.subscription_end_at ?? undefined,
     accent: accentForId(c.id)
   };
 }
@@ -365,11 +380,21 @@ export interface CommunityReview {
 }
 
 export interface ApiCommunityDetails extends ApiCommunitySummary {
+  // Confirmed live on GET /communities/details/{id} — always present, but
+  // only ever true when the request actually carried the student's Bearer
+  // token. The Server Component pages that call getCommunityDetails() fetch
+  // without auth (no token available during SSR), so this always reads false
+  // there — RealCommunitySubscribeCard still relies on the client-side
+  // cached membership set (isSubscribed()) for the real answer, gated on
+  // myAccessLoaded to avoid a flicker. Kept on the type mainly so it's
+  // available wherever this gets fetched client-side with a token.
+  is_subscribed: boolean;
   reviews: ApiCommunityReview[];
   courses: ApiCommunityCourse[];
 }
 
 export interface CommunityDetails extends CommunitySummary {
+  isSubscribed: boolean;
   reviews: CommunityReview[];
   courses: { id: string; title: string; description: string; image?: string; lessonsCount: number; createdAt: string }[];
 }
@@ -377,6 +402,7 @@ export interface CommunityDetails extends CommunitySummary {
 export function mapApiCommunityDetails(c: ApiCommunityDetails): CommunityDetails {
   return {
     ...mapApiCommunitySummary(c),
+    isSubscribed: c.is_subscribed,
     reviews: c.reviews.map((r) => ({
       id: String(r.id),
       rating: r.rate,
@@ -826,6 +852,14 @@ export interface ApiCreatorLessonUpdate {
   order?: number;
   status: string;
   created_at: string;
+  // Not confirmed present on every one of the four endpoints sharing this
+  // shape (a 500 on the live backend blocked confirming the create/single-GET
+  // response body) — kept optional/defensive, same rule as everywhere else
+  // this project hits an unconfirmed field. The *request* side (uploading
+  // attachments on create/update as attachments[0], attachments[1], ...) is
+  // confirmed live: the backend validates each indexed file field and
+  // rejects unsupported types, so the field-naming convention itself is real.
+  attachments?: ApiLessonAttachment[];
 }
 
 export interface CreatorLessonUpdateResult {
@@ -836,6 +870,7 @@ export interface CreatorLessonUpdateResult {
   isFree: boolean;
   order?: number;
   status: string;
+  attachments: LessonAttachment[];
 }
 
 export function mapApiCreatorLessonUpdate(l: ApiCreatorLessonUpdate): CreatorLessonUpdateResult {
@@ -846,7 +881,13 @@ export function mapApiCreatorLessonUpdate(l: ApiCreatorLessonUpdate): CreatorLes
     videoUrl: l.video_url,
     isFree: Boolean(l.is_free),
     order: l.order,
-    status: l.status
+    status: l.status,
+    attachments: (l.attachments ?? []).map((a) => ({
+      path: a.media_path,
+      name: a.media_name,
+      type: a.media_type,
+      size: a.media_size
+    }))
   };
 }
 

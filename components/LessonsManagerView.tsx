@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertCircle, BookX, Loader2, Pencil, Plus, Trash2, Video } from "lucide-react";
+import { AlertCircle, BookX, FileText, Loader2, Paperclip, Pencil, Plus, Trash2, Video, X } from "lucide-react";
 import { t } from "@/lib/i18n/t";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
@@ -20,6 +20,7 @@ import EmptyState from "./EmptyState";
 import Modal from "./motion/Modal";
 import FormField, { fieldInputClass } from "./FormField";
 import PageLoader from "./PageLoader";
+import type { LessonAttachment } from "@/lib/api-types";
 
 interface LessonRow {
   id: string;
@@ -29,6 +30,7 @@ interface LessonRow {
   isFree: boolean;
   order?: number;
   status: string;
+  attachments: LessonAttachment[];
 }
 
 interface LessonFormState {
@@ -77,6 +79,8 @@ export default function LessonsManagerView({
   const [modalMode, setModalMode] = useState<"create" | "edit" | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<LessonFormState>(emptyForm);
+  const [attachmentFiles, setAttachmentFiles] = useState<File[]>([]);
+  const [existingAttachments, setExistingAttachments] = useState<LessonAttachment[]>([]);
   const [modalLoading, setModalLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState("");
@@ -107,7 +111,8 @@ export default function LessonsManagerView({
         url: l.videoUrl,
         isFree: l.isFree,
         order: l.order,
-        status: l.status
+        status: l.status,
+        attachments: l.attachments
       }))
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     setLessons(sorted);
@@ -131,6 +136,8 @@ export default function LessonsManagerView({
 
   function openCreate() {
     setForm(emptyForm);
+    setAttachmentFiles([]);
+    setExistingAttachments([]);
     setFieldErrors({});
     setFormError("");
     setModalMode("create");
@@ -139,6 +146,7 @@ export default function LessonsManagerView({
   async function openEdit(lesson: LessonRow) {
     setModalMode("edit");
     setEditingId(lesson.id);
+    setAttachmentFiles([]);
     setFieldErrors({});
     setFormError("");
     setModalLoading(true);
@@ -152,12 +160,15 @@ export default function LessonsManagerView({
       isFree: fresh?.isFree ?? lesson.isFree,
       status: (fresh?.status ?? lesson.status) === "inactive" ? "inactive" : "active"
     });
+    setExistingAttachments(fresh?.attachments ?? lesson.attachments);
     setModalLoading(false);
   }
 
   function closeModal() {
     setModalMode(null);
     setEditingId(null);
+    setAttachmentFiles([]);
+    setExistingAttachments([]);
   }
 
   async function submit(e: React.FormEvent) {
@@ -191,7 +202,8 @@ export default function LessonsManagerView({
             videoUrl: form.videoUrl,
             duration: parsed.data.duration,
             order: parsed.data.order,
-            isFree: form.isFree
+            isFree: form.isFree,
+            attachments: attachmentFiles.length ? attachmentFiles : undefined
           },
           locale
         );
@@ -205,7 +217,8 @@ export default function LessonsManagerView({
             duration: parsed.data.duration,
             order: parsed.data.order,
             isFree: form.isFree,
-            status: form.status
+            status: form.status,
+            attachments: attachmentFiles.length ? attachmentFiles : undefined
           },
           locale
         );
@@ -382,6 +395,60 @@ export default function LessonsManagerView({
                       {dict.common.inactive}
                     </button>
                   </div>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <span className="mb-2 block text-xs font-semibold tracking-wide text-ink/70">
+                {dict.creatorDash.fieldLessonAttachments}
+              </span>
+              <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-line px-3.5 py-2.5 text-sm text-ink/65 hover:border-primary-300 hover:text-primary-700">
+                <Paperclip size={15} className="shrink-0" />
+                {dict.creatorDash.fieldLessonAttachments}
+                <input
+                  type="file"
+                  multiple
+                  accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.jpg,.jpeg,.png"
+                  className="hidden"
+                  onChange={(e) => setAttachmentFiles((prev) => [...prev, ...Array.from(e.target.files ?? [])])}
+                />
+              </label>
+              <p className="mt-1.5 text-xs leading-5 text-ink/55">{dict.creatorDash.lessonAttachmentsHint}</p>
+              {attachmentFiles.length > 0 && (
+                <ul className="mt-2 space-y-1.5">
+                  {attachmentFiles.map((file, i) => (
+                    <li
+                      key={`${file.name}-${i}`}
+                      className="flex items-center gap-2 rounded-lg bg-paper px-3 py-1.5 text-xs text-ink/70"
+                    >
+                      <FileText size={13} className="shrink-0 text-primary-600" />
+                      <span className="min-w-0 flex-1 truncate">{file.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => setAttachmentFiles((prev) => prev.filter((_, idx) => idx !== i))}
+                        className="shrink-0 text-ink/40 hover:text-danger"
+                      >
+                        <X size={13} />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {existingAttachments.length > 0 && (
+                <div className="mt-3">
+                  <p className="mb-1.5 text-xs font-medium text-ink/55">{dict.creatorDash.lessonExistingAttachments}</p>
+                  <ul className="space-y-1.5">
+                    {existingAttachments.map((a, i) => (
+                      <li
+                        key={`${a.path}-${i}`}
+                        className="flex items-center gap-2 rounded-lg border border-line px-3 py-1.5 text-xs text-ink/65"
+                      >
+                        <FileText size={13} className="shrink-0 text-ink/40" />
+                        <span className="min-w-0 flex-1 truncate">{a.name}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
             </div>

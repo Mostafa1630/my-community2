@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookOpen, Users2 } from "lucide-react";
+import { BookOpen, CheckCircle2, Users2 } from "lucide-react";
 import type { CourseSummary } from "@/lib/api-types";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
@@ -13,12 +13,18 @@ export default function RealCourseCard({
   course,
   locale,
   dict,
-  priority = false
+  priority = false,
+  owned = false
 }: {
   course: CourseSummary;
   locale: Locale;
   dict: Dictionary;
   priority?: boolean;
+  // Set on "My Courses" cards — showing the price again makes no sense once
+  // you've already bought it, and standalone course ownership never expires
+  // (no subscription window here, unlike communities), so there's nothing to
+  // count down — just a plain "owned" badge instead of the price.
+  owned?: boolean;
 }) {
   const accent = getAccent(course.accent);
 
@@ -71,8 +77,17 @@ export default function RealCourseCard({
         </div>
 
         <div className="mt-5 flex items-center justify-between gap-2 border-t border-line pt-3.5">
-          <span className="whitespace-nowrap font-mono text-[11px] font-bold tracking-wide text-accent-700 sm:text-xs">
-            {course.isFree ? dict.communities.freeBadge : formatPrice(course.finalPrice, locale)}
+          <span className="flex items-center gap-1 whitespace-nowrap font-mono text-[11px] font-bold tracking-wide text-success sm:text-xs">
+            {owned ? (
+              <>
+                <CheckCircle2 size={12} className="shrink-0" />
+                {dict.student.ownedBadge}
+              </>
+            ) : course.isFree ? (
+              dict.communities.freeBadge
+            ) : (
+              formatPrice(course.finalPrice, locale)
+            )}
           </span>
           <span className="shrink-0 whitespace-nowrap rounded-full border border-primary-200 px-2.5 py-1 text-center text-[11px] font-medium text-primary-800 transition-colors duration-200 group-hover:border-primary-300 group-hover:bg-primary-50 sm:px-3 sm:text-xs">
             {dict.common.viewDetails}

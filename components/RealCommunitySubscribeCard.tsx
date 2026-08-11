@@ -6,9 +6,10 @@ import { AlertCircle, CheckCircle2, Loader2, Tag } from "lucide-react";
 import type { CommunityDetails } from "@/lib/api-types";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
+import { t } from "@/lib/i18n/t";
 import { useAuth } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api-client";
-import { formatPrice } from "@/lib/format";
+import { formatPrice, formatDate } from "@/lib/format";
 
 export default function RealCommunitySubscribeCard({
   community,
@@ -19,8 +20,15 @@ export default function RealCommunitySubscribeCard({
   locale: Locale;
   dict: Dictionary;
 }) {
-  const { role, user, hydrated, checkCoupon, settings, isSubscribed } = useAuth();
+  const { role, user, hydrated, checkCoupon, settings, isSubscribed, myAccessLoaded, getCommunitySubscriptionDates } =
+    useAuth();
   const subscribed = role === "student" && isSubscribed(community.id);
+  const subscriptionDates = subscribed ? getCommunitySubscriptionDates(community.id) : null;
+  // Same flicker fix as the course access gate: subscribedCommunityIds is
+  // still empty for a moment after hydration while it loads, so `subscribed`
+  // above briefly reads false for a real subscriber — wait for myAccessLoaded
+  // (not just hydrated) before trusting that "false" enough to show Subscribe.
+  const accessLoading = !hydrated || (role === "student" && !myAccessLoaded);
   const [couponCode, setCouponCode] = useState("");
   const [checking, setChecking] = useState(false);
   const [couponResult, setCouponResult] = useState<{ discountPercentage: number } | null>(null);
@@ -118,12 +126,13 @@ export default function RealCommunitySubscribeCard({
         </div>
       )}
 
-      {!hydrated ? (
-        // Deciding "guest" here before the real session is confirmed was
-        // exactly what sent a genuinely logged-in student to /login —
-        // same class of bug as the old RoleGuard flash, just unguarded on
-        // this public page. A same-sized skeleton avoids both the wrong
-        // link and any layout shift once hydrated resolves.
+      {accessLoading ? (
+        // Deciding "guest" (or "not subscribed") here before the real session
+        // and membership data are both confirmed was exactly what sent a
+        // genuinely logged-in/subscribed student to the wrong CTA — same
+        // class of bug as the old RoleGuard flash, just unguarded on this
+        // public page. A same-sized skeleton avoids both the wrong link and
+        // any layout shift/flicker once everything resolves.
         <div className="mt-4 h-[46px] w-full animate-pulse rounded-full bg-line/60" />
       ) : role === "student" && subscribed ? (
         <>
@@ -131,6 +140,14 @@ export default function RealCommunitySubscribeCard({
             <CheckCircle2 size={13} />
             {dict.communityDetails.alreadySubscribed}
           </p>
+          {subscriptionDates && (
+            <p className="mt-1.5 text-center text-xs text-ink/55">
+              {t(dict.communityDetails.subscriptionPeriod, {
+                from: formatDate(subscriptionDates.startAt, locale),
+                to: formatDate(subscriptionDates.endAt, locale)
+              })}
+            </p>
+          )}
           <Link
             href={`/${locale}/communities/${community.id}/feed`}
             className="mt-2 flex w-full items-center justify-center rounded-full bg-primary-500 py-3 text-sm font-semibold text-white transition hover:bg-primary-600"

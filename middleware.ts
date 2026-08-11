@@ -12,9 +12,12 @@ export function middleware(request: NextRequest) {
   // Skip static assets, API-ish paths, and Next's generated metadata routes
   // (icon/apple-icon/opengraph-image have no file extension in their URL path,
   // so the dot-check above doesn't catch them — without this they'd otherwise
-  // get redirected to a non-existent /en/icon and 404).
+  // get redirected to a non-existent /en/icon and 404). Route Handlers under
+  // /api must also be skipped — without this, a client fetch("/api/...")
+  // would get redirected to /en/api/... (or /ar/...) and break.
   if (
     pathname.startsWith("/_next") ||
+    pathname.startsWith("/api") ||
     pathname.includes(".") ||
     pathname === "/icon" ||
     pathname === "/apple-icon"

@@ -67,7 +67,7 @@ export default function MyCoursesView({ locale, dict }: { locale: Locale; dict: 
     <div>
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {items.map((course, i) => (
-          <RealCourseCard key={course.id} course={course} locale={locale} dict={dict} priority={i < 4} />
+          <RealCourseCard key={course.id} course={course} locale={locale} dict={dict} priority={i < 4} owned />
         ))}
       </div>
       <Pagination page={page} totalPages={lastPage} onChange={setPage} dict={dict} />

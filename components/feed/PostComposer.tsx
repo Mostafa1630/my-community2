@@ -9,7 +9,10 @@ import { ApiError } from "@/lib/api-client";
 // Shared by both "create a post" (feed composer) and "edit a post" (inline
 // in PostCard) — the backend only ever accepts up to two media files
 // (media[0]/media[1]), so this caps attachments at 2 rather than pretending
-// more are possible.
+// more are possible. Confirmed live: the media validation whitelist is
+// jpg/jpeg/png/mp4/mov — images and short videos, not arbitrary documents
+// (unlike lesson attachments, which do allow pdf/doc/etc on a different
+// endpoint) — accept/preview both file kinds accordingly.
 export default function PostComposer({
   dict,
   initialContent = "",
@@ -88,7 +91,11 @@ export default function PostComposer({
         <div className="mt-3 flex gap-2 ps-12">
           {previews.map((src, i) => (
             <div key={i} className="relative h-20 w-20 overflow-hidden rounded-xl border border-line">
-              <img src={src} alt="" className="h-full w-full object-cover" />
+              {mediaFiles[i]?.type.startsWith("video/") ? (
+                <video src={src} className="h-full w-full object-cover" muted playsInline />
+              ) : (
+                <img src={src} alt="" className="h-full w-full object-cover" />
+              )}
               <button
                 type="button"
                 onClick={() => removeMedia(i)}
@@ -108,7 +115,7 @@ export default function PostComposer({
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*"
+          accept="image/jpeg,image/png,video/mp4,video/quicktime"
           multiple
           className="hidden"
           onChange={(e) => pickFiles(e.target.files)}

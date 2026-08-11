@@ -68,7 +68,14 @@ export default function MyCommunitiesView({ locale, dict }: { locale: Locale; di
     <div>
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {items.map((community, i) => (
-          <RealCommunityCard key={community.id} community={community} locale={locale} dict={dict} priority={i < 4} />
+          <RealCommunityCard
+            key={community.id}
+            community={community}
+            locale={locale}
+            dict={dict}
+            priority={i < 4}
+            subscribed
+          />
         ))}
       </div>
       <Pagination page={page} totalPages={lastPage} onChange={setPage} dict={dict} />
