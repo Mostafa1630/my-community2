@@ -79,6 +79,10 @@
     "student": "طالب",
     "creator": "منشئ محتوى"
   },
+  "notFound": {
+    "title": "404",
+    "description": "لم نتمكن من العثور على الصفحة التي تبحث عنها."
+  },
   "home": {
     "heroTitle": "انضم إلى مجتمع صنّاع المحتوى، واحصل على وصول غير محدود إلى جميع الدورات، وتعلّم من خلال مجتمع يشاركك الاهتمام والطموح نفسيهما.",
     "statsCourses": "دورة متاحة",
@@ -420,7 +424,7 @@
     "statPendingBalance": "الرصيد المعلّق",
     "subscribersTitle": "المشتركون",
     "subscribersEmpty": "لا يوجد مشتركون حتى الآن",
-    "activeMembersTitle": "الأعضاء النشطون",
+    "activeMembersTitle": "الأعضاء المشتركين",
     "communityModTitle": "منشورات — {name}",
     "profileSubtitle": "حدّث بيانات ملفك الشخصي كمنشئ محتوى",
     "profileEditCta": "تعديل بياناتك الشخصية",

@@ -79,6 +79,10 @@
     "student": "Student",
     "creator": "Content Creator"
   },
+  "notFound": {
+    "title": "404",
+    "description": "We couldn't find the page you're looking for."
+  },
   "home": {
     "heroTitle": "Join a community of content creators, get unlimited access to every course, and learn through a community that shares your interests and ambition",
     "statsCourses": "Live courses",

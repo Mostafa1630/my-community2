@@ -14,7 +14,7 @@ export default function ProfilePage({ params }: { params: { locale: string } }) 
   const dict = getDictionary(locale);
   return (
     <div className="container-page py-12">
-      <div className="mx-auto max-w-2xl">
+      <div className="mx-auto max-w-2xl lg:w-[70%] lg:max-w-none">
         <StudentProfileDisplayView locale={locale} dict={dict} />
       </div>
     </div>
