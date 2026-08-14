@@ -7,11 +7,8 @@ import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import { useAuth } from "@/lib/auth-context";
 import DashboardPageHeader from "./DashboardPageHeader";
+import ProfileInfoField from "./ProfileInfoField";
 
-// Read-only display of the creator's own profile — same list/display+edit
-// split as My Community: this page just shows the data, an "Edit" button in
-// the header takes you to the actual form (CreatorProfileView, mounted at
-// /creator/profile/edit), and saving there navigates back here.
 export default function CreatorProfileDisplayView({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const { user } = useAuth();
   const [coverFailed, setCoverFailed] = useState(false);
@@ -61,33 +58,20 @@ export default function CreatorProfileDisplayView({ locale, dict }: { locale: Lo
         <div className="p-6 sm:p-8">
           <h2 className="mb-6 text-2xl font-bold tracking-tight text-ink">{user.name}</h2>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-xl border border-line bg-paper p-4 sm:p-5">
-              <p className="mb-2 text-xs font-medium tracking-wide text-ink/55">{dict.common.name}</p>
-              <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
-                <User size={13} className="shrink-0 text-primary-600" />
-                {user.name}
-              </p>
-            </div>
-            <div className="rounded-xl border border-line bg-paper p-4 sm:p-5">
-              <p className="mb-2 text-xs font-medium tracking-wide text-ink/55">{dict.common.email}</p>
-              <p className="flex items-center gap-1.5 text-sm font-semibold text-ink" dir="ltr">
-                <Mail size={13} className="shrink-0 text-primary-600" />
-                {user.email}
-              </p>
-            </div>
-            <div className="rounded-xl border border-line bg-paper p-4 sm:p-5">
-              <p className="mb-2 text-xs font-medium tracking-wide text-ink/55">{dict.common.phoneNumber}</p>
-              <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
-                <Phone size={13} className="shrink-0 text-primary-600" />
-                {user.phoneNumber || "—"}
-              </p>
-            </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <ProfileInfoField label={dict.common.name} value={user.name} icon={User} />
+            <ProfileInfoField label={dict.common.email} value={user.email} icon={Mail} dir="ltr" />
+            <ProfileInfoField
+              label={dict.common.phoneNumber}
+              value={user.phoneNumber || ""}
+              icon={Phone}
+              dir="ltr"
+            />
           </div>
 
           {user.bioEn && (
-            <div className="mt-4 rounded-xl border border-line bg-paper p-4 sm:p-5">
-              <p className="mb-2 text-xs font-medium tracking-wide text-ink/55">{dict.creatorDash.fieldBio}</p>
+            <div className="mt-3 rounded-lg border border-line bg-paper px-3 py-2.5">
+              <p className="mb-1 text-[11px] font-medium text-ink/55">{dict.creatorDash.fieldBio}</p>
               <p className="text-sm leading-6 text-ink/80">{user.bioEn}</p>
             </div>
           )}

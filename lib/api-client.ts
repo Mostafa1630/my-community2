@@ -1,43 +1,57 @@
 import type { Locale } from "./i18n/config";
 
-// Shared HTTP client for the real backend, introduced as we connect each feature
-// away from the local JSON/localStorage mock data one at a time — see auth-context.tsx
-// for the first consumer (change-password). Every subsequent endpoint should go
-// through `apiFetch` rather than hand-rolling `fetch` calls, so token attachment,
-// the `lang` header, and Laravel-style error parsing stay in one place.
-
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 
 const TOKEN_STORAGE_KEY = "mujtamaaty.apiToken.v1";
 
+export const AUTH_TOKEN_COOKIE = "mujtamaaty_auth_token";
+const AUTH_TOKEN_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+
+function readAuthTokenCookie(): string | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(new RegExp(`(?:^|; )${AUTH_TOKEN_COOKIE.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}=([^;]*)`));
+  if (!match?.[1]) return null;
+  try {
+    const value = decodeURIComponent(match[1]);
+    return value || null;
+  } catch {
+    return null;
+  }
+}
+
 export function getAuthToken(): string | null {
   if (typeof window === "undefined") return null;
-  return window.localStorage.getItem(TOKEN_STORAGE_KEY);
+  const fromStorage = window.localStorage.getItem(TOKEN_STORAGE_KEY);
+  if (fromStorage) {
+    if (!readAuthTokenCookie()) {
+      document.cookie = `${AUTH_TOKEN_COOKIE}=${encodeURIComponent(fromStorage)}; path=/; max-age=${AUTH_TOKEN_COOKIE_MAX_AGE}; SameSite=Lax`;
+    }
+    return fromStorage;
+  }
+  const fromCookie = readAuthTokenCookie();
+  if (fromCookie) {
+    window.localStorage.setItem(TOKEN_STORAGE_KEY, fromCookie);
+    return fromCookie;
+  }
+  return null;
 }
 
 export function setAuthToken(token: string) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(TOKEN_STORAGE_KEY, token);
+  document.cookie = `${AUTH_TOKEN_COOKIE}=${encodeURIComponent(token)}; path=/; max-age=${AUTH_TOKEN_COOKIE_MAX_AGE}; SameSite=Lax`;
 }
 
 export function clearAuthToken() {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+  document.cookie = `${AUTH_TOKEN_COOKIE}=; path=/; max-age=0`;
 }
 
-// A cached copy of the last known /auth/profile response, kept alongside the
-// token so a page refresh can render the logged-in UI immediately instead of
-// waiting on a fresh network round-trip — the profile is still re-verified
-// in the background afterwards (see AuthProvider's hydrate effect), this is
-// only for what shows up on the very first paint.
+
 const USER_CACHE_KEY = "mujtamaaty.cachedUser.v1";
 
-// Mirrors the same cached profile into a cookie, under this name, so the
-// root layout (a Server Component — no access to localStorage) can read it
-// during SSR and render the already-correct signed-in UI in the very first
-// HTML sent to the browser. That's what actually eliminates the
-// guest-then-flip flash on refresh, rather than just shortening it —
-// localStorage alone can only ever resolve after the client's own JS runs.
+
 export const USER_CACHE_COOKIE = "mujtamaaty_cached_user";
 const USER_CACHE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
@@ -65,12 +79,7 @@ export function clearCachedUser() {
   document.cookie = `${USER_CACHE_COOKIE}=; path=/; max-age=0`;
 }
 
-// GET /settings rarely changes and is public — no reason to hit it on every
-// single page load. Cached alongside the timestamp of our own fetch (not the
-// response's own `last_updated`, which only ever moves further into the past
-// relative to "now" and so can never itself signal "go refetch"); once that
-// fetch is older than SETTINGS_CACHE_TTL_MS, the next read is treated as a
-// miss and a fresh request replaces it.
+
 const SETTINGS_CACHE_KEY = "mujtamaaty.settingsCache.v1";
 const SETTINGS_CACHE_TTL_MS = 10 * 60 * 1000;
 
@@ -92,17 +101,7 @@ export function setCachedSettings(data: unknown) {
   window.localStorage.setItem(SETTINGS_CACHE_KEY, JSON.stringify({ data, fetchedAt: Date.now() }));
 }
 
-// Same "paint instantly from cache, quietly reconcile in the background"
-// pattern as the cached-user cookie above — GET /communities/my-subscriptions
-// and GET /courses/my-courses only ever resolve after a real network
-// round-trip, so a student's own subscribe/enter-community CTA was flashing
-// "Subscribe" then flipping to "Enter community" on every single refresh
-// while that fetch was in flight, even with a loading skeleton in between —
-// the skeleton-to-real-content swap itself still read as a visible flicker.
-// Caching the last known membership set per user id means a repeat visit can
-// render the *correct* CTA on the very first paint, with the real fetch only
-// ever silently correcting it if something actually changed (a new
-// subscription from another tab/device, an expiry) — never the reverse.
+
 export interface CachedMyAccess {
   userId: string;
   subscribedCommunityIds: string[];
@@ -112,16 +111,7 @@ export interface CachedMyAccess {
 
 const MY_ACCESS_CACHE_KEY = "mujtamaaty.myAccessCache.v1";
 
-// Mirrored into a cookie for the exact same reason USER_CACHE_COOKIE exists
-// alongside USER_CACHE_KEY: localStorage only exists client-side, so reading
-// it from a `useState` initializer still renders wrong-then-right on the
-// server-rendered HTML's first paint (server has no window, so it always
-// starts from "not loaded yet") — that server/client mismatch, not the
-// network fetch itself, was the actual remaining flicker on refresh even
-// after this cache existed. A cookie is readable during SSR via
-// next/headers' cookies(), so the very first HTML the browser receives can
-// already carry the last-known "subscribed" answer, same as it already does
-// for the signed-in user's own name/avatar.
+
 export const MY_ACCESS_CACHE_COOKIE = "mujtamaaty_cached_my_access";
 const MY_ACCESS_CACHE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
@@ -151,10 +141,7 @@ export function clearCachedMyAccess() {
   document.cookie = `${MY_ACCESS_CACHE_COOKIE}=; path=/; max-age=0`;
 }
 
-// Server-side counterpart of getCachedMyAccess — parses the same cookie's
-// raw value (via next/headers' cookies() in a Server Component) instead of
-// localStorage, which doesn't exist there. See parseCachedUserCookie below
-// for the identical reasoning.
+
 export function parseCachedMyAccessCookie(raw: string | undefined): CachedMyAccess | null {
   if (!raw) return null;
   try {
@@ -164,12 +151,6 @@ export function parseCachedMyAccessCookie(raw: string | undefined): CachedMyAcce
   }
 }
 
-// Server-side counterpart of getCachedUser — parses the same cookie's raw
-// value (as read via next/headers' cookies() in a Server Component) instead
-// of localStorage, which doesn't exist there. Only ever holds display data
-// (name/avatar/role/...), never the bearer token itself — the token stays
-// localStorage-only, so this cookie alone can't be used to make authenticated
-// requests, only to pre-render what a cached session looked like.
 export function parseCachedUserCookie<T>(raw: string | undefined): T | null {
   if (!raw) return null;
   try {
@@ -179,7 +160,6 @@ export function parseCachedUserCookie<T>(raw: string | undefined): T | null {
   }
 }
 
-// Laravel's default validation-error shape: { message, errors: { field: ["msg", ...] } }
 export interface ApiFieldErrors {
   [field: string]: string[];
 }
@@ -195,11 +175,82 @@ export class ApiError extends Error {
     this.fieldErrors = fieldErrors;
   }
 
-  // First error message for a given field, if any — the common case for showing
-  // inline validation feedback under an input.
+
   fieldError(field: string): string | undefined {
     return this.fieldErrors[field]?.[0];
   }
+}
+
+export function readApiMessage(res: unknown): string {
+  if (res && typeof res === "object" && "message" in res) {
+    const message = (res as { message?: unknown }).message;
+    if (typeof message === "string" && message.trim()) return message;
+  }
+  return "";
+}
+
+export type InteractionGateMessages = {
+  loginRequired?: string;
+  subscriptionRequired?: string;
+};
+
+export function resolveInteractionGateMessage(
+  status: number,
+  message: string,
+  gates?: InteractionGateMessages,
+): string | null {
+  if (!gates) return null;
+  if (status === 401 && gates.loginRequired) return gates.loginRequired;
+  if (status === 403 && gates.subscriptionRequired) return gates.subscriptionRequired;
+
+  const normalized = message.toLowerCase();
+  if (
+    gates.loginRequired &&
+    (normalized.includes("unauthenticated") ||
+      normalized.includes("unauthorized") ||
+      message.includes("يجب تسجيل الدخول"))
+  ) {
+    return gates.loginRequired;
+  }
+  if (
+    gates.subscriptionRequired &&
+    (normalized.includes("forbidden") ||
+      normalized.includes("not allowed") ||
+      message.includes("غير مسموح") ||
+      message.includes("غير مصرح"))
+  ) {
+    return gates.subscriptionRequired;
+  }
+  return null;
+}
+
+export function userFacingApiError(
+  err: unknown,
+  fallback: string,
+  gates?: InteractionGateMessages,
+): string {
+  if (err instanceof ApiError) {
+    const gateMessage = resolveInteractionGateMessage(err.status, err.message, gates);
+    if (gateMessage) return gateMessage;
+    if (err.status >= 500 || err.message === "An error occurred") return fallback;
+    return err.message;
+  }
+  return fallback;
+}
+
+export type ReactionResult =
+  | { ok: true }
+  | { ok: false; status: number; message: string };
+
+export function reactionFailureMessage(
+  result: Extract<ReactionResult, { ok: false }>,
+  fallback: string,
+  gates?: InteractionGateMessages,
+): string {
+  const gateMessage = resolveInteractionGateMessage(result.status, result.message, gates);
+  if (gateMessage) return gateMessage;
+  if (result.status >= 500 || result.message === "An error occurred") return fallback;
+  return result.message;
 }
 
 function buildUrl(path: string): string {
@@ -214,12 +265,14 @@ export async function apiFetch<T = unknown>(
     method = "GET",
     body,
     locale,
-    auth = true
+    auth = true,
+    token,
   }: {
     method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
     body?: FormData | Record<string, unknown>;
     locale: Locale;
     auth?: boolean;
+    token?: string | null;
   }
 ): Promise<T> {
   if (!API_BASE_URL) {
@@ -229,30 +282,19 @@ export async function apiFetch<T = unknown>(
   const headers: Record<string, string> = {
     Accept: "application/json",
     lang: locale,
-    // The dev backend is currently tunneled through ngrok's free tier, which
-    // serves an HTML "you're about to visit an ngrok site" interstitial to
-    // any request that looks like it's coming from a browser — silently
-    // breaking every client-side fetch (JSON.parse on that HTML throws,
-    // caught by each getX() helper's try/catch, surfacing as an empty
-    // result with no visible error). Requests from Node (SSR/build) don't
-    // trigger it, which is why server-rendered pages worked immediately but
-    // client-side calls — pagination, search-driven refetches, form
-    // submissions — silently returned nothing until this was added. Harmless
-    // to send once ngrok is out of the picture; a real backend just ignores
-    // an unrecognized header.
+
     "ngrok-skip-browser-warning": "true"
   };
 
   if (auth) {
-    const token = getAuthToken();
-    if (token) headers.Authorization = `Bearer ${token}`;
+    const bearer = token ?? getAuthToken();
+    if (bearer) headers.Authorization = `Bearer ${bearer}`;
   }
 
   let requestBody: BodyInit | undefined;
   if (body instanceof FormData) {
     requestBody = body;
-    // Don't set Content-Type manually for FormData — the browser sets the
-    // multipart boundary itself; setting it here breaks the upload.
+ 
   } else if (body) {
     headers["Content-Type"] = "application/json";
     requestBody = JSON.stringify(body);

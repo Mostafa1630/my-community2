@@ -16,11 +16,7 @@ import Pagination from "./Pagination";
 import DashboardPageHeader from "./DashboardPageHeader";
 import Modal from "./motion/Modal";
 
-// "wallet" replaces the old "vodafone_cash" value (renamed at the client's
-// request — same payout method, new label: "Wallet" / "المحفظة"), plus the
-// new "bank_account" option. A withdrawal fetched from the real backend can
-// still carry the legacy "vodafone_cash" value on old rows, so that's kept
-// as an alias mapping to the same label rather than dropped.
+
 const methodLabel = (dict: Dictionary, method: string) => {
   if (method === "wallet" || method === "vodafone_cash") return dict.creatorDash.payoutWallet;
   if (method === "bank_account") return dict.creatorDash.payoutBankAccount;
@@ -70,7 +66,7 @@ export default function CreatorWithdrawalsView({ locale, dict }: { locale: Local
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [user?.id, locale, page]);
 
   if (!user || user.role !== "creator") return null;
@@ -209,7 +205,7 @@ export default function CreatorWithdrawalsView({ locale, dict }: { locale: Local
           type="number"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
-          placeholder="0"
+          placeholder=""
           className="w-full rounded-xl border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus:border-primary-400"
         />
         <label className="mb-1.5 mt-4 block text-xs font-semibold tracking-wide text-ink/70">{dict.creatorDash.fieldPayoutMethod}</label>
@@ -292,10 +288,20 @@ export default function CreatorWithdrawalsView({ locale, dict }: { locale: Local
                 <span className="text-ink">{details.approvedAt}</span>
               </div>
             )}
-            {details.adminPaymentProof && (
+            {(details.adminPaymentProof || details.hasProof) && (
               <div>
                 <p className="mb-1.5 text-ink/55">{dict.creatorDash.withdrawProof}</p>
-                <img src={details.adminPaymentProof} alt="" className="h-32 w-full rounded-xl object-cover" />
+                {details.adminPaymentProof ? (
+                  <a href={details.adminPaymentProof} target="_blank" rel="noopener noreferrer">
+                    <img
+                      src={details.adminPaymentProof}
+                      alt=""
+                      className="max-h-64 w-full rounded-xl border border-line object-contain bg-paper"
+                    />
+                  </a>
+                ) : (
+                  <p className="text-xs text-ink/55">{dict.common.empty}</p>
+                )}
               </div>
             )}
           </div>

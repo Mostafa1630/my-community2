@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, BookX, CheckCircle2, Loader2 } from "lucide-react";
+import { AlertCircle, BookX, CheckCircle2, ImagePlus, Loader2 } from "lucide-react";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import type { Category } from "@/lib/types";
@@ -22,6 +22,7 @@ const API_FIELD_MAP: Record<string, string> = {
 import EmptyState from "./EmptyState";
 import FormField, { fieldInputClass } from "./FormField";
 import PageLoader from "./PageLoader";
+import ImageCropper from "./ImageCropper";
 
 export default function EditCourseView({
   courseId,
@@ -36,6 +37,7 @@ export default function EditCourseView({
 }) {
   const router = useRouter();
   const { user, getCourseByCreator, updateCourseByCreator } = useAuth();
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -43,26 +45,21 @@ export default function EditCourseView({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState("");
-  const [price, setPrice] = useState(0);
-  const [discountPercentage, setDiscountPercentage] = useState(0);
+  const [price, setPrice] = useState("");
+  const [discountPercentage, setDiscountPercentage] = useState("10");
   const [introVideoUrl, setIntroVideoUrl] = useState("");
   const [isFree, setIsFree] = useState(false);
   const [image, setImage] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [currentImage, setCurrentImage] = useState<string | undefined>(undefined);
+  const [cropSourceFile, setCropSourceFile] = useState<File | null>(null);
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
 
-  // GET /creators/courses/{id} (round 12) replaced the public
-  // GET /courses/details/{id} used here before — creator-scoped, so the
-  // backend itself enforces ownership (a course that isn't this creator's
-  // own just 404s, no manual creator-id check needed anymore). Still no
-  // category field anywhere in this shape, so unlike title/description it
-  // truly can't be recovered; left unresolved (see courseCategoryNote)
-  // rather than guessed, and only sent on save if the creator actively
-  // picks something other than the "leave unchanged" placeholder.
+
   useEffect(() => {
     let cancelled = false;
     async function load() {
@@ -79,19 +76,22 @@ export default function EditCourseView({
       }
       setTitle(details.title);
       setDescription(details.description);
-      setPrice(details.price);
-      setDiscountPercentage(details.discountPercentage);
+      setPrice(details.price ? String(details.price) : "");
+      setDiscountPercentage(String(details.discountPercentage || 10));
       setIntroVideoUrl(details.introVideo ?? "");
       setIsFree(details.isFree);
       setCurrentImage(details.image);
+      if (details.categoryId && categories.some((c) => c.id === details.categoryId)) {
+        setCategoryId(details.categoryId);
+      }
       setLoading(false);
     }
     load();
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, courseId, locale]);
+
+  }, [user?.id, courseId, locale, categories]);
 
   if (!user || user.role !== "creator") return null;
 
@@ -101,6 +101,13 @@ export default function EditCourseView({
 
   if (notFound) {
     return <EmptyState icon={BookX} title={dict.creatorDash.courseNotFound} />;
+  }
+
+  function handleCropConfirm(blob: Blob) {
+    const file = new File([blob], "course.jpg", { type: "image/jpeg" });
+    setImage(file);
+    setImagePreviewUrl(URL.createObjectURL(blob));
+    setCropSourceFile(null);
   }
 
   async function submit(e: React.FormEvent) {
@@ -116,8 +123,8 @@ export default function EditCourseView({
     const parsed = schema.safeParse({
       title,
       isFree,
-      price,
-      discountPercentage,
+      price: price ? Number(price) : 0,
+      discountPercentage: Number(discountPercentage) || 0,
       introVideoUrl
     });
     if (!parsed.success) {
@@ -135,8 +142,8 @@ export default function EditCourseView({
           title,
           description,
           image: image ?? undefined,
-          price: isFree ? undefined : price,
-          discountPercentage: isFree ? undefined : discountPercentage,
+          price: isFree ? undefined : Number(price),
+          discountPercentage: isFree ? undefined : Number(discountPercentage) || 0,
           introVideoUrl,
           isFree
         },
@@ -144,6 +151,7 @@ export default function EditCourseView({
       );
       setCurrentImage(result.image);
       setImage(null);
+      setImagePreviewUrl(null);
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (err) {
@@ -199,13 +207,34 @@ export default function EditCourseView({
 
       <label className="block">
         <span className="mb-1.5 block text-xs font-medium text-ink/65">{dict.creatorDash.fieldCourseImage}</span>
-        {currentImage && !image && <img src={currentImage} alt="" className="mb-2 h-28 w-full rounded-xl object-cover" />}
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => setImage(e.target.files?.[0] ?? null)}
-          className="w-full text-sm text-ink/70"
-        />
+        <div className="relative mb-3 flex h-44 w-full items-center justify-center overflow-hidden rounded-xl border border-dashed border-line bg-paper sm:h-56">
+          {imagePreviewUrl || currentImage ? (
+            <img src={imagePreviewUrl ?? currentImage} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <ImagePlus size={28} className="text-ink/30" />
+          )}
+          <button
+            type="button"
+            onClick={() => imageInputRef.current?.click()}
+            className="absolute end-3 top-3 rounded-full bg-ink/60 px-3.5 py-2 text-xs font-semibold text-white backdrop-blur hover:bg-ink/75"
+          >
+            {dict.common.changeCover}
+          </button>
+          <span className="absolute bottom-2 left-2 rounded-md bg-ink/60 px-2 py-1 text-[11px] font-medium text-white backdrop-blur">
+            1200 × 400
+          </span>
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0] ?? null;
+              if (file) setCropSourceFile(file);
+              e.target.value = "";
+            }}
+          />
+        </div>
       </label>
 
       <label className="flex items-center gap-2 text-sm text-ink/70">
@@ -224,7 +253,8 @@ export default function EditCourseView({
             <input
               type="number"
               value={price}
-              onChange={(e) => setPrice(Number(e.target.value) || 0)}
+              onChange={(e) => setPrice(e.target.value)}
+              placeholder=""
               className={fieldInputClass(!!fieldErrors.price)}
             />
           </FormField>
@@ -232,7 +262,8 @@ export default function EditCourseView({
             <input
               type="number"
               value={discountPercentage}
-              onChange={(e) => setDiscountPercentage(Number(e.target.value) || 0)}
+              onChange={(e) => setDiscountPercentage(e.target.value)}
+              placeholder="10"
               className={fieldInputClass(!!fieldErrors.discountPercentage)}
             />
           </FormField>
@@ -278,6 +309,18 @@ export default function EditCourseView({
           </span>
         )}
       </div>
+
+      {cropSourceFile && (
+        <ImageCropper
+          file={cropSourceFile}
+          aspect={3}
+          shape="rect"
+          outputSize={{ width: 1200, height: 400 }}
+          dict={dict}
+          onConfirm={handleCropConfirm}
+          onCancel={() => setCropSourceFile(null)}
+        />
+      )}
     </form>
   );
 }

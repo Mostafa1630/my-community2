@@ -12,21 +12,13 @@ import { initials } from "@/lib/accents";
 import Badge from "@/components/Badge";
 import DashboardPageHeader from "@/components/DashboardPageHeader";
 import PageLoader from "@/components/PageLoader";
-import CommunitySubscribersList from "@/components/CommunitySubscribersList";
+import CommunityMembersStrip from "@/components/CommunityMembersStrip";
 
-// A creator only ever has one community (per the create endpoint's own
-// business rule) — this page shows it as a single profile-style display with
-// one "Edit community" action, not a list/table. Before this it showed a
-// list with a Create button always visible; that only made sense while this
-// was still (incorrectly) treated as a one-to-many relationship.
+
 export default function CreatorCommunitiesView({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const { user, getMyCommunities, settings } = useAuth();
   const [loading, setLoading] = useState(true);
   const [community, setCommunity] = useState<CreatorCommunity | null>(null);
-  // Falls back to the gradient placeholder if `coverImage` is set but the URL
-  // 404s/doesn't load (seen with the backend's default cover_image value on
-  // a freshly-created community with no upload) — otherwise the banner would
-  // just render blank instead of showing anything.
   const [coverFailed, setCoverFailed] = useState(false);
 
   useEffect(() => {
@@ -60,11 +52,7 @@ export default function CreatorCommunitiesView({ locale, dict }: { locale: Local
       <DashboardPageHeader
         title={dict.creatorDash.myCommunityTitle}
         subtitle={dict.creatorDash.myCommunitySubtitle}
-        // Only ever rendered once a community is confirmed to exist — during
-        // the initial fetch `community` is null the same as the genuinely
-        // empty state, so gating this on `community` (rather than `!loading`)
-        // means the header never shows "Create" for a split second before
-        // flipping to "Edit" once the real data lands.
+
         action={
           community ? (
             <Link
@@ -153,7 +141,16 @@ export default function CreatorCommunitiesView({ locale, dict }: { locale: Local
         </div>
       )}
 
-      {community && <CommunitySubscribersList communityId={community.id} locale={locale} dict={dict} />}
+      {community && (
+        <div className="mt-6">
+          <CommunityMembersStrip
+            communityId={community.id}
+            locale={locale}
+            dict={dict}
+            title={dict.creatorDash.subscribersTitle}
+          />
+        </div>
+      )}
     </div>
   );
 }

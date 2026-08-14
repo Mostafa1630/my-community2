@@ -3,10 +3,7 @@
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 
-// Compact page list: page 1, page 2, an ellipsis, the current page (if it
-// isn't already 1/2/last), another ellipsis, then the last page — instead of
-// a button per page, which stops being usable once there are dozens of
-// pages (communities/creators/coupons lists can all get there).
+
 function getCompactPages(page: number, totalPages: number): (number | "ellipsis")[] {
   if (totalPages <= 4) {
     return Array.from({ length: totalPages }, (_, i) => i + 1);

@@ -6,23 +6,25 @@ import { getCourseDetails } from "@/lib/api-content";
 import { withDecryptedIntroVideo } from "@/lib/video";
 import CourseCheckoutView from "@/components/CourseCheckoutView";
 
-export async function generateMetadata({
-  params
-}: {
-  params: { locale: string; id: string };
-}): Promise<Metadata> {
+export async function generateMetadata(
+  props: {
+    params: Promise<{ locale: string; id: string }>;
+  }
+): Promise<Metadata> {
+  const params = await props.params;
   const locale: Locale = isLocale(params.locale) ? params.locale : "ar";
   const dict = getDictionary(locale);
   return { title: dict.courseDetails.checkoutTitle, robots: { index: false } };
 }
 
-export default async function CourseCheckoutPage({
-  params,
-  searchParams
-}: {
-  params: { locale: string; id: string };
-  searchParams: { coupon?: string };
-}) {
+export default async function CourseCheckoutPage(
+  props: {
+    params: Promise<{ locale: string; id: string }>;
+    searchParams: Promise<{ coupon?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const locale: Locale = isLocale(params.locale) ? params.locale : "ar";
   const dict = getDictionary(locale);
   const rawCourse = await getCourseDetails(params.id, locale);

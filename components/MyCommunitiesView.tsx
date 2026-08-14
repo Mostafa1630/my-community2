@@ -12,10 +12,7 @@ import Pagination from "./Pagination";
 import EmptyState from "./EmptyState";
 import PageLoader from "./PageLoader";
 
-// GET /communities/my-subscriptions — same item shape as the public
-// GET /communities list, just scoped to the signed-in student's own real
-// subscriptions and requiring auth, so this goes through auth-context
-// rather than the public api-content fetchers.
+
 export default function MyCommunitiesView({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const { hydrated, role, getMySubscriptions } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -42,7 +39,7 @@ export default function MyCommunitiesView({ locale, dict }: { locale: Locale; di
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [hydrated, role, locale, page]);
 
   if (!hydrated || loading) return <PageLoader />;

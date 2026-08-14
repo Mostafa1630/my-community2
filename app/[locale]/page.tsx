@@ -4,37 +4,54 @@ import type { Metadata } from "next";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/getDictionary";
 import { getCategories, getTopCreatorsApi, getCommunities, getSettings } from "@/lib/api-content";
+import { getSiteDescription } from "@/lib/platform-branding";
+import { readServerAuthToken } from "@/lib/server-auth";
 import CreatorCard from "@/components/CreatorCard";
 import SectionHeading from "@/components/SectionHeading";
 import Slider from "@/components/motion/Slider";
 import CommunitiesExplorer from "@/components/CommunitiesExplorer";
 import ContactSection from "@/components/ContactSection";
 import EmptyState from "@/components/EmptyState";
+import HomeHero from "@/components/HomeHero";
+import HomeReloadScrollFix from "@/components/HomeReloadScrollFix";
 
-export async function generateMetadata({ params }: { params: { locale: string } }): Promise<Metadata> {
+export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const params = await props.params;
   const locale: Locale = isLocale(params.locale) ? params.locale : "ar";
   const dict = getDictionary(locale);
+  const settings = await getSettings(locale);
   return {
     title: dict.home.heroTitle,
-    description: dict.meta.defaultDescription
+    description: getSiteDescription(settings, locale, dict)
   };
 }
 
-export default async function HomePage({ params }: { params: { locale: string } }) {
+export default async function HomePage(props: { params: Promise<{ locale: string }> }) {
+  const params = await props.params;
   const locale: Locale = isLocale(params.locale) ? params.locale : "ar";
   const dict = getDictionary(locale);
 
   const topCreators = await getTopCreatorsApi(locale);
   const categories = await getCategories(locale);
-  const initialCommunities = await getCommunities(locale);
+  const authToken = await readServerAuthToken();
+  const initialCommunities = await getCommunities(locale, {}, authToken);
   const settings = await getSettings(locale);
 
   return (
     <div>
+      <HomeReloadScrollFix />
+      <HomeHero
+        locale={locale}
+        dict={dict}
+        settings={settings}
+        communitiesCount={initialCommunities.total}
+        creatorsCount={topCreators.length}
+      />
+
       {/* Top content creators */}
       <section className="bg-surface py-14 sm:py-16">
         <div className="container-page">
-          <SectionHeading as="h1" title={dict.home.topCreatorsTitle} subtitle={dict.home.topCreatorsSubtitle} />
+          <SectionHeading title={dict.home.topCreatorsTitle} subtitle={dict.home.topCreatorsSubtitle} />
           {topCreators.length === 0 ? (
             <EmptyState image="/images/no-data.jpg" title={dict.home.noTopCreators} />
           ) : (
@@ -54,7 +71,7 @@ export default async function HomePage({ params }: { params: { locale: string } 
 
       {/* Newest communities — the full browse/search/filter/pagination experience lives
           here now, not on a separate /communities page (there isn't one anymore). */}
-      <section className="py-14 sm:py-16">
+      <section id="communities" className="scroll-mt-24 py-14 sm:py-16">
         <div className="container-page">
           <SectionHeading title={dict.home.latestTitle} subtitle={dict.home.latestSubtitle} />
           <CommunitiesExplorer initialCommunities={initialCommunities} categories={categories} locale={locale} dict={dict} />

@@ -3,10 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import type { ReactNode } from "react";
 
-// Reusable animated dialog. The caller must always render <Modal open={...}> (never
-// wrap it in `{condition && <Modal/>}`) — AnimatePresence needs to stay mounted across
-// the open/close toggle so it can play the exit animation; if the parent unmounts the
-// whole component instead, the exit animation never gets a chance to run.
+
 export default function Modal({
   open,
   onClose,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertCircle, ImagePlus, Loader2, Users2 } from "lucide-react";
 import type { Locale } from "@/lib/i18n/config";
@@ -24,11 +24,8 @@ import DashboardPageHeader from "./DashboardPageHeader";
 import FormField, { fieldInputClass } from "./FormField";
 import EmptyState from "./EmptyState";
 import PageLoader from "./PageLoader";
+import ImageCropper from "./ImageCropper";
 
-// POST /creators/communities/{id} (update only — creation lives in
-// NewCommunityView). No "get one community" endpoint exists, so the target
-// community is resolved by fetching the full list (GET /creators/communities)
-// and matching on id client-side, same as how the list page already has it.
 export default function EditCommunityView({
   communityId,
   locale,
@@ -42,6 +39,7 @@ export default function EditCommunityView({
 }) {
   const router = useRouter();
   const { user, saveCommunity, getMyCommunities } = useAuth();
+  const coverInputRef = useRef<HTMLInputElement>(null);
 
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -52,26 +50,13 @@ export default function EditCommunityView({
   const [categoryUnresolved, setCategoryUnresolved] = useState(false);
   const [type, setType] = useState<"public" | "private">("public");
   const [isFree, setIsFree] = useState(false);
-  const [subscriptionPrice, setSubscriptionPrice] = useState(0);
-  const [discountPercentage, setDiscountPercentage] = useState(0);
+  const [subscriptionPrice, setSubscriptionPrice] = useState("");
+  const [discountPercentage, setDiscountPercentage] = useState("10");
   const [durationDays, setDurationDays] = useState("");
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
   const [currentCoverImage, setCurrentCoverImage] = useState<string | undefined>(undefined);
-
-  // Same reasoning as NewCommunityView: preview a newly picked file at the
-  // same size the existing cover renders at, rather than leaving the
-  // (much taller, now-stale) current cover showing until the save
-  // round-trips.
-  useEffect(() => {
-    if (!coverImage) {
-      setCoverPreviewUrl(null);
-      return;
-    }
-    const url = URL.createObjectURL(coverImage);
-    setCoverPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [coverImage]);
+  const [cropSourceFile, setCropSourceFile] = useState<File | null>(null);
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -96,8 +81,9 @@ export default function EditCommunityView({
       setDescription(community.description);
       setType(community.type);
       setIsFree(community.isFree);
-      setSubscriptionPrice(community.subscriptionPrice);
-      setDiscountPercentage(community.discountPercentage);
+      setSubscriptionPrice(community.subscriptionPrice ? String(community.subscriptionPrice) : "");
+      setDiscountPercentage(String(community.discountPercentage || 10));
+      setDurationDays(community.subscriptionDurationDays ? String(community.subscriptionDurationDays) : "");
       setCurrentCoverImage(community.coverImage);
       if (categories.some((c) => c.id === community.categoryId)) {
         setCategoryId(community.categoryId);
@@ -110,7 +96,7 @@ export default function EditCommunityView({
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+ 
   }, [user?.id, locale, communityId]);
 
   if (!user || user.role !== "creator") return null;
@@ -119,6 +105,13 @@ export default function EditCommunityView({
 
   if (notFound) {
     return <EmptyState icon={Users2} title={dict.creatorDash.communityError} />;
+  }
+
+  function handleCropConfirm(blob: Blob) {
+    const file = new File([blob], "cover.jpg", { type: "image/jpeg" });
+    setCoverImage(file);
+    setCoverPreviewUrl(URL.createObjectURL(blob));
+    setCropSourceFile(null);
   }
 
   async function submit(e: React.FormEvent) {
@@ -142,8 +135,8 @@ export default function EditCommunityView({
       categoryId,
       type,
       isFree,
-      subscriptionPrice,
-      discountPercentage,
+      subscriptionPrice: subscriptionPrice ? Number(subscriptionPrice) : 0,
+      discountPercentage: Number(discountPercentage) || 0,
       subscriptionDurationDays: durationDays ? Number(durationDays) : undefined
     });
     if (!parsed.success) {
@@ -162,8 +155,8 @@ export default function EditCommunityView({
           coverImage: coverImage ?? undefined,
           type,
           isFree,
-          subscriptionPrice: isFree ? undefined : subscriptionPrice,
-          discountPercentage: isFree ? undefined : discountPercentage,
+          subscriptionPrice: isFree ? undefined : Number(subscriptionPrice),
+          discountPercentage: isFree ? undefined : Number(discountPercentage) || 0,
           subscriptionDurationDays: durationDays ? Number(durationDays) : undefined
         },
         communityId,
@@ -239,16 +232,28 @@ export default function EditCommunityView({
             ) : (
               <ImagePlus size={28} className="text-ink/30" />
             )}
+            <button
+              type="button"
+              onClick={() => coverInputRef.current?.click()}
+              className="absolute end-3 top-3 rounded-full bg-ink/60 px-3.5 py-2 text-xs font-semibold text-white backdrop-blur hover:bg-ink/75"
+            >
+              {dict.common.changeCover}
+            </button>
             <span className="absolute bottom-2 left-2 rounded-md bg-ink/60 px-2 py-1 text-[11px] font-medium text-white backdrop-blur">
               1200 × 400
             </span>
+            <input
+              ref={coverInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0] ?? null;
+                if (file) setCropSourceFile(file);
+                e.target.value = "";
+              }}
+            />
           </div>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setCoverImage(e.target.files?.[0] ?? null)}
-            className="w-full text-sm text-ink/70"
-          />
         </label>
 
         <div className="grid gap-5 sm:grid-cols-2">
@@ -307,7 +312,8 @@ export default function EditCommunityView({
               <input
                 type="number"
                 value={subscriptionPrice}
-                onChange={(e) => setSubscriptionPrice(Number(e.target.value) || 0)}
+                onChange={(e) => setSubscriptionPrice(e.target.value)}
+                placeholder=""
                 className={fieldInputClass(!!fieldErrors.subscriptionPrice)}
               />
             </FormField>
@@ -315,7 +321,8 @@ export default function EditCommunityView({
               <input
                 type="number"
                 value={discountPercentage}
-                onChange={(e) => setDiscountPercentage(Number(e.target.value) || 0)}
+                onChange={(e) => setDiscountPercentage(e.target.value)}
+                placeholder="10"
                 className={fieldInputClass(!!fieldErrors.discountPercentage)}
               />
             </FormField>
@@ -338,6 +345,18 @@ export default function EditCommunityView({
           {dict.creatorDash.communitySaveButton}
         </button>
       </form>
+
+      {cropSourceFile && (
+        <ImageCropper
+          file={cropSourceFile}
+          aspect={3}
+          shape="rect"
+          outputSize={{ width: 1200, height: 400 }}
+          dict={dict}
+          onConfirm={handleCropConfirm}
+          onCancel={() => setCropSourceFile(null)}
+        />
+      )}
     </div>
   );
 }

@@ -32,23 +32,10 @@ interface CouponFormState {
   expiredAt: string;
 }
 
-// limitUses defaults to a real value, not blank — confirmed via live
-// testing that the backend rejects a missing limit_uses with a 422 even
-// though the spec's own table marks it optional (see couponFormSchema).
+
 const emptyForm: CouponFormState = { code: "", discountPercentage: "10", limitUses: "10", expiredAt: "" };
 
-// GET /creators/coupons is the one creator-CRUD list endpoint this project
-// has that's actually paginated by the backend (like communities/creators),
-// not just a flat array — real Pagination component reused here.
-// `expired_at` needs converting in both directions: GET returns a
-// human-display 12-hour string ("2026-09-19 12:00 AM"), but the create/
-// update request wants a plain 24-hour "Y-m-d H:i:s" string — see
-// couponExpiryToInputValue/couponExpiryToApiValue in lib/api-types.ts.
-// Both limit_uses and expired_at are documented optional but aren't in
-// practice — confirmed via live testing (round 13) that omitting either one
-// breaks the real backend (a clean 422 for limit_uses, a bare 500 server
-// crash for expired_at). Both are treated as required in this form as a
-// result — see the comment on couponFormSchema for the full story.
+
 export default function CreatorCouponsView({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const { user, getMyCoupons, saveCreatorCoupon, deleteCouponByCreator } = useAuth();
 
@@ -82,7 +69,7 @@ export default function CreatorCouponsView({ locale, dict }: { locale: Locale; d
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [user?.id, locale, page]);
 
   if (!user || user.role !== "creator") return null;

@@ -17,11 +17,12 @@ import Reveal from "@/components/motion/Reveal";
 // pre-generated. Once the base_url is live this still works the same way,
 // just without a build-time prerender pass.
 
-export async function generateMetadata({
-  params
-}: {
-  params: { locale: string; id: string };
-}): Promise<Metadata> {
+export async function generateMetadata(
+  props: {
+    params: Promise<{ locale: string; id: string }>;
+  }
+): Promise<Metadata> {
+  const params = await props.params;
   const locale: Locale = isLocale(params.locale) ? params.locale : "ar";
   const creator = await getCreatorDetails(params.id, locale);
   if (!creator) return {};
@@ -35,7 +36,8 @@ export async function generateMetadata({
   };
 }
 
-export default async function CreatorProfilePage({ params }: { params: { locale: string; id: string } }) {
+export default async function CreatorProfilePage(props: { params: Promise<{ locale: string; id: string }> }) {
+  const params = await props.params;
   const locale: Locale = isLocale(params.locale) ? params.locale : "ar";
   const dict = getDictionary(locale);
   const creator = await getCreatorDetails(params.id, locale);

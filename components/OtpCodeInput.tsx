@@ -4,9 +4,7 @@ import { useRef } from "react";
 
 const LENGTH = 5;
 
-// 5 separate boxes rather than one text input — matches the "code shown
-// nicely" ask, with auto-advance on type/backspace and paste support for
-// pasting the whole code from the email at once.
+
 export default function OtpCodeInput({
   value,
   onChange,

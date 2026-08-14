@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Heart } from "lucide-react";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import { useAuth } from "@/lib/auth-context";
+import { apiFetch } from "@/lib/api-client";
 import { formatPrice } from "@/lib/format";
 import { t } from "@/lib/i18n/t";
+import { mapApiFavoriteEntry, type ApiFavoriteEntry, type FavoriteItem } from "@/lib/api-types";
 import FavoriteButton from "./FavoriteButton";
 import EmptyState from "./EmptyState";
 import Reveal from "./motion/Reveal";
@@ -16,8 +18,34 @@ import PageLoader from "./PageLoader";
 type Tab = "communities" | "courses";
 
 export default function FavoritesView({ locale, dict }: { locale: Locale; dict: Dictionary }) {
-  const { user, favorites, favoritesLoading, settings } = useAuth();
+  const { user, settings } = useAuth();
   const [tab, setTab] = useState<Tab>("communities");
+  const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadFavorites = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await apiFetch<{ data: ApiFavoriteEntry[] }>("/favorites", {
+        method: "GET",
+        locale,
+      });
+      setFavorites(res.data.map(mapApiFavoriteEntry));
+    } catch {
+      setFavorites([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [locale]);
+
+  useEffect(() => {
+    if (!user) {
+      setFavorites([]);
+      setLoading(false);
+      return;
+    }
+    loadFavorites();
+  }, [user, loadFavorites]);
 
   if (!user) {
     return <EmptyState icon={Heart} title={dict.common.empty} />;
@@ -48,7 +76,7 @@ export default function FavoritesView({ locale, dict }: { locale: Locale; dict: 
         </button>
       </div>
 
-      {favoritesLoading ? (
+      {loading ? (
         <PageLoader />
       ) : active.length === 0 ? (
         <EmptyState icon={Heart} title={dict.favorites.empty} />
@@ -75,7 +103,17 @@ export default function FavoritesView({ locale, dict }: { locale: Locale; dict: 
                       {fav.categoryName}
                     </span>
                     <div className="absolute top-3 end-3">
-                      <FavoriteButton favoritableType="community" favoritableId={fav.id} locale={locale} />
+                      <FavoriteButton
+                        favoritableType="community"
+                        favoritableId={fav.id}
+                        locale={locale}
+                        initialIsFavorite
+                        onChange={(isFavorite) => {
+                          if (!isFavorite) {
+                            setFavorites((prev) => prev.filter((f) => f.favoriteId !== fav.favoriteId));
+                          }
+                        }}
+                      />
                     </div>
                   </div>
                   <div className="flex flex-1 flex-col p-4">
@@ -109,7 +147,17 @@ export default function FavoritesView({ locale, dict }: { locale: Locale; dict: 
                       />
                     )}
                     <div className="absolute top-3 end-3">
-                      <FavoriteButton favoritableType="course" favoritableId={fav.id} locale={locale} />
+                      <FavoriteButton
+                        favoritableType="course"
+                        favoritableId={fav.id}
+                        locale={locale}
+                        initialIsFavorite
+                        onChange={(isFavorite) => {
+                          if (!isFavorite) {
+                            setFavorites((prev) => prev.filter((f) => f.favoriteId !== fav.favoriteId));
+                          }
+                        }}
+                      />
                     </div>
                   </div>
                   <div className="flex flex-1 flex-col gap-1.5 p-4">

@@ -7,22 +7,26 @@ import LessonWatchView from "@/components/LessonWatchView";
 // no server-rendered lesson content at all, so the real video url (only
 // available via the authenticated GET /lessons/{id}) never ends up in this
 // page's static HTML. LessonWatchView fetches it client-side after mount.
-export async function generateMetadata({
-  params
-}: {
-  params: { locale: string };
-}): Promise<Metadata> {
+export async function generateMetadata(
+  props: {
+    params: Promise<{ locale: string }>;
+  }
+): Promise<Metadata> {
+  const params = await props.params;
   const locale: Locale = isLocale(params.locale) ? params.locale : "ar";
   const dict = getDictionary(locale);
   return { title: dict.courseDetails.curriculum, robots: { index: false } };
 }
 
-export default function LessonWatchPage({
-  params
-}: {
-  params: { locale: string; id: string; lessonId: string };
-}) {
+export default async function LessonWatchPage(
+  props: {
+    params: Promise<{ locale: string; id: string; lessonId: string }>;
+  }
+) {
+  const params = await props.params;
   const locale: Locale = isLocale(params.locale) ? params.locale : "ar";
   const dict = getDictionary(locale);
-  return <LessonWatchView lessonId={params.lessonId} locale={locale} dict={dict} />;
+  return (
+    <LessonWatchView courseId={params.id} lessonId={params.lessonId} locale={locale} dict={dict} />
+  );
 }

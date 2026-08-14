@@ -12,13 +12,7 @@ import RealCommunityFeedView from "./RealCommunityFeedView";
 import EmptyState from "./EmptyState";
 import PageLoader from "./PageLoader";
 
-// getMyCommunities needs a Bearer token, so unlike the student-facing feed
-// page (which resolves the community server-side via the public
-// getCommunityDetails endpoint), the creator's own community id has to be
-// looked up client-side here before RealCommunityFeedView can render. The
-// "active members" sidebar itself lives inside RealCommunityFeedView (shown
-// whenever the viewer is the community's own creator), so it appears here
-// automatically without this page needing to render it separately.
+
 export default function CreatorCommunityFeedView({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const { user, getMyCommunities } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -41,7 +35,7 @@ export default function CreatorCommunityFeedView({ locale, dict }: { locale: Loc
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [user?.id, locale]);
 
   if (!user || user.role !== "creator") return null;

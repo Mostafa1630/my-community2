@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Search, SlidersHorizontal, ChevronDown } from "lucide-react";
 import type { Category } from "@/lib/types";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import { t } from "@/lib/i18n/t";
+import { useAuth } from "@/lib/auth-context";
 import { getCommunities, type CommunitiesPage } from "@/lib/api-content";
 import RealCommunityCard from "./RealCommunityCard";
 import Pagination from "./Pagination";
@@ -13,11 +14,7 @@ import EmptyState from "./EmptyState";
 import Reveal from "./motion/Reveal";
 import Slider from "./motion/Slider";
 
-// "newest" leaves the API's own order alone (there's no created_at on the
-// community summary to re-sort by client-side); every other key genuinely
-// re-sorts whichever page is currently loaded, over fields the list
-// response already carries (price, ratingAvg, coursesCount,
-// subscriptionsCount) — no server-side sort param is documented.
+
 type SortKey =
   | "newest"
   | "price-asc"
@@ -42,6 +39,7 @@ export default function CommunitiesExplorer({
   locale: Locale;
   dict: Dictionary;
 }) {
+  const { user, sessionReady } = useAuth();
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [sort, setSort] = useState<SortKey>("newest");
@@ -51,6 +49,22 @@ export default function CommunitiesExplorer({
   const [loading, setLoading] = useState(false);
   const [visibleCategoryCount, setVisibleCategoryCount] =
     useState(CATEGORY_PAGE_SIZE);
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const userInitiatedPageChange = useRef(false);
+
+  function handlePageChange(nextPage: number) {
+    if (window.location.hash) {
+      history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
+    userInitiatedPageChange.current = true;
+    setPage(nextPage);
+  }
+
+  useEffect(() => {
+    if (!userInitiatedPageChange.current) return;
+    userInitiatedPageChange.current = false;
+    sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [page]);
 
   // Debounced so search doesn't refetch on every keystroke.
   useEffect(() => {
@@ -62,14 +76,13 @@ export default function CommunitiesExplorer({
     setPage(1);
   }, [debouncedQuery, category]);
 
-  // GET /communities takes `page`, `category_id`, and — per the backend's
-  // own upcoming spec — `search` (matches community name/description/creator
-  // name). `search` isn't live server-side yet, but it's sent regardless so
-  // this starts working the moment it is, no frontend change needed.
-  // Price/rating/etc. sort stays client-side over whichever page is loaded,
-  // since there's no documented sort query param.
+
   useEffect(() => {
-    if (page === initialCommunities.currentPage && category === "all" && !debouncedQuery) {
+    const isDefaultView =
+      page === initialCommunities.currentPage && category === "all" && !debouncedQuery;
+    const ssrHasFavoriteFlags = initialCommunities.items.some((c) => c.isFavorite !== undefined);
+    const needsAuthRefetch = sessionReady && user && !ssrHasFavoriteFlags;
+    if (isDefaultView && !needsAuthRefetch) {
       setCommunitiesPage(initialCommunities);
       return;
     }
@@ -89,10 +102,11 @@ export default function CommunitiesExplorer({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, category, debouncedQuery, locale]);
+  }, [page, category, debouncedQuery, locale, sessionReady, user?.id]);
 
   function updateFilter(fn: () => void) {
     fn();
+    userInitiatedPageChange.current = true;
     setPage(1);
   }
 
@@ -120,7 +134,7 @@ export default function CommunitiesExplorer({
   }, [communitiesPage.items, sort]);
 
   return (
-    <div>
+    <div ref={sectionRef} className="scroll-mt-24">
       <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search
@@ -233,11 +247,12 @@ export default function CommunitiesExplorer({
               ))}
               itemClassName="w-[66.67%]"
               centered
+              animateIn={false}
             />
           </div>
           <div className="hidden sm:grid sm:grid-cols-2 gap-5 lg:grid-cols-4">
             {filtered.map((community, i) => (
-              <Reveal key={community.id} index={i}>
+              <Reveal key={community.id} index={i} animate={false}>
                 <RealCommunityCard
                   community={community}
                   locale={locale}
@@ -253,7 +268,7 @@ export default function CommunitiesExplorer({
       <Pagination
         page={page}
         totalPages={communitiesPage.lastPage}
-        onChange={setPage}
+        onChange={handlePageChange}
         dict={dict}
       />
     </div>

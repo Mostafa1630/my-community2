@@ -12,12 +12,7 @@ import EmptyState from "./EmptyState";
 import Reveal from "./motion/Reveal";
 import Slider from "./motion/Slider";
 
-// No `categories` prop here on purpose — GET /creators and /creators/top
-// return name/bio/images only, with no category or community association at
-// all, so a category filter has nothing to filter *by* client-side. Showing
-// one anyway would just be a dropdown that silently does nothing when
-// changed. If the backend later adds a category/community field to these
-// responses (or a query param), that's the point to bring the filter back.
+
 export default function CreatorsExplorer({
   initialCreators,
   locale,
@@ -33,10 +28,7 @@ export default function CreatorsExplorer({
   const [page, setPage] = useState(initialCreators.currentPage);
   const [loading, setLoading] = useState(false);
 
-  // GET /creators takes `page` and, per the backend's own upcoming spec, a
-  // `search` param matching name/bio — not live server-side yet, but sent
-  // regardless so this starts working the moment it is, with no frontend
-  // change needed. Debounced so it doesn't refetch on every keystroke.
+
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(query.trim()), 400);
     return () => clearTimeout(timer);
@@ -62,7 +54,7 @@ export default function CreatorsExplorer({
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  
   }, [page, debouncedQuery, locale]);
 
   const filtered = creatorsPage.items;

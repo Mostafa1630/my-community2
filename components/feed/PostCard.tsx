@@ -1,10 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
-  Download,
-  FileText,
   Heart,
   MessageCircle,
   MoreHorizontal,
@@ -16,82 +14,122 @@ import {
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import type { FeedPost, ReactionType } from "@/lib/api-types";
+import { t } from "@/lib/i18n/t";
 import { useAuth } from "@/lib/auth-context";
-import { ApiError } from "@/lib/api-client";
+import { ApiError, resolveInteractionGateMessage } from "@/lib/api-client";
+import { useToast } from "@/components/ToastProvider";
 import ReactionPicker from "./ReactionPicker";
 import PostComposer from "./PostComposer";
+import FeedCommentPreview from "./FeedCommentPreview";
+import PostMediaGallery from "./PostMediaGallery";
 
-// Shared between the feed list (compact, links out to the detail page for
-// comments/reactions) and the detail page itself (detailMode — same card,
-// minus the outbound link since the comments/reactions are already right
-// below it there).
+
 export default function PostCard({
   post,
   locale,
   dict,
   communityId,
   isCommunityCreator,
+  canInteract = true,
   onReact,
   onRemoveReaction,
   onEdit,
   onDelete,
   onTogglePin,
   detailMode = false,
-  canInteract = true,
+  variant = "default",
 }: {
   post: FeedPost;
   locale: Locale;
   dict: Dictionary;
   communityId: string;
   isCommunityCreator: boolean;
-  onReact: (type: ReactionType) => Promise<void>;
-  onRemoveReaction: () => Promise<void>;
-  onEdit: (content: string, media: File[]) => Promise<void>;
+  canInteract?: boolean;
+  // Resolves to an error message on failure — callers return a string rather
+  // than throwing so a failed react never becomes an unhandled rejection in
+  // the picker/PostCard click path (Next.js dev overlay was surfacing those).
+  onReact: (type: ReactionType) => Promise<string | void>;
+  onRemoveReaction: () => Promise<string | void>;
+  onEdit: (payload: { content: string; newMedia: File[]; removedMediaUrls: string[] }) => Promise<void>;
   onDelete: () => void;
   onTogglePin: () => void;
   detailMode?: boolean;
-  // False for someone previewing a public community's feed without a real
-  // subscription (the "Explore community" flow) — the backend still enforces
-  // this with a 403 on react/comment, but hiding the controls up front reads
-  // as "you're browsing, not a member" rather than a raw error after tapping.
-  canInteract?: boolean;
+  variant?: "default" | "feed";
 }) {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const [menuOpen, setMenuOpen] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [reactionError, setReactionError] = useState("");
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function handlePointerDown(event: PointerEvent) {
+      if (menuRef.current?.contains(event.target as Node)) return;
+      setMenuOpen(false);
+    }
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [menuOpen]);
+
+  const interactionGates = {
+    loginRequired: dict.community.loginRequired,
+    subscriptionRequired: dict.community.subscriptionRequired,
+  };
+
+  function reactionFailureMessage(err: unknown): string {
+    if (err instanceof ApiError) {
+      const gateMessage = resolveInteractionGateMessage(err.status, err.message, interactionGates);
+      if (gateMessage) return gateMessage;
+      // Laravel's generic 500 copy isn't actionable — show our own string.
+      if (err.status >= 500 || err.message === "An error occurred") {
+        return dict.community.reactionError;
+      }
+      return err.message;
+    }
+    return dict.community.reactionError;
+  }
+
+  function gateMessageFromText(message: string): string {
+    return (
+      resolveInteractionGateMessage(0, message, interactionGates) ?? message
+    );
+  }
+
+  function showReactionError(message: string) {
+    showToast(gateMessageFromText(message), { variant: "error" });
+  }
 
   async function handleReact(type: ReactionType) {
-    setReactionError("");
+    if (!user) {
+      showToast(dict.community.loginRequired, { variant: "error" });
+      return;
+    }
     try {
-      await onReact(type);
+      const message = await onReact(type);
+      if (message) showReactionError(message);
     } catch (err) {
-      setReactionError(err instanceof ApiError ? err.message : dict.community.reactionError);
+      showReactionError(reactionFailureMessage(err));
     }
   }
 
   async function handleRemoveReaction() {
-    setReactionError("");
+    if (!user) {
+      showToast(dict.community.loginRequired, { variant: "error" });
+      return;
+    }
     try {
-      await onRemoveReaction();
+      const message = await onRemoveReaction();
+      if (message) showReactionError(message);
     } catch (err) {
-      setReactionError(err instanceof ApiError ? err.message : dict.community.reactionError);
+      showReactionError(reactionFailureMessage(err));
     }
   }
 
-  // Per the client's own rule: the post's author can edit or delete it; the
-  // community's own creator can delete or pin any post, but not edit one
-  // that isn't theirs.
-  //
-  // `post.isOwner` alone isn't trustworthy here — GET /communities/{id}/posts
-  // (the list endpoint this feed loads from) was confirmed live to always
-  // return is_owner: false, even for the exact user who just created the
-  // post (GET /posts/{id}, the single-post endpoint, gets it right). Cross-
-  // checking against the post's own author id fixes the list case without
-  // affecting the already-correct detail-page case.
-  const isOwner = post.isOwner || post.user.id === user?.id;
-  const canEdit = isOwner;
-  const canDelete = isOwner || isCommunityCreator;
+  // Post author can edit/delete when subscribed; community creator always can.
+  const isOwner = post.isOwner;
+  const canEdit = isOwner && canInteract;
+  const canDelete = (isOwner && canInteract) || isCommunityCreator;
   const canPin = isCommunityCreator;
   const hasMenu = canEdit || canDelete || canPin;
 
@@ -101,11 +139,13 @@ export default function PostCard({
         <PostComposer
           dict={dict}
           initialContent={post.content}
+          initialExistingMedia={post.media}
           submitLabel={dict.common.save}
           placeholder=""
+          boxed
           onCancel={() => setEditing(false)}
-          onSubmit={async (content, media) => {
-            await onEdit(content, media);
+          onSubmit={async (payload) => {
+            await onEdit(payload);
             setEditing(false);
           }}
         />
@@ -114,6 +154,190 @@ export default function PostCard({
   }
 
   const detailHref = `/${locale}/communities/${communityId}/posts/${post.id}`;
+  const isFeed = variant === "feed";
+
+  const optionsMenu = hasMenu ? (
+    <div className="relative z-20 shrink-0" ref={menuRef}>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setMenuOpen((v) => !v);
+        }}
+        className="rounded-full p-2 text-ink/55 hover:bg-paper"
+        aria-label="options"
+        aria-expanded={menuOpen}
+      >
+        <MoreHorizontal size={18} />
+      </button>
+      {menuOpen && (
+        <div className="absolute end-0 top-full z-20 mt-1 w-44 rounded-xl border border-line bg-surface p-1.5 shadow-raised">
+          {canPin && (
+            <button
+              type="button"
+              onClick={() => {
+                onTogglePin();
+                setMenuOpen(false);
+              }}
+              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-start text-sm text-ink/80 hover:bg-primary-50"
+            >
+              {post.isPinned ? <PinOff size={14} /> : <Pin size={14} />}
+              {post.isPinned ? dict.community.unpinPost : dict.community.pinPost}
+            </button>
+          )}
+          {canEdit && (
+            <button
+              type="button"
+              onClick={() => {
+                setEditing(true);
+                setMenuOpen(false);
+              }}
+              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-start text-sm text-ink/80 hover:bg-primary-50"
+            >
+              <Pencil size={14} /> {dict.community.editPost}
+            </button>
+          )}
+          {canDelete && (
+            <button
+              type="button"
+              onClick={() => {
+                setMenuOpen(false);
+                onDelete();
+              }}
+              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-start text-sm text-danger hover:bg-danger/10"
+            >
+              <Trash2 size={14} /> {dict.community.deletePost}
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  ) : null;
+
+  if (isFeed) {
+    const hasComments =
+      !detailMode && (post.comments.length > 0 || post.commentsCount > post.comments.length);
+
+    const headerInner = (
+      <>
+        <img
+          src={post.user.profileImage || "/images/avatar-placeholder.jpg"}
+          alt=""
+          className="h-10 w-10 shrink-0 rounded-full object-cover ring-1 ring-line"
+        />
+        <div className="min-w-0 text-start">
+          <p className="truncate text-sm font-semibold text-ink">{post.user.name}</p>
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0 text-xs text-ink/50">
+            {post.isPinned && (
+              <>
+                <span className="inline-flex items-center gap-1 font-medium text-accent-700">
+                  <Pin size={11} className="fill-accent-700" />
+                  {dict.community.pinnedLabel}
+                </span>
+                <span aria-hidden>·</span>
+              </>
+            )}
+            <span>{post.createdAt}</span>
+          </div>
+        </div>
+      </>
+    );
+
+    return (
+      <article
+        className={`overflow-hidden rounded-2xl border bg-surface shadow-card ${
+          post.isPinned ? "border-accent-300 ring-1 ring-accent-200/60" : "border-line"
+        }`}
+      >
+        <div className="flex items-center justify-between px-5 py-3.5">
+          {detailMode ? (
+            <div className="flex min-w-0 items-center gap-3">{headerInner}</div>
+          ) : (
+            <Link href={detailHref} className="flex min-w-0 items-center gap-3 hover:opacity-90">
+              {headerInner}
+            </Link>
+          )}
+          {optionsMenu}
+        </div>
+
+        {post.content && (
+          <p className="px-5 pb-2 text-[0.9375rem] leading-7 text-ink/85 whitespace-pre-line">{post.content}</p>
+        )}
+
+        {post.media.length > 0 && <PostMediaGallery items={post.media} variant="feed" />}
+
+        <div className="relative z-10 px-5 pb-3 pt-2">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-0.5">
+              {canInteract ? (
+                <>
+                  <ReactionPicker
+                    current={post.myReaction}
+                    onReact={handleReact}
+                    onRemove={handleRemoveReaction}
+                    dict={dict}
+                    iconOnly
+                  />
+                  {detailMode ? (
+                    <a
+                      href="#post-comments"
+                      className="rounded-full p-2 text-ink/70 transition hover:bg-paper hover:text-ink"
+                    >
+                      <MessageCircle size={22} strokeWidth={1.75} />
+                    </a>
+                  ) : (
+                    <Link
+                      href={`${detailHref}?tab=comments`}
+                      className="rounded-full p-2 text-ink/70 transition hover:bg-paper hover:text-ink"
+                    >
+                      <MessageCircle size={22} strokeWidth={1.75} />
+                    </Link>
+                  )}
+                </>
+              ) : null}
+            </div>
+
+            {(post.reactionsCount > 0 || post.commentsCount > 0) && (
+              <div className="flex items-center gap-3 text-xs text-ink/50">
+                {post.reactionsCount > 0 &&
+                  (detailMode ? (
+                    <a href="#post-reactions" className="hover:text-ink/70">
+                      {t(dict.community.feedReactionsCount, { count: post.reactionsCount })}
+                    </a>
+                  ) : (
+                    <Link href={`${detailHref}?tab=reactions`} className="hover:text-ink/70">
+                      {t(dict.community.feedReactionsCount, { count: post.reactionsCount })}
+                    </Link>
+                  ))}
+                {post.commentsCount > 0 &&
+                  (detailMode ? (
+                    <a href="#post-comments" className="hover:text-ink/70">
+                      {t(dict.community.feedCommentsCount, { count: post.commentsCount })}
+                    </a>
+                  ) : (
+                    <Link href={`${detailHref}?tab=comments`} className="hover:text-ink/70">
+                      {t(dict.community.feedCommentsCount, { count: post.commentsCount })}
+                    </Link>
+                  ))}
+              </div>
+            )}
+          </div>
+
+          {hasComments && (
+            <div className="mt-3">
+              <FeedCommentPreview
+                comments={post.comments}
+                commentsCount={post.commentsCount}
+                detailHref={detailHref}
+                dict={dict}
+              />
+            </div>
+          )}
+
+        </div>
+      </article>
+    );
+  }
 
   // Reactions count and comments count each jump straight to their own tab
   // on the detail page — clicking one shouldn't dump you on the other. Plain
@@ -166,7 +390,7 @@ export default function PostCard({
       {!detailMode && (
         <Link
           href={detailHref}
-          className="absolute inset-0 z-0 rounded-2xl"
+          className="pointer-events-none absolute inset-0 z-0 rounded-2xl"
           aria-label={post.content || dict.community.viewPost}
         />
       )}
@@ -193,105 +417,14 @@ export default function PostCard({
           </div>
         </div>
 
-        {hasMenu && (
-          <div className="relative z-10">
-            <button
-              onClick={() => setMenuOpen((v) => !v)}
-              className="rounded-full p-1.5 text-ink/65 hover:bg-ink/5"
-              aria-label="options"
-            >
-              <MoreHorizontal size={18} />
-            </button>
-            {menuOpen && (
-              <div
-                className="absolute end-0 top-9 z-10 w-44 rounded-xl border border-line bg-surface p-1.5 shadow-raised"
-                onMouseLeave={() => setMenuOpen(false)}
-              >
-                {canPin && (
-                  <button
-                    onClick={() => {
-                      onTogglePin();
-                      setMenuOpen(false);
-                    }}
-                    className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-start text-sm text-ink/80 hover:bg-primary-50"
-                  >
-                    {post.isPinned ? <PinOff size={14} /> : <Pin size={14} />}
-                    {post.isPinned
-                      ? dict.community.unpinPost
-                      : dict.community.pinPost}
-                  </button>
-                )}
-                {canEdit && (
-                  <button
-                    onClick={() => {
-                      setEditing(true);
-                      setMenuOpen(false);
-                    }}
-                    className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-start text-sm text-ink/80 hover:bg-primary-50"
-                  >
-                    <Pencil size={14} /> {dict.community.editPost}
-                  </button>
-                )}
-                {canDelete && (
-                  <button
-                    onClick={() => {
-                      setMenuOpen(false);
-                      onDelete();
-                    }}
-                    className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-start text-sm text-danger hover:bg-danger/10"
-                  >
-                    <Trash2 size={14} /> {dict.community.deletePost}
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+        {optionsMenu}
       </div>
 
       {post.content && (
-        <p className="mt-3 whitespace-pre-line text-sm leading-6 text-ink/80">
-          {post.content}
-        </p>
+        <p className="mt-3 whitespace-pre-line text-sm leading-6 text-ink/80">{post.content}</p>
       )}
 
-      {post.media.length > 0 && (
-        <div
-          className={`relative z-10 mt-3 grid gap-2 ${post.media.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}
-        >
-          {post.media.map((m, i) => {
-            if (/\.(mp4|mov)(\?.*)?$/i.test(m.url)) {
-              return <video key={i} src={m.url} controls className="max-h-96 w-full rounded-xl object-cover" />;
-            }
-            if (/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(m.url)) {
-              return (
-                <img
-                  key={i}
-                  src={m.url}
-                  alt=""
-                  loading="lazy"
-                  decoding="async"
-                  className="max-h-96 w-full rounded-xl object-cover"
-                />
-              );
-            }
-            return (
-              <a
-                key={i}
-                href={m.url}
-                target="_blank"
-                rel="noreferrer"
-                download
-                className="flex items-center gap-2.5 rounded-xl border border-line bg-paper px-4 py-3 text-sm hover:border-primary-200"
-              >
-                <FileText size={16} className="shrink-0 text-primary-600" />
-                <span className="min-w-0 flex-1 truncate text-ink">{m.url.split("/").pop()}</span>
-                <Download size={14} className="shrink-0 text-ink/50" />
-              </a>
-            );
-          })}
-        </div>
-      )}
+      {post.media.length > 0 && <PostMediaGallery items={post.media} variant="card" />}
 
       <div className="relative z-10 mt-3 flex items-center justify-between border-t border-line pt-3">
         {canInteract ? (
@@ -306,7 +439,6 @@ export default function PostCard({
         )}
         {countsRow}
       </div>
-      {reactionError && <p className="mt-1.5 text-xs text-danger">{reactionError}</p>}
     </article>
   );
 }

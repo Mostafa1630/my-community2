@@ -2,18 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
+import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, Loader2, Tag } from "lucide-react";
 import type { CourseDetails } from "@/lib/api-types";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import { dir } from "@/lib/i18n/config";
 import { useAuth } from "@/lib/auth-context";
+import { ApiError } from "@/lib/api-client";
 import { formatPrice } from "@/lib/format";
 
-// Mirrors CommunityCheckoutView exactly — same Kashier-hosted checkout
-// session pattern, just POST /courses/{id}/enroll instead of
-// /communities/{id}/subscribe, for buying a single course outright rather
-// than subscribing to its whole community.
 export default function CourseCheckoutView({
   course,
   locale,
@@ -27,21 +24,21 @@ export default function CourseCheckoutView({
 }) {
   const router = useRouter();
   const { checkCoupon, createCourseEnrollment, settings } = useAuth();
+  const [couponCode, setCouponCode] = useState(initialCouponCode ?? "");
   const [couponResult, setCouponResult] = useState<{ discountPercentage: number } | null>(null);
-  const [checkingCoupon, setCheckingCoupon] = useState(!!initialCouponCode);
+  const [checkingCoupon, setCheckingCoupon] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState("");
+  const [couponError, setCouponError] = useState("");
 
   async function handleConfirm() {
-    // Always goes through the real endpoint and redirects to whatever
-    // payment_url comes back — free courses still return one, same as
-    // communities, so there's no local skip-straight-through shortcut here.
+
     setError("");
     setConfirming(true);
     try {
       const session = await createCourseEnrollment(
         course.id,
-        couponResult ? initialCouponCode : undefined,
+        couponResult ? couponCode.trim() : undefined,
         locale
       );
       window.location.href = session.paymentUrl;
@@ -53,11 +50,31 @@ export default function CourseCheckoutView({
 
   useEffect(() => {
     if (!initialCouponCode) return;
+    setCouponCode(initialCouponCode);
+    setCheckingCoupon(true);
     checkCoupon({ creatorId: course.creator.id, code: initialCouponCode }, locale)
       .then((result) => setCouponResult({ discountPercentage: result.discountPercentage }))
-      .catch(() => setCouponResult(null))
+      .catch((err) => {
+        setCouponResult(null);
+        setCouponError(err instanceof ApiError ? err.message : dict.communityDetails.couponInvalid);
+      })
       .finally(() => setCheckingCoupon(false));
   }, [initialCouponCode, course.creator.id, locale, checkCoupon]);
+
+  async function handleCheckCoupon() {
+    if (!couponCode.trim()) return;
+    setCheckingCoupon(true);
+    setCouponError("");
+    setCouponResult(null);
+    try {
+      const result = await checkCoupon({ creatorId: course.creator.id, code: couponCode.trim() }, locale);
+      setCouponResult({ discountPercentage: result.discountPercentage });
+    } catch (err) {
+      setCouponError(err instanceof ApiError ? err.message : dict.communityDetails.couponInvalid);
+    } finally {
+      setCheckingCoupon(false);
+    }
+  }
 
   const hasCourseDiscount = !course.isFree && course.discountPercentage > 0;
   const finalWithCoupon = couponResult
@@ -121,6 +138,50 @@ export default function CourseCheckoutView({
             <p className="truncate text-sm font-semibold text-ink">{course.title}</p>
           </div>
         </div>
+
+        {!course.isFree && (
+          <div className="mb-6 rounded-2xl border border-line bg-paper p-4">
+            <label className="mb-1.5 flex items-center gap-1.5 text-sm font-semibold text-ink">
+              <Tag size={14} />
+              {dict.communityDetails.couponLabel}
+            </label>
+            <p className="mb-2 text-xs text-ink/65">{dict.communityDetails.couponHint}</p>
+            <div className="flex gap-2">
+              <input
+                value={couponCode}
+                onChange={(e) => {
+                  setCouponCode(e.target.value);
+                  setCouponResult(null);
+                  setCouponError("");
+                }}
+                dir="ltr"
+                placeholder={dict.communityDetails.couponPlaceholder}
+                className="w-full rounded-xl border border-line bg-surface px-3.5 py-2 text-sm font-mono outline-none focus:border-primary-300"
+              />
+              <button
+                type="button"
+                onClick={handleCheckCoupon}
+                disabled={checkingCoupon || !couponCode.trim()}
+                className="flex shrink-0 items-center gap-1.5 rounded-xl border border-line bg-surface px-4 text-sm font-semibold text-ink transition hover:border-primary-300 hover:text-primary-700 disabled:opacity-60"
+              >
+                {checkingCoupon && <Loader2 size={14} className="animate-spin" />}
+                {dict.communityDetails.couponApplyButton}
+              </button>
+            </div>
+            {couponResult && (
+              <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-success">
+                <CheckCircle2 size={13} />
+                {dict.communityDetails.couponApplied}
+              </p>
+            )}
+            {couponError && (
+              <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-danger">
+                <AlertCircle size={13} />
+                {couponError}
+              </p>
+            )}
+          </div>
+        )}
 
         {confirming ? (
           <p className="flex items-center justify-center gap-2 rounded-xl bg-accent-50 px-3.5 py-3 text-sm text-accent-800">

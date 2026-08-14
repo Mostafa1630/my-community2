@@ -20,9 +20,7 @@ const API_FIELD_MAP: Record<string, string> = {
   phone_number: "phoneNumber"
 };
 
-// Edit-only form — the display-first view lives in StudentProfileDisplayView
-// (rendered at /profile), same list/display+edit split used for My Community
-// and the creator profile. On save this navigates back to that display page.
+
 export default function StudentProfileView({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const router = useRouter();
   const { user, role, hydrated, updateProfile } = useAuth();

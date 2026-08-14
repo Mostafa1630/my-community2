@@ -104,7 +104,8 @@ const EMPTY_COMMUNITIES_PAGE: CommunitiesPage = { items: [], total: 0, currentPa
 
 export async function getCommunities(
   locale: Locale,
-  { page = 1, categoryId, search }: { page?: number; categoryId?: string; search?: string } = {}
+  { page = 1, categoryId, search }: { page?: number; categoryId?: string; search?: string } = {},
+  authToken?: string | null,
 ): Promise<CommunitiesPage> {
   try {
     const query = new URLSearchParams({ page: String(page) });
@@ -112,19 +113,24 @@ export async function getCommunities(
     if (search) query.set("search", search);
     const res = await apiFetch<{
       data: { items: ApiCommunitySummary[]; total: number; currentPage: number; lastPage: number; perPage: number };
-    }>(`/communities?${query.toString()}`, { method: "GET", locale, auth: false });
+    }>(`/communities?${query.toString()}`, { method: "GET", locale, auth: true, token: authToken });
     return { ...res.data, items: res.data.items.map(mapApiCommunitySummary) };
   } catch {
     return EMPTY_COMMUNITIES_PAGE;
   }
 }
 
-export async function getCommunityDetails(id: string, locale: Locale): Promise<CommunityDetails | null> {
+export async function getCommunityDetails(
+  id: string,
+  locale: Locale,
+  authToken?: string | null,
+): Promise<CommunityDetails | null> {
   try {
     const res = await apiFetch<{ data: ApiCommunityDetails }>(`/communities/details/${id}`, {
       method: "GET",
       locale,
-      auth: false
+      auth: true,
+      token: authToken,
     });
     return mapApiCommunityDetails(res.data);
   } catch {
@@ -132,12 +138,17 @@ export async function getCommunityDetails(id: string, locale: Locale): Promise<C
   }
 }
 
-export async function getCourseDetails(id: string, locale: Locale): Promise<CourseDetails | null> {
+export async function getCourseDetails(
+  id: string,
+  locale: Locale,
+  authToken?: string | null,
+): Promise<CourseDetails | null> {
   try {
     const res = await apiFetch<{ data: ApiCourseDetails }>(`/courses/details/${id}`, {
       method: "GET",
       locale,
-      auth: false
+      auth: true,
+      token: authToken,
     });
     return mapApiCourseDetails(res.data);
   } catch {

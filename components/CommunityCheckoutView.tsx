@@ -30,15 +30,11 @@ export default function CommunityCheckoutView({
   const [error, setError] = useState("");
 
   async function handleConfirm() {
-    // Always goes through the real endpoint and redirects to whatever
-    // payment_url comes back — free communities still return one (e.g. a
-    // zero-amount confirmation session), so there's no local "nothing to
-    // pay, skip straight to the feed" shortcut here.
+  
     setError("");
     setConfirming(true);
     try {
-      // Only sent once this page's own coupon check above already confirmed
-      // it's valid — never the raw, unverified code.
+     
       const session = await createCommunitySubscription(
         community.id,
         couponResult ? initialCouponCode : undefined,

@@ -1,12 +1,16 @@
 import { FileCheck2 } from "lucide-react";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
-import { getLegalSections } from "@/lib/api-content";
+import { getLegalSections, getSettings } from "@/lib/api-content";
+import { brandWithSiteName } from "@/lib/platform-branding";
 import { resolveLegalIcon } from "@/lib/legalIcons";
 import LegalSection from "./LegalSection";
 
 export default async function TermsSection({ locale, dict }: { locale: Locale; dict: Dictionary }) {
-  const sections = await getLegalSections("terms-conditions", locale);
+  const [sections, settings] = await Promise.all([
+    getLegalSections("terms-conditions", locale),
+    getSettings(locale)
+  ]);
   const items = sections.map((s) => ({
     icon: resolveLegalIcon(s.icon),
     question: s.title,
@@ -20,7 +24,7 @@ export default async function TermsSection({ locale, dict }: { locale: Locale; d
       badgeIcon={FileCheck2}
       badgeLabel={dict.legal.termsBadge}
       title={dict.legal.termsTitle}
-      subtitle={dict.legal.termsSubtitle}
+      subtitle={brandWithSiteName(dict.legal.termsSubtitle, settings, dict)}
       lastUpdatedLabel={dict.legal.lastUpdatedLabel}
       sectionsLabel={dict.legal.termsSectionsLabel}
       items={items}

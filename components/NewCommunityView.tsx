@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertCircle, ImagePlus, Loader2 } from "lucide-react";
 import type { Locale } from "@/lib/i18n/config";
@@ -22,10 +22,9 @@ const API_FIELD_MAP: Record<string, string> = {
 };
 import DashboardPageHeader from "./DashboardPageHeader";
 import FormField, { fieldInputClass } from "./FormField";
+import ImageCropper from "./ImageCropper";
 
-// POST /creators/communities (create only — updates live in EditCommunityView).
-// On success, goes back to the community list so the creator immediately sees
-// what they just created alongside any others, per explicit request.
+
 export default function NewCommunityView({
   locale,
   dict,
@@ -37,38 +36,33 @@ export default function NewCommunityView({
 }) {
   const router = useRouter();
   const { user, saveCommunity } = useAuth();
+  const coverInputRef = useRef<HTMLInputElement>(null);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState(categories[0]?.id ?? "");
   const [type, setType] = useState<"public" | "private">("public");
   const [isFree, setIsFree] = useState(false);
-  const [subscriptionPrice, setSubscriptionPrice] = useState(0);
-  const [discountPercentage, setDiscountPercentage] = useState(0);
+  const [subscriptionPrice, setSubscriptionPrice] = useState("");
+  const [discountPercentage, setDiscountPercentage] = useState("10");
   const [durationDays, setDurationDays] = useState("");
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
+  const [cropSourceFile, setCropSourceFile] = useState<File | null>(null);
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  // The cover image is what visitors see as the community's whole banner
-  // (see the h-56/h-72 display on CreatorCommunitiesView), so a tiny
-  // thumbnail preview here was misleading about how it'll actually look —
-  // preview it at roughly the same size, from an object URL of the picked
-  // file, freed on unmount/replacement to avoid leaking it.
-  useEffect(() => {
-    if (!coverImage) {
-      setCoverPreviewUrl(null);
-      return;
-    }
-    const url = URL.createObjectURL(coverImage);
-    setCoverPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [coverImage]);
 
   if (!user || user.role !== "creator") return null;
+
+  function handleCropConfirm(blob: Blob) {
+    const file = new File([blob], "cover.jpg", { type: "image/jpeg" });
+    setCoverImage(file);
+    setCoverPreviewUrl(URL.createObjectURL(blob));
+    setCropSourceFile(null);
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -85,8 +79,8 @@ export default function NewCommunityView({
       categoryId,
       type,
       isFree,
-      subscriptionPrice,
-      discountPercentage,
+      subscriptionPrice: subscriptionPrice ? Number(subscriptionPrice) : 0,
+      discountPercentage: Number(discountPercentage) || 0,
       subscriptionDurationDays: durationDays ? Number(durationDays) : undefined
     });
     if (!parsed.success) {
@@ -105,8 +99,8 @@ export default function NewCommunityView({
           coverImage: coverImage ?? undefined,
           type,
           isFree,
-          subscriptionPrice: isFree ? undefined : subscriptionPrice,
-          discountPercentage: isFree ? undefined : discountPercentage,
+          subscriptionPrice: isFree ? undefined : Number(subscriptionPrice),
+          discountPercentage: isFree ? undefined : Number(discountPercentage) || 0,
           subscriptionDurationDays: durationDays ? Number(durationDays) : undefined
         },
         null,
@@ -168,19 +162,28 @@ export default function NewCommunityView({
             ) : (
               <ImagePlus size={28} className="text-ink/30" />
             )}
-            {/* Matches this dropzone's own banner aspect ratio (a standard
-                3:1 cover-photo crop) so an uploaded image isn't stretched or
-                cropped unexpectedly. */}
+            <button
+              type="button"
+              onClick={() => coverInputRef.current?.click()}
+              className="absolute end-3 top-3 rounded-full bg-ink/60 px-3.5 py-2 text-xs font-semibold text-white backdrop-blur hover:bg-ink/75"
+            >
+              {dict.common.changeCover}
+            </button>
             <span className="absolute bottom-2 left-2 flex items-center justify-center rounded-md bg-ink/60 px-2 py-1 text-center text-[11px] font-medium text-white backdrop-blur">
               1200 × 400
             </span>
+            <input
+              ref={coverInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0] ?? null;
+                if (file) setCropSourceFile(file);
+                e.target.value = "";
+              }}
+            />
           </div>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setCoverImage(e.target.files?.[0] ?? null)}
-            className="w-full text-sm text-ink/70"
-          />
         </label>
 
         <div className="grid gap-5 sm:grid-cols-2">
@@ -239,7 +242,8 @@ export default function NewCommunityView({
               <input
                 type="number"
                 value={subscriptionPrice}
-                onChange={(e) => setSubscriptionPrice(Number(e.target.value) || 0)}
+                onChange={(e) => setSubscriptionPrice(e.target.value)}
+                placeholder=""
                 className={fieldInputClass(!!fieldErrors.subscriptionPrice)}
               />
             </FormField>
@@ -247,7 +251,8 @@ export default function NewCommunityView({
               <input
                 type="number"
                 value={discountPercentage}
-                onChange={(e) => setDiscountPercentage(Number(e.target.value) || 0)}
+                onChange={(e) => setDiscountPercentage(e.target.value)}
+                placeholder="10"
                 className={fieldInputClass(!!fieldErrors.discountPercentage)}
               />
             </FormField>
@@ -270,6 +275,18 @@ export default function NewCommunityView({
           {dict.creatorDash.communityCreateButton}
         </button>
       </form>
+
+      {cropSourceFile && (
+        <ImageCropper
+          file={cropSourceFile}
+          aspect={3}
+          shape="rect"
+          outputSize={{ width: 1200, height: 400 }}
+          dict={dict}
+          onConfirm={handleCropConfirm}
+          onCancel={() => setCropSourceFile(null)}
+        />
+      )}
     </div>
   );
 }

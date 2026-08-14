@@ -91,7 +91,6 @@ export function lessonFormSchema(messages: { required: string; positive: string;
   return z.object({
     title: z.string().min(1, messages.required),
     videoUrl: z.string().min(1, messages.required).url(messages.invalidUrl),
-    duration: z.number().int(messages.positive).positive(messages.positive).optional(),
     order: z.number().int(messages.positive).positive(messages.positive).optional()
   });
 }

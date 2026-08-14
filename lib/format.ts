@@ -2,7 +2,8 @@ import type { Locale } from "./i18n/config";
 
 export function formatPrice(amount: number, locale: Locale, currency = "EGP") {
   const formatted = new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en-US", {
-    maximumFractionDigits: 0
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
   }).format(amount);
   const label = currency === "EGP" ? (locale === "ar" ? "ج.م" : "EGP") : currency;
   return locale === "ar" ? `${formatted} ${label}` : `${label} ${formatted}`;

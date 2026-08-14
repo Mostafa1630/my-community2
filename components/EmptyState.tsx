@@ -8,9 +8,7 @@ export default function EmptyState({
   action
 }: {
   icon?: LucideIcon;
-  // An illustration to show instead of the plain icon badge, for the
-  // higher-visibility "nothing here" spots (top creators, communities,
-  // creators) where a small icon reads as an afterthought.
+
   image?: string;
   title: string;
   action?: ReactNode;

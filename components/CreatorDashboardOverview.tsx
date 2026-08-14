@@ -12,10 +12,6 @@ import StatCard from "@/components/StatCard";
 import DashboardPageHeader from "@/components/DashboardPageHeader";
 import PageLoader from "@/components/PageLoader";
 
-// GET /creators/dashboard — replaces the old local-mock stat computation.
-// The "recent sales" table that used to live on this page was dropped: it's
-// properly the Earnings page's job (a real, paginated, per-sale list), and
-// having a second different "recent sales" here was redundant with it.
 export default function CreatorDashboardOverview({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const { user, getCreatorDashboard, settings } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -38,7 +34,7 @@ export default function CreatorDashboardOverview({ locale, dict }: { locale: Loc
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [user?.id, locale]);
 
   if (!user || user.role !== "creator") return null;
@@ -64,7 +60,7 @@ export default function CreatorDashboardOverview({ locale, dict }: { locale: Loc
             <StatCard label={dict.creatorDash.statFreeSubscribers} value={formatNumber(summary.freeSubscribers, locale)} compact />
             <StatCard label={dict.creatorDash.statPaidSubscribers} value={formatNumber(summary.paidSubscribers, locale)} compact />
             <StatCard label={dict.creatorDash.statCourseStudents} value={formatNumber(summary.courseStudents, locale)} compact />
-            <StatCard label={dict.creatorDash.statTotalBalance} value={formatPrice(summary.totalBalance, locale, settings?.currency)} compact />
+            <StatCard label={dict.creatorDash.statTotalWithdrawn} value={formatPrice(summary.totalWithdrawn, locale, settings?.currency)} compact />
             <StatCard label={dict.creatorDash.statPendingBalance} value={formatPrice(summary.pendingBalance, locale, settings?.currency)} compact />
           </div>
         </>

@@ -5,24 +5,10 @@ import { Check, ZoomIn } from "lucide-react";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import Modal from "./motion/Modal";
 
-// Bigger window to actually judge a crop by, especially the wide 3:1 cover
-// shape — at the old fixed 320px width that rendered barely 107px tall,
-// too cramped to see what was actually being kept. Sized per shape rather
-// than one fixed constant: the circle avatar window grows modestly (it was
-// already reasonably readable), the rect cover window grows a lot more
-// since it's the one that was genuinely too small.
+
 const AVATAR_CONTAINER_SIZE = 380;
 const COVER_CONTAINER_WIDTH = 600;
 
-// Facebook-style "drag to reposition, pinch/slide to zoom" picker — not a
-// freeform crop tool. The container is a fixed-size window (circle for
-// avatars, a 3:1 rectangle for covers); the image is always scaled to fully
-// cover it (like CSS object-fit: cover) and can only be panned/zoomed
-// within that constraint, so there's never an empty gap to accidentally
-// upload. The backend only ever receives a single image file — no crop
-// coordinates field exists in the API — so the crop has to actually happen
-// client-side: what you see in the window is rendered to a canvas and
-// exported as the real file that gets uploaded.
 export default function ImageCropper({
   file,
   aspect,
@@ -33,7 +19,7 @@ export default function ImageCropper({
   onCancel
 }: {
   file: File;
-  // width / height, e.g. 1 for a square avatar, 3 for a 1200×400 cover.
+
   aspect: number;
   shape: "circle" | "rect";
   outputSize: { width: number; height: number };
@@ -101,8 +87,7 @@ export default function ImageCropper({
 
   function handleZoomChange(next: number) {
     setZoom(next);
-    // Re-clamp against the new (larger/smaller) display size so the pan
-    // offset never leaves a gap after zooming.
+   
     const newScale = baseScale * next;
     const newW = naturalSize.width * newScale;
     const newH = naturalSize.height * newScale;
@@ -120,8 +105,7 @@ export default function ImageCropper({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // What's visible inside the container window, translated back into the
-    // original image's own pixel coordinates.
+  
     const sx = -offset.x / scale;
     const sy = -offset.y / scale;
     const sw = containerWidth / scale;
@@ -155,7 +139,7 @@ export default function ImageCropper({
         onPointerLeave={onPointerUp}
       >
         {imgSrc && (
-          // eslint-disable-next-line @next/next/no-img-element
+        
           <img
             ref={imgElRef}
             src={imgSrc}

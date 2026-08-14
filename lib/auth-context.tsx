@@ -25,12 +25,12 @@ import {
   setCachedMyAccess,
   clearCachedMyAccess,
   type CachedMyAccess,
+  type ReactionResult,
   ApiError,
+  readApiMessage,
 } from "./api-client";
 import type {
   ApiUser,
-  ApiFavoriteEntry,
-  FavoriteItem,
   ApiCreatorCommunity,
   CreatorCommunity,
   ApiCreatorCourseUpdate,
@@ -76,10 +76,13 @@ import type {
   CommunitySummary,
   ApiCourseSummary,
   CourseSummary,
+  ApiCommunityDetails,
+  CommunityDetails,
+  ApiCourseDetails,
+  CourseDetails,
 } from "./api-types";
 import {
   mapApiUserToLocal,
-  mapApiFavoriteEntry,
   mapApiCreatorCommunity,
   mapApiCreatorCourseUpdate,
   mapApiCreatorLessonUpdate,
@@ -95,10 +98,13 @@ import {
   mapApiCreatorWithdrawalDetails,
   mapApiCommunitySubscriber,
   mapApiSettings,
+  mergePlatformSettings,
   mapApiNotification,
   mapApiPaymentSession,
   mapApiCommunitySummary,
   mapApiCourseSummary,
+  mapApiCommunityDetails,
+  mapApiCourseDetails,
 } from "./api-types";
 
 interface RegisterApiInput {
@@ -114,6 +120,10 @@ interface AuthContextValue {
   apiUser: ApiUser | null;
   role: Role | "guest";
   hydrated: boolean;
+  // False until the mount effect has synced token (localStorage ↔ cookie) and
+  // reconciled apiUser against it — feed/comments/reactions must wait for this
+  // on refresh, otherwise child effects can fire before the Bearer is ready.
+  sessionReady: boolean;
   login: (email: string, password: string, locale: Locale) => Promise<AnyUser>;
   register: (input: RegisterApiInput, locale: Locale) => Promise<AnyUser>;
   logout: (locale: Locale) => void;
@@ -314,13 +324,13 @@ interface AuthContextValue {
     communityId: string,
     input: { content: string; media?: File[] },
     locale: Locale,
-  ) => Promise<void>;
-  getPost: (postId: string, locale: Locale) => Promise<FeedPost | null>;
+  ) => Promise<string>;
+  getPost: (postId: string, locale: Locale) => Promise<FeedPost>;
   updatePost: (
     postId: string,
-    input: { content: string; media?: File[] },
+    input: { content: string; media?: File[]; removedMediaUrls?: string[] },
     locale: Locale,
-  ) => Promise<void>;
+  ) => Promise<string>;
   deletePost: (postId: string, locale: Locale) => Promise<void>;
   togglePinPost: (postId: string, locale: Locale) => Promise<boolean>;
   getPostComments: (
@@ -334,11 +344,11 @@ interface AuthContextValue {
     lastPage: number;
     perPage: number;
   }>;
-  addComment: (postId: string, content: string, locale: Locale) => Promise<void>;
-  updateComment: (commentId: string, content: string, locale: Locale) => Promise<void>;
-  deleteComment: (commentId: string, locale: Locale) => Promise<void>;
+  addComment: (postId: string, content: string, locale: Locale) => Promise<string>;
+  updateComment: (commentId: string, content: string, locale: Locale) => Promise<string>;
+  deleteComment: (commentId: string, locale: Locale) => Promise<string>;
   getCommentReplies: (commentId: string, locale: Locale) => Promise<FeedComment[]>;
-  addReply: (commentId: string, content: string, locale: Locale) => Promise<void>;
+  addReply: (commentId: string, content: string, locale: Locale) => Promise<string>;
   getPostReactions: (
     postId: string,
     locale: Locale,
@@ -350,8 +360,8 @@ interface AuthContextValue {
     lastPage: number;
     perPage: number;
   }>;
-  addReaction: (postId: string, type: ReactionType, locale: Locale) => Promise<void>;
-  removeReaction: (postId: string, locale: Locale) => Promise<void>;
+  addReaction: (postId: string, type: ReactionType, locale: Locale) => Promise<ReactionResult>;
+  removeReaction: (postId: string, locale: Locale) => Promise<ReactionResult>;
   getCreatorDashboard: (locale: Locale) => Promise<CreatorDashboardSummary>;
   getEarningsSummary: (locale: Locale) => Promise<CreatorEarningsSummary>;
   getEarningsSales: (
@@ -374,21 +384,18 @@ interface AuthContextValue {
     locale: Locale,
     page?: number,
   ) => Promise<{ items: CommunitySubscriber[]; total: number; currentPage: number; lastPage: number; perPage: number }>;
+  fetchCommunityDetails: (communityId: string, locale: Locale) => Promise<CommunityDetails | null>;
+  fetchCourseDetails: (courseId: string, locale: Locale) => Promise<CourseDetails | null>;
   isSubscribed: (communityId: string) => boolean;
   ownsCourseStandalone: (courseId: string) => boolean;
   getCommunitySubscriptionDates: (communityId: string) => { startAt: string; endAt: string } | null;
+  myAccessResolved: boolean;
   myAccessLoaded: boolean;
-  favorites: FavoriteItem[];
-  favoritesLoading: boolean;
   toggleFavorite: (
     favoritableType: "course" | "community",
     favoritableId: string,
     locale: Locale,
-  ) => Promise<void>;
-  isFavorited: (
-    favoritableType: "course" | "community",
-    favoritableId: string,
-  ) => boolean;
+  ) => Promise<boolean>;
   settings: PlatformSettings | null;
   unreadNotificationsCount: number;
   refreshUnreadNotificationsCount: (locale: Locale) => Promise<void>;
@@ -407,6 +414,7 @@ export function AuthProvider({
   locale = "en",
   initialUser = null,
   initialMyAccess = null,
+  initialSettings = null,
 }: {
   children: ReactNode;
   locale?: Locale;
@@ -425,6 +433,10 @@ export function AuthProvider({
   // first render from a cookie instead means server and client agree from
   // the start, so there's nothing to flip.
   initialMyAccess?: CachedMyAccess | null;
+  // Platform branding (logo, name, currency…) resolved server-side so the
+  // navbar/footer logo is correct on first paint instead of flashing the
+  // text fallback while a client-side /settings fetch is in flight.
+  initialSettings?: PlatformSettings | null;
 }) {
   const [apiUser, setApiUser] = useState<ApiUser | null>(initialUser);
   // A non-null initialUser means the server already made a definitive call
@@ -433,9 +445,11 @@ export function AuthProvider({
   // while localStorage still has a live session) and still needs the mount
   // effect below to check localStorage before anything gates on it.
   const [hydrated, setHydrated] = useState(initialUser !== null);
-  const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
-  const [favoritesLoading, setFavoritesLoading] = useState(false);
-  const [settings, setSettings] = useState<PlatformSettings | null>(null);
+  // Must start false on server and client alike — initializing from getAuthToken()
+  // on the client only made the feed render <section> while SSR still showed
+  // PageLoader, triggering a hydration mismatch on refresh.
+  const [sessionReady, setSessionReady] = useState(initialUser !== null);
+  const [settings, setSettings] = useState<PlatformSettings | null>(initialSettings);
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
 
   // On mount, hydrate synchronously from the cached profile first (no network
@@ -469,6 +483,8 @@ export function AuthProvider({
       if (cached) setApiUser(cached);
       setHydrated(true);
     }
+
+    setSessionReady(true);
 
     let cancelled = false;
     async function verify() {
@@ -517,15 +533,21 @@ export function AuthProvider({
   // sync with anything an admin changes.
   useEffect(() => {
     let cancelled = false;
+    const applySettings = (raw: ApiSettings) => {
+      if (cancelled) return;
+      setSettings((prev) =>
+        mergePlatformSettings(prev ?? initialSettings, mapApiSettings(raw))
+      );
+    };
     const cached = getCachedSettings<ApiSettings>();
     if (cached) {
-      setSettings(mapApiSettings(cached));
+      applySettings(cached);
       return;
     }
     apiFetch<{ data: ApiSettings }>("/settings", { method: "GET", locale, auth: false })
       .then((res) => {
         if (!cancelled) {
-          setSettings(mapApiSettings(res.data));
+          applySettings(res.data);
           setCachedSettings(res.data);
         }
       })
@@ -890,6 +912,34 @@ export function AuthProvider({
     },
     [],
   );
+
+  // GET /communities/details/{id} and GET /courses/details/{id} with Bearer
+  // auth — is_subscribed / is_enrolled are only true on these responses when
+  // the token is present. Used by useCommunitySubscription / useCourseEnrollment
+  // instead of scanning my-subscriptions / my-courses lists for gate decisions.
+  const fetchCommunityDetails = useCallback(async (communityId: string, requestLocale: Locale) => {
+    try {
+      const res = await apiFetch<{ data: ApiCommunityDetails }>(`/communities/details/${communityId}`, {
+        method: "GET",
+        locale: requestLocale,
+      });
+      return mapApiCommunityDetails(res.data);
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const fetchCourseDetails = useCallback(async (courseId: string, requestLocale: Locale) => {
+    try {
+      const res = await apiFetch<{ data: ApiCourseDetails }>(`/courses/details/${courseId}`, {
+        method: "GET",
+        locale: requestLocale,
+      });
+      return mapApiCourseDetails(res.data);
+    } catch {
+      return null;
+    }
+  }, []);
 
   // POST /reviews — same table-vs-formdata mismatch this project keeps hitting:
   // the prose "Request Body" table names reviewable_type/reviewable_id, but the
@@ -1474,9 +1524,19 @@ export function AuthProvider({
   // up front and fetches the next page only once the caller scrolls near the
   // bottom of the list (see RealCommunityFeedView's IntersectionObserver),
   // rather than fetching every post in the community up front.
+  //
+  // Deliberately NOT `auth: false` (despite the endpoint being open to
+  // anyone) — every post's `my_reaction`/`is_owner` is computed by the
+  // backend against whichever user the request is authenticated as, so
+  // omitting the bearer token here made a logged-in viewer's own reaction
+  // come back as null on every reload (confirmed live: reacting updates the
+  // UI optimistically, then vanishes on refresh because the follow-up GET
+  // never told the backend who was asking). `auth: true` (the apiFetch
+  // default) only attaches the header when a token actually exists, so an
+  // anonymous viewer's request is unaffected either way.
   const getCommunityPosts = useCallback(
     async (communityId: string, requestLocale: Locale, page = 1) => {
-      const res = await apiFetch<{
+      type PostsPayload = {
         data: {
           items: ApiFeedPost[];
           total: number;
@@ -1484,12 +1544,20 @@ export function AuthProvider({
           lastPage: number;
           perPage: number;
         };
-      }>(`/communities/${communityId}/posts?page=${page}`, {
-        method: "GET",
-        locale: requestLocale,
-        auth: false,
+      };
+      const path = `/communities/${communityId}/posts?page=${page}`;
+      const parse = (res: PostsPayload) => ({
+        ...res.data,
+        items: (res.data.items ?? []).map(mapApiFeedPost),
       });
-      return { ...res.data, items: res.data.items.map(mapApiFeedPost) };
+
+      return parse(
+        await apiFetch<PostsPayload>(path, {
+          method: "GET",
+          locale: requestLocale,
+          auth: true,
+        }),
+      );
     },
     [],
   );
@@ -1503,41 +1571,42 @@ export function AuthProvider({
       const form = new FormData();
       form.set("content", input.content);
       input.media?.slice(0, 2).forEach((file, i) => form.set(`media[${i}]`, file));
-      await apiFetch(`/communities/${communityId}/posts`, {
+      const res = await apiFetch<{ message?: string }>(`/communities/${communityId}/posts`, {
         method: "POST",
         body: form,
         locale: requestLocale,
       });
+      return readApiMessage(res);
     },
     [],
   );
 
   const getPost = useCallback(async (postId: string, requestLocale: Locale) => {
-    try {
-      const res = await apiFetch<{ data: ApiFeedPost }>(`/posts/${postId}`, {
-        method: "GET",
-        locale: requestLocale,
-      });
-      return mapApiFeedPost(res.data);
-    } catch {
-      return null;
-    }
+    const res = await apiFetch<{ data: ApiFeedPost }>(`/posts/${postId}`, {
+      method: "GET",
+      locale: requestLocale,
+      auth: true,
+    });
+    return mapApiFeedPost(res.data);
   }, []);
 
   const updatePost = useCallback(
     async (
       postId: string,
-      input: { content: string; media?: File[] },
+      input: { content: string; media?: File[]; removedMediaUrls?: string[] },
       requestLocale: Locale,
     ) => {
       const form = new FormData();
       form.set("content", input.content);
       input.media?.slice(0, 2).forEach((file, i) => form.set(`media[${i}]`, file));
-      await apiFetch(`/posts/${postId}`, {
+      input.removedMediaUrls?.forEach((url, i) => form.set(`deleted_media_paths[${i}]`, url));
+      const res = await apiFetch<{ message: string }>(`/posts/${postId}`, {
         method: "POST",
         body: form,
         locale: requestLocale,
+        auth: true,
       });
+      return res.message;
     },
     [],
   );
@@ -1563,16 +1632,45 @@ export function AuthProvider({
 
   const getPostComments = useCallback(
     async (postId: string, requestLocale: Locale, page = 1) => {
-      const res = await apiFetch<{
-        data: {
-          items: ApiFeedCommentListItem[];
-          total: number;
-          currentPage: number;
-          lastPage: number;
-          perPage: number;
+      type CommentsPageData = {
+        items?: ApiFeedCommentListItem[];
+        comments?: ApiFeedCommentListItem[];
+        total?: number;
+        currentPage?: number;
+        current_page?: number;
+        lastPage?: number;
+        last_page?: number;
+        perPage?: number;
+        per_page?: number;
+      };
+      type CommentsPayload = { data?: CommentsPageData };
+      const path = `/posts/${postId}/comments?page=${page}`;
+
+      const parsePage = (raw?: CommentsPageData) => {
+        const source = raw?.items ?? raw?.comments ?? [];
+        const items = source.flatMap((c) => {
+          try {
+            return [mapApiFeedComment(c)];
+          } catch {
+            return [];
+          }
+        });
+        const currentPage = raw?.currentPage ?? raw?.current_page ?? page;
+        const lastPage = raw?.lastPage ?? raw?.last_page ?? 1;
+        return {
+          items,
+          total: raw?.total ?? items.length,
+          currentPage,
+          lastPage,
+          perPage: raw?.perPage ?? raw?.per_page ?? items.length,
         };
-      }>(`/posts/${postId}/comments?page=${page}`, { method: "GET", locale: requestLocale });
-      return { ...res.data, items: res.data.items.map(mapApiFeedComment) };
+      };
+
+      const fetchPage = () =>
+        apiFetch<CommentsPayload>(path, { method: "GET", locale: requestLocale, auth: true });
+
+      const res = await fetchPage();
+      return parsePage(res.data);
     },
     [],
   );
@@ -1581,11 +1679,13 @@ export function AuthProvider({
     async (postId: string, content: string, requestLocale: Locale) => {
       const form = new FormData();
       form.set("content", content);
-      await apiFetch(`/posts/${postId}/comments`, {
+      const res = await apiFetch<{ message?: string }>(`/posts/${postId}/comments`, {
         method: "POST",
         body: form,
         locale: requestLocale,
+        auth: true,
       });
+      return readApiMessage(res);
     },
     [],
   );
@@ -1594,17 +1694,22 @@ export function AuthProvider({
     async (commentId: string, content: string, requestLocale: Locale) => {
       const form = new FormData();
       form.set("content", content);
-      await apiFetch(`/comments/${commentId}`, {
+      const res = await apiFetch<{ message?: string }>(`/comments/${commentId}`, {
         method: "POST",
         body: form,
         locale: requestLocale,
       });
+      return readApiMessage(res);
     },
     [],
   );
 
   const deleteComment = useCallback(async (commentId: string, requestLocale: Locale) => {
-    await apiFetch(`/comments/${commentId}`, { method: "DELETE", locale: requestLocale });
+    const res = await apiFetch<{ message?: string }>(`/comments/${commentId}`, {
+      method: "DELETE",
+      locale: requestLocale,
+    });
+    return readApiMessage(res);
   }, []);
 
   // GET /comments/{id}/replies — unlike the comments list, this wraps the
@@ -1612,11 +1717,25 @@ export function AuthProvider({
   // an `{items}` list, so it's unwrapped differently here.
   const getCommentReplies = useCallback(
     async (commentId: string, requestLocale: Locale) => {
-      const res = await apiFetch<{ data: ApiFeedCommentRepliesResponse }>(
-        `/comments/${commentId}/replies`,
-        { method: "GET", locale: requestLocale },
-      );
-      return res.data.replies.map(mapApiFeedComment);
+      const path = `/comments/${commentId}/replies`;
+      const parseReplies = (raw?: ApiFeedCommentRepliesResponse) =>
+        (raw?.replies ?? []).flatMap((c) => {
+          try {
+            return [mapApiFeedComment(c)];
+          } catch {
+            return [];
+          }
+        });
+
+      const fetchReplies = () =>
+        apiFetch<{ data?: ApiFeedCommentRepliesResponse }>(path, {
+          method: "GET",
+          locale: requestLocale,
+          auth: true,
+        });
+
+      const res = await fetchReplies();
+      return parseReplies(res.data);
     },
     [],
   );
@@ -1625,11 +1744,12 @@ export function AuthProvider({
     async (commentId: string, content: string, requestLocale: Locale) => {
       const form = new FormData();
       form.set("content", content);
-      await apiFetch(`/comments/${commentId}/replies`, {
+      const res = await apiFetch<{ message?: string }>(`/comments/${commentId}/replies`, {
         method: "POST",
         body: form,
         locale: requestLocale,
       });
+      return readApiMessage(res);
     },
     [],
   );
@@ -1644,28 +1764,58 @@ export function AuthProvider({
           lastPage: number;
           perPage: number;
         };
-      }>(`/posts/${postId}/reactions?page=${page}`, { method: "GET", locale: requestLocale });
-      return { ...res.data, items: res.data.items.map(mapApiFeedReaction) };
+      }>(`/posts/${postId}/reactions?page=${page}`, {
+        method: "GET",
+        locale: requestLocale,
+        auth: true,
+      });
+      return {
+        ...res.data,
+        items: (res.data?.items ?? []).map(mapApiFeedReaction),
+      };
     },
     [],
   );
 
   const addReaction = useCallback(
-    async (postId: string, type: ReactionType, requestLocale: Locale) => {
-      const form = new FormData();
-      form.set("type", type);
-      await apiFetch(`/posts/${postId}/reactions`, {
-        method: "POST",
-        body: form,
-        locale: requestLocale,
-      });
+    async (postId: string, type: ReactionType, requestLocale: Locale): Promise<ReactionResult> => {
+      // Drop any existing row first before POST — switching reaction type
+      // requires replacing the prior row on some backend builds.
+      try {
+        await apiFetch(`/posts/${postId}/reactions`, { method: "DELETE", locale: requestLocale, auth: true });
+      } catch {
+        // Nothing to delete — fine, continue to POST.
+      }
+      try {
+        const form = new FormData();
+        form.set("type", type);
+        await apiFetch(`/posts/${postId}/reactions`, {
+          method: "POST",
+          body: form,
+          locale: requestLocale,
+          auth: true,
+        });
+        return { ok: true };
+      } catch (err) {
+        if (err instanceof ApiError) return { ok: false, status: err.status, message: err.message };
+        return { ok: false, status: 0, message: "Request failed" };
+      }
     },
     [],
   );
 
-  const removeReaction = useCallback(async (postId: string, requestLocale: Locale) => {
-    await apiFetch(`/posts/${postId}/reactions`, { method: "DELETE", locale: requestLocale });
-  }, []);
+  const removeReaction = useCallback(
+    async (postId: string, requestLocale: Locale): Promise<ReactionResult> => {
+      try {
+        await apiFetch(`/posts/${postId}/reactions`, { method: "DELETE", locale: requestLocale, auth: true });
+        return { ok: true };
+      } catch (err) {
+        if (err instanceof ApiError) return { ok: false, status: err.status, message: err.message };
+        return { ok: false, status: 0, message: "Request failed" };
+      }
+    },
+    [],
+  );
 
   // GET /creators/dashboard — the general overview stats page. "Recent
   // sales" used to live on this page too (still does in the UI copy), but
@@ -1755,13 +1905,17 @@ export function AuthProvider({
   }, []);
 
   const getCommunitySubscribers = useCallback(async (communityId: string, requestLocale: Locale, page = 1) => {
-    const res = await apiFetch<{
-      data: { items: ApiCommunitySubscriber[]; total: number; currentPage: number; lastPage: number; perPage: number };
-    }>(`/creators/communities/${communityId}/subscriptions?page=${page}`, {
-      method: "GET",
-      locale: requestLocale,
-    });
-    return { ...res.data, items: res.data.items.map(mapApiCommunitySubscriber) };
+    try {
+      const res = await apiFetch<{
+        data: { items: ApiCommunitySubscriber[]; total: number; currentPage: number; lastPage: number; perPage: number };
+      }>(`/creators/communities/${communityId}/subscriptions?page=${page}`, {
+        method: "GET",
+        locale: requestLocale,
+      });
+      return { ...res.data, items: (res.data.items ?? []).map(mapApiCommunitySubscriber) };
+    } catch {
+      return { items: [], total: 0, currentPage: 1, lastPage: 1, perPage: 0 };
+    }
   }, []);
 
   const user = useMemo(() => {
@@ -1824,6 +1978,7 @@ export function AuthProvider({
   // true when a localStorage cache already answered the question skips that
   // gap entirely on repeat visits; loadMyAccess below still quietly verifies.
   const [myAccessLoaded, setMyAccessLoaded] = useState(initialMyAccessCache !== null);
+  const [myAccessResolved, setMyAccessResolved] = useState(false);
 
   const loadMyAccess = useCallback(
     async (requestLocale: Locale, forUserId: string) => {
@@ -1865,6 +2020,7 @@ export function AuthProvider({
         // Same as above — keep whatever was already loaded/cached.
       } finally {
         setMyAccessLoaded(true);
+        setMyAccessResolved(true);
         setCachedMyAccess({
           userId: forUserId,
           subscribedCommunityIds: [...finalIds],
@@ -1888,6 +2044,7 @@ export function AuthProvider({
       setEnrolledCourseIds(new Set());
       setCommunitySubscriptionDates(new Map());
       setMyAccessLoaded(hydrated);
+      setMyAccessResolved(true);
       clearCachedMyAccess();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1908,54 +2065,10 @@ export function AuthProvider({
     [communitySubscriptionDates],
   );
 
-  // GET /favorites and POST /favorites/toggle both require Bearer auth, so
-  // this can't be a Server Component fetcher like getCommunities/etc — it
-  // only ever runs client-side, backed by whatever token is in localStorage.
-  // Loaded once per session (and again on locale change, so item names come
-  // back in the right language) rather than fetched fresh by every
-  // FavoriteButton — isFavorited() just reads this cached list. Supports an
-  // optional `type` filter (community|course) — deliberately not sent here,
-  // since the Favorites page wants both types loaded at once to populate
-  // its two tabs from a single request.
-  const loadFavorites = useCallback(async (requestLocale: Locale) => {
-    setFavoritesLoading(true);
-    try {
-      const res = await apiFetch<{ data: ApiFavoriteEntry[] }>("/favorites", {
-        method: "GET",
-        locale: requestLocale,
-      });
-      setFavorites(res.data.map(mapApiFavoriteEntry));
-    } catch {
-      setFavorites([]);
-    } finally {
-      setFavoritesLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (apiUser) {
-      loadFavorites(locale);
-    } else {
-      setFavorites([]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiUser?.id, locale]);
-
-  const isFavorited = useCallback(
-    (favoritableType: "course" | "community", favoritableId: string) =>
-      favorites.some(
-        (f) => f.type === favoritableType && f.id === favoritableId,
-      ),
-    [favorites],
-  );
-
-  // The toggle response only ever carries {success, status, message} — status
-  // 201 means it was just added, 200 means it was just removed (per the
-  // spec's own Responses table), and that's the only signal available for
-  // which branch happened. On add, the response has none of the item's own
-  // data (name/image/price/...), so there's nothing to splice in locally —
-  // refetch the list instead. On remove, the id we already sent is enough to
-  // drop it from local state without another round-trip.
+  // POST /favorites/toggle — returns true when the item was just added (201),
+  // false when it was just removed (200). Favorite state on cards/details
+  // comes from each list/details response's is_favorite field, not a cached
+  // GET /favorites list.
   const toggleFavorite = useCallback(
     async (
       favoritableType: "course" | "community",
@@ -1973,17 +2086,9 @@ export function AuthProvider({
           locale: requestLocale,
         },
       );
-      if (res.status === 201) {
-        await loadFavorites(requestLocale);
-      } else {
-        setFavorites((prev) =>
-          prev.filter(
-            (f) => !(f.type === favoritableType && f.id === favoritableId),
-          ),
-        );
-      }
+      return res.status === 201;
     },
-    [loadFavorites],
+    [],
   );
 
   const value: AuthContextValue = {
@@ -1991,6 +2096,7 @@ export function AuthProvider({
     apiUser,
     role: user?.role ?? "guest",
     hydrated,
+    sessionReady,
     login,
     register,
     logout,
@@ -2052,14 +2158,14 @@ export function AuthProvider({
     getWithdrawalDetails,
     deleteWithdrawal,
     getCommunitySubscribers,
+    fetchCommunityDetails,
+    fetchCourseDetails,
     isSubscribed,
     ownsCourseStandalone,
     getCommunitySubscriptionDates,
+    myAccessResolved,
     myAccessLoaded,
-    favorites,
-    favoritesLoading,
     toggleFavorite,
-    isFavorited,
     settings,
     unreadNotificationsCount,
     refreshUnreadNotificationsCount,

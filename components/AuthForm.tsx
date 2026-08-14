@@ -7,6 +7,7 @@ import { AlertCircle, GraduationCap, Loader2, Users } from "lucide-react";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import { useAuth } from "@/lib/auth-context";
+import { getSiteName } from "@/lib/platform-branding";
 import { ApiError } from "@/lib/api-client";
 import { loginSchema, registerSchema } from "@/lib/validation/auth";
 import Seal from "./Seal";
@@ -21,7 +22,7 @@ export default function AuthForm({
   dict: Dictionary;
 }) {
   const router = useRouter();
-  const { login, register } = useAuth();
+  const { login, register, settings } = useAuth();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -108,12 +109,13 @@ export default function AuthForm({
   }
 
   const isLogin = mode === "login";
+  const siteName = getSiteName(settings, dict);
 
   return (
     <div className="container-page flex min-h-[70vh] items-center justify-center py-16">
       <div className="w-full max-w-md rounded-2xl border border-line bg-surface p-8 shadow-card">
         <div className="mb-6 flex flex-col items-center text-center">
-          <Seal size={44} label={dict.meta.siteName[0]} />
+          <Seal size={44} label={siteName[0]} dict={dict} />
           <h1 className="mt-4 text-xl font-bold text-ink">
             {isLogin ? dict.auth.loginTitle : dict.auth.registerTitle}
           </h1>
@@ -258,9 +260,7 @@ function collectIssues(issues: { path: PropertyKey[]; message: string }[]) {
   return errors;
 }
 
-// Maps the backend's snake_case field names (password_confirmation, ...) back
-// onto this form's camelCase state keys so ApiError.fieldErrors can be shown
-// under the right input.
+
 function mapApiErrors(err: ApiError) {
   const errors: Record<string, string> = {};
   const map: Record<string, string> = {

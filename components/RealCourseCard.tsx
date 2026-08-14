@@ -6,9 +6,7 @@ import type { Dictionary } from "@/lib/i18n/getDictionary";
 import { getAccent, initials } from "@/lib/accents";
 import { formatPrice } from "@/lib/format";
 
-// Same visual system as RealCommunityCard — the two are meant to read as
-// one family of "content" cards across the site, just one links to a
-// community and this one links to a single course.
+
 export default function RealCourseCard({
   course,
   locale,
@@ -20,10 +18,7 @@ export default function RealCourseCard({
   locale: Locale;
   dict: Dictionary;
   priority?: boolean;
-  // Set on "My Courses" cards — showing the price again makes no sense once
-  // you've already bought it, and standalone course ownership never expires
-  // (no subscription window here, unlike communities), so there's nothing to
-  // count down — just a plain "owned" badge instead of the price.
+ 
   owned?: boolean;
 }) {
   const accent = getAccent(course.accent);

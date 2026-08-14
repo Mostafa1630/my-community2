@@ -13,7 +13,6 @@ const API_FIELD_MAP: Record<string, string> = {
   title: "title",
   description: "description",
   video_url: "videoUrl",
-  duration: "duration",
   order: "order"
 };
 import EmptyState from "./EmptyState";
@@ -37,7 +36,6 @@ interface LessonFormState {
   title: string;
   description: string;
   videoUrl: string;
-  duration: string;
   order: string;
   isFree: boolean;
   status: "active" | "inactive";
@@ -47,18 +45,12 @@ const emptyForm: LessonFormState = {
   title: "",
   description: "",
   videoUrl: "",
-  duration: "",
   order: "",
   isFree: false,
   status: "active"
 };
 
-// GET /creators/courses/{id}/lessons (round 12) replaced reusing the
-// lessons array embedded in the public GET /courses/details/{id} (round
-// 11's workaround). `duration` is still write-only — no GET anywhere on
-// this backend ever returns it (not the list, not the single-lesson GET,
-// not the create response) — so it's never prefilled, only sent if the
-// creator types one.
+
 export default function LessonsManagerView({
   courseId,
   locale,
@@ -121,7 +113,7 @@ export default function LessonsManagerView({
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [user?.id, courseId, locale]);
 
   if (!user || user.role !== "creator") return null;
@@ -155,8 +147,7 @@ export default function LessonsManagerView({
       title: fresh?.title ?? lesson.title,
       description: fresh?.description ?? lesson.description,
       videoUrl: fresh?.videoUrl ?? lesson.url,
-      duration: "",
-      order: String(lesson.order ?? ""),
+      order: String(fresh?.order ?? lesson.order ?? ""),
       isFree: fresh?.isFree ?? lesson.isFree,
       status: (fresh?.status ?? lesson.status) === "inactive" ? "inactive" : "active"
     });
@@ -182,7 +173,6 @@ export default function LessonsManagerView({
     const parsed = schema.safeParse({
       title: form.title,
       videoUrl: form.videoUrl,
-      duration: form.duration ? Number(form.duration) : undefined,
       order: form.order ? Number(form.order) : undefined
     });
     if (!parsed.success) {
@@ -200,7 +190,6 @@ export default function LessonsManagerView({
             title: form.title,
             description: form.description || undefined,
             videoUrl: form.videoUrl,
-            duration: parsed.data.duration,
             order: parsed.data.order,
             isFree: form.isFree,
             attachments: attachmentFiles.length ? attachmentFiles : undefined
@@ -214,7 +203,6 @@ export default function LessonsManagerView({
             title: form.title,
             description: form.description,
             videoUrl: form.videoUrl,
-            duration: parsed.data.duration,
             order: parsed.data.order,
             isFree: form.isFree,
             status: form.status,
@@ -339,27 +327,16 @@ export default function LessonsManagerView({
               />
             </FormField>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormField label={dict.creatorDash.fieldLessonDuration} error={fieldErrors.duration}>
-                <input
-                  type="number"
-                  min={1}
-                  placeholder="—"
-                  value={form.duration}
-                  onChange={(e) => setForm({ ...form, duration: e.target.value })}
-                  className={fieldInputClass(!!fieldErrors.duration)}
-                />
-              </FormField>
-              <FormField label={dict.creatorDash.fieldOrder} error={fieldErrors.order}>
-                <input
-                  type="number"
-                  min={1}
-                  value={form.order}
-                  onChange={(e) => setForm({ ...form, order: e.target.value })}
-                  className={fieldInputClass(!!fieldErrors.order)}
-                />
-              </FormField>
-            </div>
+            <FormField label={dict.creatorDash.fieldOrder} error={fieldErrors.order}>
+              <input
+                type="number"
+                min={1}
+                value={form.order}
+                onChange={(e) => setForm({ ...form, order: e.target.value })}
+                placeholder=""
+                className={fieldInputClass(!!fieldErrors.order)}
+              />
+            </FormField>
 
             <div className="flex flex-wrap items-center gap-5">
               <label className="flex items-center gap-2 text-sm text-ink/70">

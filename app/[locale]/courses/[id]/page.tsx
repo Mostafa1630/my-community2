@@ -7,6 +7,7 @@ import { getDictionary } from "@/lib/i18n/getDictionary";
 import { t } from "@/lib/i18n/t";
 import { localizedAlternates, DEFAULT_OG_IMAGE } from "@/lib/seo";
 import { getCourseDetails } from "@/lib/api-content";
+import { readServerAuthToken } from "@/lib/server-auth";
 import { withDecryptedIntroVideo } from "@/lib/video";
 import { getAccent, initials } from "@/lib/accents";
 import RealCourseAccess from "@/components/RealCourseAccess";
@@ -20,13 +21,15 @@ import FavoriteButton from "@/components/FavoriteButton";
 // bare course id with no community id alongside it, so the route can't
 // depend on one being present in the URL.
 
-export async function generateMetadata({
-  params
-}: {
-  params: { locale: string; id: string };
-}): Promise<Metadata> {
+export async function generateMetadata(
+  props: {
+    params: Promise<{ locale: string; id: string }>;
+  }
+): Promise<Metadata> {
+  const params = await props.params;
   const locale: Locale = isLocale(params.locale) ? params.locale : "ar";
-  const course = await getCourseDetails(params.id, locale);
+  const authToken = await readServerAuthToken();
+  const course = await getCourseDetails(params.id, locale, authToken);
   if (!course) return {};
   const image = course.image || DEFAULT_OG_IMAGE;
   return {
@@ -38,10 +41,12 @@ export async function generateMetadata({
   };
 }
 
-export default async function CourseDetailsPage({ params }: { params: { locale: string; id: string } }) {
+export default async function CourseDetailsPage(props: { params: Promise<{ locale: string; id: string }> }) {
+  const params = await props.params;
   const locale: Locale = isLocale(params.locale) ? params.locale : "ar";
   const dict = getDictionary(locale);
-  const rawCourse = await getCourseDetails(params.id, locale);
+  const authToken = await readServerAuthToken();
+  const rawCourse = await getCourseDetails(params.id, locale, authToken);
   if (!rawCourse) notFound();
   const course = await withDecryptedIntroVideo(rawCourse);
 
@@ -51,7 +56,12 @@ export default async function CourseDetailsPage({ params }: { params: { locale: 
     <div>
       <div className={`relative bg-gradient-to-b ${accent.gradient}`}>
         <div className="absolute end-4 top-4">
-          <FavoriteButton favoritableType="course" favoritableId={course.id} locale={locale} />
+          <FavoriteButton
+            favoritableType="course"
+            favoritableId={course.id}
+            locale={locale}
+            initialIsFavorite={course.isFavorite}
+          />
         </div>
         <div className="container-page grid gap-8 py-10 text-white lg:grid-cols-[1.6fr,1fr] lg:py-14">
           <div>
@@ -95,12 +105,12 @@ export default async function CourseDetailsPage({ params }: { params: { locale: 
       </div>
 
       <div className="container-page py-10">
-        <h2 className="mb-3 text-lg font-bold text-ink">{dict.courseDetails.about}</h2>
-        <p className="max-w-2xl text-sm leading-7 text-ink/70">{course.description}</p>
-
-        <div className="mt-10">
-          <RealCourseAccess course={course} locale={locale} dict={dict} />
+        <div className="mb-8 max-w-3xl">
+          <h2 className="text-lg font-bold text-ink">{dict.courseDetails.about}</h2>
+          <p className="mt-2 text-sm leading-7 text-ink/70">{course.description}</p>
         </div>
+
+        <RealCourseAccess course={course} locale={locale} dict={dict} />
       </div>
     </div>
   );

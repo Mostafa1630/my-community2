@@ -6,18 +6,17 @@ import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import type { FeedComment } from "@/lib/api-types";
 import { useAuth } from "@/lib/auth-context";
-import { ApiError } from "@/lib/api-client";
+import { userFacingApiError } from "@/lib/api-client";
+import { useToast } from "@/components/ToastProvider";
 import { t } from "@/lib/i18n/t";
 
-// canModerate covers both the community's own creator and the post's owner
-// (per spec: a comment can be deleted by its author, the community creator,
-// or whoever posted the post it's on) — the caller (CommentsPanel) computes
-// that union once and passes it straight down.
+
 export default function CommentThread({
   comment,
   locale,
   dict,
   canModerate,
+  canInteract = true,
   onDeleted,
   onUpdated,
   onCountChange,
@@ -27,12 +26,14 @@ export default function CommentThread({
   locale: Locale;
   dict: Dictionary;
   canModerate: boolean;
-  onDeleted: (id: string) => void;
+  canInteract?: boolean;
+  onDeleted: (id: string, removedCount: number) => void;
   onUpdated: (id: string, content: string) => void;
   onCountChange?: (delta: number) => void;
   depth?: number;
 }) {
-  const { updateComment, deleteComment, addReply, getCommentReplies } = useAuth();
+  const { user, updateComment, deleteComment, addReply, getCommentReplies } = useAuth();
+  const { confirm, showToast } = useToast();
   const [editing, setEditing] = useState(false);
   const [editDraft, setEditDraft] = useState(comment.content);
   const [replying, setReplying] = useState(false);
@@ -41,10 +42,10 @@ export default function CommentThread({
   const [repliesLoading, setRepliesLoading] = useState(false);
   const [replies, setReplies] = useState<FeedComment[] | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [replyError, setReplyError] = useState("");
 
-  const canEdit = comment.isOwner;
-  const canDelete = comment.isOwner || canModerate;
+  const isOwner = comment.isOwner;
+  const canEdit = isOwner && canInteract;
+  const canDelete = (isOwner && canInteract) || canModerate;
 
   async function loadReplies() {
     if (replies) {
@@ -56,6 +57,14 @@ export default function CommentThread({
       const items = await getCommentReplies(comment.id, locale);
       setReplies(items);
       setRepliesOpen(true);
+    } catch (err) {
+      showToast(
+        userFacingApiError(err, dict.community.commentLoadError, {
+          loginRequired: dict.community.loginRequired,
+          subscriptionRequired: dict.community.subscriptionRequired,
+        }),
+        { variant: "error" },
+      );
     } finally {
       setRepliesLoading(false);
     }
@@ -65,34 +74,56 @@ export default function CommentThread({
     if (!editDraft.trim() || submitting) return;
     setSubmitting(true);
     try {
-      await updateComment(comment.id, editDraft.trim(), locale);
+      const message = await updateComment(comment.id, editDraft.trim(), locale);
       onUpdated(comment.id, editDraft.trim());
       setEditing(false);
+      showToast(message || dict.common.save, { variant: "success" });
+    } catch (err) {
+      showToast(userFacingApiError(err, dict.community.commentEditError), { variant: "error" });
     } finally {
       setSubmitting(false);
     }
   }
 
-  async function remove() {
-    if (!window.confirm(dict.community.deleteCommentConfirm)) return;
-    await deleteComment(comment.id, locale);
-    onDeleted(comment.id);
+  function remove() {
+    confirm({
+      message: dict.community.deleteCommentConfirm,
+      confirmLabel: dict.community.deleteComment,
+      cancelLabel: dict.common.cancel,
+      onConfirm: async () => {
+        try {
+          const message = await deleteComment(comment.id, locale);
+          const removedCount = 1 + (comment.repliesCount ?? 0);
+          onDeleted(comment.id, removedCount);
+          showToast(message || dict.community.commentDeleteSuccess, { variant: "success" });
+        } catch (err) {
+          showToast(userFacingApiError(err, dict.community.commentDeleteError), { variant: "error" });
+          throw err;
+        }
+      },
+    });
   }
 
   async function submitReply() {
     if (!replyDraft.trim() || submitting) return;
-    setReplyError("");
     setSubmitting(true);
     try {
-      await addReply(comment.id, replyDraft.trim(), locale);
+      const message = await addReply(comment.id, replyDraft.trim(), locale);
       setReplyDraft("");
       setReplying(false);
       const items = await getCommentReplies(comment.id, locale);
       setReplies(items);
       setRepliesOpen(true);
       onCountChange?.(1);
+      showToast(message || dict.common.reply, { variant: "success" });
     } catch (err) {
-      setReplyError(err instanceof ApiError ? err.message : dict.community.commentCreateError);
+      showToast(
+        userFacingApiError(err, dict.community.commentCreateError, {
+          loginRequired: dict.community.loginRequired,
+          subscriptionRequired: dict.community.subscriptionRequired,
+        }),
+        { variant: "error" },
+      );
     } finally {
       setSubmitting(false);
     }
@@ -122,7 +153,7 @@ export default function CommentThread({
                     {dict.common.cancel}
                   </button>
                   <button
-                    onClick={saveEdit}
+                    onClick={() => void saveEdit()}
                     disabled={submitting}
                     className="text-[11px] font-semibold text-primary-700 disabled:opacity-50"
                   >
@@ -138,9 +169,11 @@ export default function CommentThread({
           {!editing && (
             <div className="mt-1 flex items-center gap-3 text-[11px] font-medium text-ink/55">
               <span>{comment.createdAt}</span>
-              <button onClick={() => setReplying((v) => !v)} className="hover:text-primary-600">
-                {dict.common.reply}
-              </button>
+              {canInteract && (
+                <button onClick={() => setReplying((v) => !v)} className="hover:text-primary-600">
+                  {dict.common.reply}
+                </button>
+              )}
               {canEdit && (
                 <button onClick={() => setEditing(true)} className="hover:text-primary-600">
                   {dict.community.editComment}
@@ -154,17 +187,17 @@ export default function CommentThread({
             </div>
           )}
 
-          {replying && (
+          {canInteract && replying && (
             <div className="mt-1.5 flex items-center gap-2">
               <input
                 value={replyDraft}
                 onChange={(e) => setReplyDraft(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && submitReply()}
+                onKeyDown={(e) => e.key === "Enter" && void submitReply()}
                 placeholder={dict.community.replyPlaceholder}
                 className="w-full rounded-full border border-line bg-paper px-3 py-1.5 text-xs outline-none focus:border-primary-400"
               />
               <button
-                onClick={submitReply}
+                onClick={() => void submitReply()}
                 disabled={submitting || !replyDraft.trim()}
                 aria-label="send"
                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary-500 text-white disabled:opacity-40"
@@ -173,7 +206,6 @@ export default function CommentThread({
               </button>
             </div>
           )}
-          {replyError && <p className="mt-1 text-[11px] text-danger">{replyError}</p>}
 
           {comment.repliesCount > 0 && !repliesOpen && (
             <button
@@ -195,7 +227,11 @@ export default function CommentThread({
                   locale={locale}
                   dict={dict}
                   canModerate={canModerate}
-                  onDeleted={(id) => setReplies((prev) => prev?.filter((x) => x.id !== id) ?? null)}
+                  canInteract={canInteract}
+                  onDeleted={(id, _removedCount) => {
+                    setReplies((prev) => prev?.filter((x) => x.id !== id) ?? null);
+                    onCountChange?.(-1);
+                  }}
                   onUpdated={(id, content) =>
                     setReplies((prev) => prev?.map((x) => (x.id === id ? { ...x, content } : x)) ?? null)
                   }

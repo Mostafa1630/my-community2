@@ -9,11 +9,7 @@ import { Menu, X } from "lucide-react";
 export interface SidebarItem {
   href: string;
   label: string;
-  // Pre-rendered icon element (e.g. <LayoutDashboard size={16} />), NOT a component
-  // reference. This file is a Client Component, and its parent layouts are Server
-  // Components — passing an un-rendered component/function across that boundary
-  // is not serializable and throws at runtime. Passing an already-created element
-  // works fine because React elements are serializable across the RSC boundary.
+
   icon: ReactNode;
 }
 
@@ -55,7 +51,7 @@ export default function DashboardSidebar({ title, items }: { title: string; item
 
   return (
     <>
-      {/* Mobile: menu button that opens an off-canvas sidebar */}
+
       <div className="lg:hidden">
         <button
           onClick={() => setOpen(true)}
@@ -100,8 +96,6 @@ export default function DashboardSidebar({ title, items }: { title: string; item
       )}
       </AnimatePresence>
 
-      {/* Desktop: pinned in place within the normal page column (so it stays aligned with the
-          site's centered container/logo), stays put while the page content scrolls. */}
       <aside className="relative hidden shrink-0 overflow-hidden rounded-3xl bg-gradient-to-br from-primary-500 to-primary-700 p-4 shadow-raised lg:sticky lg:top-24 lg:block lg:w-64 lg:self-start">
         <div className="pointer-events-none absolute -end-8 -top-8 h-40 w-40 rounded-full bg-accent-400/20 blur-2xl" />
         <p className="relative mb-3 px-2 text-xs font-semibold uppercase tracking-wide text-white/60">{title}</p>

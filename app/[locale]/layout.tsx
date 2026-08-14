@@ -1,11 +1,17 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { Plus_Jakarta_Sans, IBM_Plex_Sans_Arabic, IBM_Plex_Mono } from "next/font/google";
+import {
+  Plus_Jakarta_Sans,
+  IBM_Plex_Sans_Arabic,
+  IBM_Plex_Mono
+} from "next/font/google";
 import { MotionConfig } from "framer-motion";
 import "../globals.css";
 import { locales, isLocale, dir, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/getDictionary";
 import { DEFAULT_OG_IMAGE } from "@/lib/seo";
+import { getSettings } from "@/lib/api-content";
+import { getSiteDescription, getSiteName } from "@/lib/platform-branding";
 import { AuthProvider } from "@/lib/auth-context";
 import {
   USER_CACHE_COOKIE,
@@ -17,13 +23,8 @@ import type { ApiUser } from "@/lib/api-types";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ScrollToTopButton from "@/components/ScrollToTopButton";
+import { ToastProvider } from "@/components/ToastProvider";
 
-// Plus Jakarta Sans is a warmer, more distinctive geometric sans than Inter — closer to
-// the friendly-but-professional feel of Udemy's own type. It doesn't cover Arabic
-// glyphs, so the browser automatically falls back to IBM Plex Sans Arabic (next in the
-// font stack, see tailwind.config.ts) for Arabic characters — no per-locale
-// font-switching logic needed. Plex Sans Arabic was picked over Noto Sans Arabic for
-// being noticeably more polished for UI text at small sizes.
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: "--font-sans",
@@ -51,19 +52,27 @@ export function generateStaticParams() {
 export async function generateMetadata({
   params
 }: {
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
-  const locale: Locale = isLocale(params.locale) ? params.locale : "ar";
+  const { locale: localeParam } = await params;
+
+  const locale: Locale = isLocale(localeParam) ? localeParam : "ar";
   const dict = getDictionary(locale);
-  const title = `${dict.meta.siteName} — ${dict.meta.tagline}`;
+  const settings = await getSettings(locale);
+  const siteName = getSiteName(settings, dict);
+  const description = getSiteDescription(settings, locale, dict);
+  const title = `${siteName} — ${dict.meta.tagline}`;
 
   return {
     metadataBase: new URL("https://nadi-community.com"),
     title: {
       default: title,
-      template: `%s · ${dict.meta.siteName}`
+      template: `%s · ${siteName}`
     },
-    description: dict.meta.defaultDescription,
+    description,
+    ...(settings?.siteFavicon
+      ? { icons: { icon: settings.siteFavicon } }
+      : {}),
     alternates: {
       canonical: `/${locale}`,
       languages: {
@@ -73,7 +82,7 @@ export async function generateMetadata({
     },
     openGraph: {
       title,
-      description: dict.meta.defaultDescription,
+      description,
       locale: locale === "ar" ? "ar_EG" : "en_US",
       type: "website",
       images: [DEFAULT_OG_IMAGE]
@@ -81,7 +90,7 @@ export async function generateMetadata({
     twitter: {
       card: "summary_large_image",
       title,
-      description: dict.meta.defaultDescription,
+      description,
       images: [DEFAULT_OG_IMAGE]
     },
     robots: {
@@ -91,56 +100,79 @@ export async function generateMetadata({
   };
 }
 
-export default function LocaleLayout({
+export default async function LocaleLayout({
   children,
   params
 }: {
   children: React.ReactNode;
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 }) {
-  const locale: Locale = isLocale(params.locale) ? params.locale : "ar";
+  const { locale: localeParam } = await params;
+
+  const locale: Locale = isLocale(localeParam) ? localeParam : "ar";
   const dictionary = getDictionary(locale);
-  const initialUser = parseCachedUserCookie<ApiUser>(cookies().get(USER_CACHE_COOKIE)?.value);
-  const initialMyAccess = parseCachedMyAccessCookie(cookies().get(MY_ACCESS_CACHE_COOKIE)?.value);
+  const settings = await getSettings(locale);
+  const siteName = getSiteName(settings, dictionary);
+  const siteDescription = getSiteDescription(
+    settings,
+    locale,
+    dictionary
+  );
+
+  const cookieStore = await cookies();
+
+  const initialUser = parseCachedUserCookie<ApiUser>(
+    cookieStore.get(USER_CACHE_COOKIE)?.value
+  );
+
+  const initialMyAccess = parseCachedMyAccessCookie(
+    cookieStore.get(MY_ACCESS_CACHE_COOKIE)?.value
+  );
 
   const organizationJsonLd = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: dictionary.meta.siteName,
-    description: dictionary.meta.defaultDescription,
+    name: siteName,
+    description: siteDescription,
     url: `https://nadi-community.com/${locale}`
   };
 
   return (
-    <html lang={locale} dir={dir(locale)} className={`${jakarta.variable} ${plexSansArabic.variable} ${plexMono.variable}`}>
+    <html
+      lang={locale}
+      dir={dir(locale)}
+      data-scroll-behavior="smooth"
+      className={`${jakarta.variable} ${plexSansArabic.variable} ${plexMono.variable}`}
+    >
       <head>
-        {/* Every creator/community image in this app (avatars, covers) is hosted on
-            one of these two external origins — preconnecting shaves the DNS+TLS
-            handshake off whichever one happens to end up serving the page's
-            Largest Contentful Paint image, since that connection setup was
-            measured to be a meaningful chunk of LCP time on the home page. */}
         <link rel="preconnect" href="https://ui-avatars.com" />
         <link rel="preconnect" href="https://admin.nadi-community.com" />
       </head>
+
       <body>
         <script
           type="application/ld+json"
           // eslint-disable-next-line react/no-danger
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organizationJsonLd)
+          }}
         />
-        {/* reducedMotion="user" makes every framer-motion animation in the app (Slider,
-            Reveal, Navbar's menus, etc.) automatically collapse to instant opacity-only
-            transitions for anyone with the OS-level "reduce motion" preference on — the
-            CSS prefers-reduced-motion block in globals.css only covers plain CSS
-            transitions/animations, not these. */}
+
         <MotionConfig reducedMotion="user">
-          <AuthProvider locale={locale} initialUser={initialUser} initialMyAccess={initialMyAccess}>
-            <div className="flex min-h-screen flex-col">
-              <Navbar locale={locale} dict={dictionary} />
-              <main className="flex-1">{children}</main>
-              <Footer locale={locale} dict={dictionary} />
-              <ScrollToTopButton />
-            </div>
+          <AuthProvider
+            locale={locale}
+            initialUser={initialUser}
+            initialMyAccess={initialMyAccess}
+            initialSettings={settings}
+          >
+            <ToastProvider>
+              <div className="flex min-h-screen flex-col">
+                <Navbar locale={locale} dict={dictionary} />
+                <main className="flex-1">{children}</main>
+                <Footer locale={locale} dict={dictionary} />
+                <ScrollToTopButton />
+              </div>
+            </ToastProvider>
           </AuthProvider>
         </MotionConfig>
       </body>

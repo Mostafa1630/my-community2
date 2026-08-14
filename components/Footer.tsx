@@ -5,6 +5,7 @@ import { Facebook, Instagram, Linkedin, Twitter, Youtube } from "lucide-react";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import { useAuth } from "@/lib/auth-context";
+import { getSiteDescription, getSiteName } from "@/lib/platform-branding";
 import Seal from "./Seal";
 import { TikTokIcon, WhatsAppIcon } from "./BrandIcons";
 
@@ -16,10 +17,9 @@ const paymentBadges = [
 export default function Footer({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const { settings } = useAuth();
   const year = new Date().getFullYear();
+  const siteName = getSiteName(settings, dict);
+  const aboutText = getSiteDescription(settings, locale, dict, "footer");
 
-  // Only rendered when the corresponding /settings field is non-null — per
-  // the client's explicit instruction, an icon with no real link behind it
-  // shouldn't show up at all rather than pointing at "#".
   const socialLinks = [
     settings?.facebookUrl && {
       icon: Facebook,
@@ -68,9 +68,15 @@ export default function Footer({ locale, dict }: { locale: Locale; dict: Diction
   return (
     <footer className="bg-ink text-white/60">
       <div className="container-page grid gap-10 py-16 sm:grid-cols-2 lg:grid-cols-5 lg:gap-8">
-        <div className="sm:col-span-2 lg:col-span-2">
-          <Seal size={36} />
-          <p className="mt-5 max-w-sm text-sm leading-7 text-white/55">{dict.footer.about}</p>
+        <div className="max-w-sm text-start sm:col-span-2 lg:col-span-2">
+          <Link
+            href={`/${locale}`}
+            className="inline-flex rounded-xl bg-white/[0.08] p-2 ring-1 ring-white/10 transition hover:bg-white/[0.12]"
+          >
+            <Seal size={32} dict={dict} variant="onDark" layout="footer" />
+          </Link>
+          <p className="mt-3 text-base font-bold tracking-tight text-white">{siteName}</p>
+          <p className="mt-2 text-sm leading-7 text-white/55">{aboutText}</p>
 
           {socialLinks.length > 0 && (
             <div className="mt-6">
@@ -130,7 +136,7 @@ export default function Footer({ locale, dict }: { locale: Locale; dict: Diction
       <div className="border-t border-white/10">
         <div className="container-page flex flex-col items-center gap-3 py-6 text-xs text-white/45 sm:flex-row sm:justify-between">
           <p>
-            © {year} {dict.meta.siteName} — {dict.footer.rights}
+            © {year} {siteName} — {dict.footer.rights}
           </p>
           <div className="flex items-center gap-2">
             <Link href={`/${locale}/terms`} className="transition-colors hover:text-white">

@@ -8,11 +8,7 @@ const ZONE_CLASSES = {
   red: { bar: "bg-danger", text: "text-danger", track: "bg-danger/15" }
 } as const;
 
-// A subscription's total window split into thirds — green while more than
-// two thirds of it remain, yellow through the middle third, red for the
-// final third or once it's actually expired — used on "my communities"
-// cards so a student sees at a glance how urgent renewing is, without
-// needing to read the exact date.
+
 export default function SubscriptionCountdown({
   startAt,
   endAt,

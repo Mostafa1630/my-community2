@@ -1,7 +1,4 @@
-// Lucide ships no TikTok or WhatsApp mark (it only carries a handful of
-// legacy brand icons — Facebook/Instagram/LinkedIn), so these are small
-// inline SVGs instead of imports. Shared between Footer and the About page,
-// the two places that render the full social-link set.
+
 export function TikTokIcon({ size = 16 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">

@@ -5,8 +5,7 @@ export default function StatCard({
   value,
   icon: Icon,
   tone = "primary",
-  // For secondary/breakdown stats sitting below a page's primary StatCard
-  // row — same card, no icon slot, smaller value text, tighter padding.
+
   compact = false
 }: {
   label: string;

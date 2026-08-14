@@ -20,10 +20,7 @@ const API_FIELD_MAP: Record<string, string> = {
   bio: "bio"
 };
 
-// Edit-only form — the display-first view lives in CreatorProfileDisplayView
-// (rendered at /creator/profile), same list/display+edit split as My Community.
-// On save this navigates back to that display page rather than staying put,
-// per the same "save takes you a step back to see it displayed" pattern.
+
 export default function CreatorProfileView({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const router = useRouter();
   const { user, updateProfile } = useAuth();
@@ -42,9 +39,7 @@ export default function CreatorProfileView({ locale, dict }: { locale: Locale; d
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
-  // The raw picked file waits here until the crop/reposition step is
-  // confirmed — avatarFile/coverFile (what actually gets uploaded) only get
-  // set from the cropper's output, never directly from the <input>.
+
   const [cropTarget, setCropTarget] = useState<"avatar" | "cover" | null>(null);
   const [cropSourceFile, setCropSourceFile] = useState<File | null>(null);
 
@@ -126,9 +121,7 @@ export default function CreatorProfileView({ locale, dict }: { locale: Locale; d
           >
             {dict.common.changeCover}
           </button>
-          {/* z-10 — the avatar (painted after this cover in DOM order, since
-              it straddles this same bottom-left corner) would otherwise
-              paint over this label and hide it. */}
+       
           <span className="absolute bottom-3 left-3 z-10 flex items-center justify-center rounded-md bg-ink/60 px-2 py-1 text-center text-[11px] font-medium text-white backdrop-blur">
             1200 × 400
           </span>

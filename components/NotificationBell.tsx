@@ -3,12 +3,41 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { Bell, BookOpen, CheckCheck, Loader2, PlayCircle } from "lucide-react";
+import { Bell, BookOpen, CheckCheck, CircleCheck, Loader2, PlayCircle, Sparkles } from "lucide-react";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import { useAuth } from "@/lib/auth-context";
 import type { AppNotification } from "@/lib/api-types";
 import { formatRelative } from "@/lib/format";
+import { isNotificationIconUrl, notificationIconShell, resolveNotificationIcon } from "@/lib/notificationIcons";
+
+function isPaymentNotification(n: AppNotification) {
+  const text = `${n.message ?? ""} ${n.type}`.toLowerCase();
+  return /دفع|payment|paid|subscribe|subscription|اشتراك|نجاح|success|enrolled|تمت/.test(text);
+}
+
+type NotificationVisual =
+  | { kind: "lucide"; Icon: typeof Sparkles; shell: string }
+  | { kind: "image"; src: string; shell: string };
+
+function notificationVisual(n: AppNotification): NotificationVisual {
+  if (n.icon) {
+    if (isNotificationIconUrl(n.icon)) {
+      return { kind: "image", src: n.icon, shell: "bg-ink/5" };
+    }
+    return { kind: "lucide", Icon: resolveNotificationIcon(n.icon), shell: notificationIconShell(n.icon) };
+  }
+  if (isPaymentNotification(n)) {
+    return { kind: "lucide", Icon: CircleCheck, shell: "bg-success/10 text-success" };
+  }
+  if (n.type === "new_course_in_community") {
+    return { kind: "lucide", Icon: BookOpen, shell: "bg-primary-100 text-primary-700" };
+  }
+  if (n.type === "new_lesson_in_course") {
+    return { kind: "lucide", Icon: PlayCircle, shell: "bg-accent-100 text-accent-700" };
+  }
+  return { kind: "lucide", Icon: Sparkles, shell: "bg-ink/5 text-ink/55" };
+}
 
 export default function NotificationBell({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const router = useRouter();
@@ -122,20 +151,24 @@ export default function NotificationBell({ locale, dict }: { locale: Locale; dic
                 </div>
               ) : (
                 <ul>
-                  {items.map((n) => (
+                  {items.map((n) => {
+                    const visual = notificationVisual(n);
+                    return (
                     <li key={n.id}>
                       <button
                         onClick={() => handleClick(n)}
-                        className={`flex w-full items-start gap-3 border-b border-line/60 px-4 py-3 text-start transition last:border-0 hover:bg-primary-50/60 ${
+                        className={`flex w-full items-center gap-3 border-b border-line/60 px-4 py-3 text-start transition last:border-0 hover:bg-primary-50/60 ${
                           !n.read ? "bg-primary-50/40" : ""
                         }`}
                       >
                         <span
-                          className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
-                            n.type === "new_course_in_community" ? "bg-primary-100 text-primary-700" : "bg-success/10 text-success"
-                          }`}
+                          className={`flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl ${visual.shell}`}
                         >
-                          {n.type === "new_course_in_community" ? <BookOpen size={15} /> : <PlayCircle size={15} />}
+                          {visual.kind === "image" ? (
+                            <img src={visual.src} alt="" className="h-full w-full object-cover" />
+                          ) : (
+                            <visual.Icon size={16} strokeWidth={2} />
+                          )}
                         </span>
                         <span className="min-w-0 flex-1">
                           <span className={`block text-sm leading-5 ${!n.read ? "font-semibold text-ink" : "text-ink/75"}`}>
@@ -143,10 +176,11 @@ export default function NotificationBell({ locale, dict }: { locale: Locale; dic
                           </span>
                           <span className="mt-0.5 block text-[11px] text-ink/45">{formatRelative(n.createdAt, locale)}</span>
                         </span>
-                        {!n.read && <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary-500" />}
+                        {!n.read && <span className="h-2 w-2 shrink-0 rounded-full bg-primary-500" />}
                       </button>
                     </li>
-                  ))}
+                    );
+                  })}
                 </ul>
               )}
             </div>

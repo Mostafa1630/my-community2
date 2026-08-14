@@ -15,10 +15,7 @@ import PageLoader from "./PageLoader";
 import Pagination from "./Pagination";
 import DashboardPageHeader from "./DashboardPageHeader";
 
-// GET /creators/earnings (summary) + GET /creators/earnings/sales (paginated
-// list) — replaces the old local-mock computation. Stat card order follows
-// the client's own explicit spec: total sales, then platform commission,
-// then net profit, then current balance.
+
 export default function CreatorEarningsView({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const { user, getEarningsSummary, getEarningsSales, settings } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -47,7 +44,7 @@ export default function CreatorEarningsView({ locale, dict }: { locale: Locale; 
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  
   }, [user?.id, locale, page]);
 
   if (!user || user.role !== "creator") return null;

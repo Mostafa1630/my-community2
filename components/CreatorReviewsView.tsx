@@ -36,12 +36,7 @@ function ReviewableLink({ review, locale }: { review: CreatorReview; locale: Loc
   );
 }
 
-// GET /creators/reviews returns everything a moderation table needs
-// (rating/comment/user/type/reviewable/is_approved) in one call, so the
-// list itself never needs a per-row extra fetch. GET /creators/reviews/{id}
-// (get one) is still put to real use though — opening the details modal
-// re-fetches that one review fresh rather than trusting already-loaded list
-// state, same reasoning as the lesson edit modal in round 12.
+
 export default function CreatorReviewsView({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const { user, getMyReviews, getReviewByCreator, moderateReview, deleteReviewByCreator } = useAuth();
 
@@ -72,7 +67,7 @@ export default function CreatorReviewsView({ locale, dict }: { locale: Locale; d
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [user?.id, locale]);
 
   if (!user || user.role !== "creator") return null;

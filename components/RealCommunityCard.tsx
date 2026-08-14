@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { Users2, BookOpen, Lock, Unlock } from "lucide-react";
 import type { CommunitySummary } from "@/lib/api-types";
@@ -5,14 +7,10 @@ import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import { getAccent, initials } from "@/lib/accents";
 import { formatPrice } from "@/lib/format";
+import { useAuth } from "@/lib/auth-context";
 import FavoriteButton from "./FavoriteButton";
 import SubscriptionCountdown from "./SubscriptionCountdown";
 
-// Same visual design as CommunityCard.tsx, sourced from the real /communities
-// API shape instead of local mock data — kept as a separate component rather
-// than making CommunityCard accept either shape, since MyCommunitiesView still
-// renders local mock Community records (subscriptions aren't connected yet)
-// and genuinely needs the old component untouched.
 export default function RealCommunityCard({
   community,
   locale,
@@ -23,18 +21,14 @@ export default function RealCommunityCard({
   community: CommunitySummary;
   locale: Locale;
   dict: Dictionary;
-  // Set for the first handful of cards on the home page, which sit above the
-  // fold on load — lazy-loading an image that's already in the viewport just
-  // delays its fetch for no benefit, and was measurably enough on its own to
-  // make Chrome's Largest Contentful Paint detection fail outright on that
-  // page (confirmed directly via PerformanceObserver, not just Lighthouse).
+
   priority?: boolean;
-  // Set on "My Communities" cards, where showing the subscription price
-  // again makes no sense (you already paid it) — swaps the price/view-details
-  // footer for a countdown of how much of the subscription window is left.
+
   subscribed?: boolean;
 }) {
+  const { settings } = useAuth();
   const accent = getAccent(community.accent);
+  const hasDiscount = !community.isFree && community.discountPercentage > 0;
 
   return (
     <Link
@@ -69,6 +63,7 @@ export default function RealCommunityCard({
             favoritableType="community"
             favoritableId={community.id}
             locale={locale}
+            initialIsFavorite={community.isFavorite}
           />
         </div>
       </div>
@@ -128,11 +123,23 @@ export default function RealCommunityCard({
           </div>
         ) : (
           <div className="mt-5 flex items-center justify-between gap-2 border-t border-line pt-3.5">
-            <span className="whitespace-nowrap font-mono text-[11px] font-bold tracking-wide text-accent-700 sm:text-xs">
-              {community.isFree
-                ? dict.communities.freeBadge
-                : formatPrice(community.finalPrice, locale)}
-            </span>
+            <div className="flex min-w-0 flex-wrap items-baseline gap-1.5">
+              <span className="whitespace-nowrap font-mono text-sm font-black tracking-tight text-accent-700 sm:text-base">
+                {community.isFree
+                  ? dict.communities.freeBadge
+                  : formatPrice(community.finalPrice, locale, settings?.currency)}
+              </span>
+              {hasDiscount && (
+                <>
+                  <span className="font-mono text-xs text-ink/55 line-through">
+                    {formatPrice(community.subscriptionPrice, locale, settings?.currency)}
+                  </span>
+                  <span className="rounded-full bg-danger/10 px-1.5 py-0.5 text-[10px] font-bold text-danger">
+                    -{community.discountPercentage}%
+                  </span>
+                </>
+              )}
+            </div>
             <span className="shrink-0 whitespace-nowrap rounded-full border border-primary-200 px-2.5 py-1 text-center text-[11px] font-medium text-primary-800 transition-colors duration-200 group-hover:border-primary-300 group-hover:bg-primary-50 sm:px-3 sm:text-xs">
               {dict.common.viewDetails}
             </span>

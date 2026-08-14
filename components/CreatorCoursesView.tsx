@@ -14,13 +14,7 @@ import DashboardPageHeader from "@/components/DashboardPageHeader";
 import Modal from "@/components/motion/Modal";
 import PageLoader from "@/components/PageLoader";
 
-// GET /creators/courses (round 12) replaced the old
-// getCreatorDetails+per-course-getCourseDetails N+1 workaround from round
-// 10 — one request now, no more per-course fan-out. Still no category
-// column: no endpoint anywhere (this one included) ever returns a course's
-// category, and this list shape has no students-count either (that only
-// ever came from the public GET /courses/details/{id}, dropped here since
-// it's not worth an extra fetch per row just for one column).
+
 export default function CreatorCoursesView({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const { user, getMyCourses, deleteCourseByCreator, settings } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -48,7 +42,7 @@ export default function CreatorCoursesView({ locale, dict }: { locale: Locale; d
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [user?.id, locale]);
 
   if (!user || user.role !== "creator") return null;

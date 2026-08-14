@@ -6,22 +6,28 @@ import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import type { FeedReaction } from "@/lib/api-types";
 import { useAuth } from "@/lib/auth-context";
+import { useToast } from "@/components/ToastProvider";
 import EmptyState from "../EmptyState";
 import { REACTION_EMOJI, reactionLabel } from "./reactionConfig";
 
-// Same infinite-scroll pattern as the post feed and the comments panel.
+
 export default function ReactionsPanel({ postId, locale, dict }: { postId: string; locale: Locale; dict: Dictionary }) {
-  const { getPostReactions } = useAuth();
+  const { getPostReactions, sessionReady, hydrated } = useAuth();
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [reactions, setReactions] = useState<FeedReaction[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
+  const [loadError, setLoadError] = useState("");
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!hydrated || !sessionReady) return;
+
     let cancelled = false;
     setLoading(true);
+    setLoadError("");
     getPostReactions(postId, locale, 1)
       .then((res) => {
         if (cancelled) return;
@@ -29,14 +35,20 @@ export default function ReactionsPanel({ postId, locale, dict }: { postId: strin
         setPage(1);
         setHasMore(res.currentPage < res.lastPage);
       })
+      .catch(() => {
+        if (!cancelled) {
+          setReactions([]);
+          setLoadError(dict.community.reactionsLoadError);
+        }
+      })
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [postId, locale]);
+   
+  }, [postId, locale, hydrated, sessionReady]);
 
   const loadMore = useCallback(async () => {
     if (loadingMore || !hasMore) return;
@@ -47,10 +59,12 @@ export default function ReactionsPanel({ postId, locale, dict }: { postId: strin
       setReactions((prev) => [...prev, ...res.items]);
       setPage(nextPage);
       setHasMore(res.currentPage < res.lastPage);
+    } catch {
+      showToast(dict.community.loadMoreError, { variant: "error" });
     } finally {
       setLoadingMore(false);
     }
-  }, [postId, locale, page, hasMore, loadingMore, getPostReactions]);
+  }, [postId, locale, page, hasMore, loadingMore, getPostReactions, showToast, dict.community.loadMoreError]);
 
   useEffect(() => {
     const el = sentinelRef.current;
@@ -65,11 +79,17 @@ export default function ReactionsPanel({ postId, locale, dict }: { postId: strin
     return () => observer.disconnect();
   }, [loading, loadMore]);
 
-  if (loading) {
+  if (!sessionReady || loading) {
     return (
       <div className="flex justify-center py-10">
         <Loader2 size={22} className="animate-spin text-primary-500" />
       </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{loadError}</div>
     );
   }
 

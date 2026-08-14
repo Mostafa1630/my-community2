@@ -4,17 +4,7 @@ import { getCreators, getCommunities } from "@/lib/api-content";
 
 const BASE_URL = "https://nadi-community.com";
 
-// Creator and community routes are both keyed by real numeric id now
-// (/creators/{id}, /communities/{id} — neither uses a local slug anymore),
-// so both sets of sitemap entries come from the real API, walking every page
-// via `lastPage`. The nested local-mock course-in-community pages
-// (/communities/{slug}/courses/{courseSlug}) are deliberately left out here —
-// they're only reachable from a local mock subscription, which nothing in the
-// app can actually create anymore now that auth is real (see auth-context.tsx/
-// MyCommunitiesView — the local demo role-switcher that used to seed those
-// subscriptions is gone). Both getCreators()/getCommunities() fail soft (empty
-// page) while NEXT_PUBLIC_API_BASE_URL is unset, so this loop just runs once
-// and contributes nothing until a real backend is reachable.
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPaths = ["", "/creators", "/login", "/register"];
   const lastModified = new Date();

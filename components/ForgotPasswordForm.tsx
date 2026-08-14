@@ -7,6 +7,7 @@ import { AlertCircle, CheckCircle2, Loader2, Mail } from "lucide-react";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import { useAuth } from "@/lib/auth-context";
+import { getSiteName } from "@/lib/platform-branding";
 import { ApiError } from "@/lib/api-client";
 import { forgotPasswordSchema, resetPasswordSchema } from "@/lib/validation/auth";
 import { apiFieldErrors } from "@/lib/validation/creatorForms";
@@ -20,14 +21,10 @@ const PASSWORD_FIELD_MAP: Record<string, string> = {
   password_confirmation: "passwordConfirmation"
 };
 
-// Single-page, two-step flow: email -> 5-digit code emailed by the backend +
-// new password. Replaces the old email-link-with-token page (deleted along
-// with /reset-password) — the backend now emails a short numeric code
-// instead of a clickable link, so there's no URL to land on with query
-// params anymore, just this form advancing in place.
+
 export default function ForgotPasswordForm({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const router = useRouter();
-  const { forgotPassword, verifyResetCode, resetPassword } = useAuth();
+  const { forgotPassword, verifyResetCode, resetPassword, settings } = useAuth();
 
   const [step, setStep] = useState<"email" | "code">("email");
   const [email, setEmail] = useState("");
@@ -54,9 +51,6 @@ export default function ForgotPasswordForm({ locale, dict }: { locale: Locale; d
     return () => clearInterval(timer);
   }, [resendCooldown]);
 
-  // Auto-verifies as soon as all 5 digits are in, rather than waiting for a
-  // separate "verify" button — the code either resolves instantly (valid,
-  // reveals the password fields) or comes back invalid/expired right away.
   useEffect(() => {
     if (code.length !== 5) {
       setCodeState("idle");
@@ -77,7 +71,7 @@ export default function ForgotPasswordForm({ locale, dict }: { locale: Locale; d
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [code, email, locale]);
 
   async function handleEmailSubmit(e: React.FormEvent) {
@@ -156,11 +150,13 @@ export default function ForgotPasswordForm({ locale, dict }: { locale: Locale; d
     }
   }
 
+  const siteName = getSiteName(settings, dict);
+
   return (
     <div className="container-page flex min-h-[70vh] items-center justify-center py-16">
       <div className="w-full max-w-md rounded-2xl border border-line bg-surface p-8 shadow-card">
         <div className="mb-6 flex flex-col items-center text-center">
-          <Seal size={44} label={dict.meta.siteName[0]} />
+          <Seal size={44} label={siteName[0]} dict={dict} />
           <h1 className="mt-4 text-xl font-bold text-ink">
             {done
               ? dict.auth.resetSuccessTitle

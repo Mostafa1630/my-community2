@@ -1,15 +1,7 @@
 import type { AnyUser, AccentKey, Category } from "./types";
 
-// Raw shape returned by the real backend (GET/POST /auth/profile, and the
-// slimmer version embedded in register/login responses). Kept separate from
-// the local mock `Student`/`Creator` types in lib/types.ts rather than
-// replacing them — most of the app (communities, courses, favorites, ...)
-// still runs on local mock data, and those types are shaped for that. This
-// is the actual API contract; mapApiUserToLocal() bridges the two.
 export interface ApiCreatorProfile {
-  // Was a real {en, ar} object; the backend later collapsed the ar/en split
-  // across every bilingual field (name, description, title, bio, ...) to a
-  // single already-localized string, same as everywhere else.
+
   bio: string | null;
   cover_image: string | null;
   balance: string;
@@ -29,8 +21,7 @@ export interface ApiUser {
   creator_profile: ApiCreatorProfile | null;
 }
 
-// The register/login responses only return this slim subset — enough to act
-// on immediately without a follow-up GET /auth/profile round-trip.
+
 export interface ApiAuthResult {
   id: number;
   name: string;
@@ -46,17 +37,12 @@ function slugify(name: string, id: number) {
   return `${name.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}-${id}`;
 }
 
-// Deterministic per-id pick, not random — same creator always gets the same
-// accent across renders/requests instead of flickering between colors.
+
 function accentForId(id: number): AccentKey {
   return ACCENTS[id % ACCENTS.length];
 }
 
-// Adapts the real backend's user shape into the local Student/Creator shape
-// the rest of the app already reads via useAuth().user — so pages built
-// against local mock data keep working unchanged while auth itself is real.
-// Fields the backend doesn't return get a reasonable default rather than
-// being left undefined, since the local types don't mark them optional.
+
 export function mapApiUserToLocal(apiUser: ApiUser): AnyUser {
   const base = {
     id: String(apiUser.id),
@@ -76,10 +62,7 @@ export function mapApiUserToLocal(apiUser: ApiUser): AnyUser {
       ...base,
       role: "creator",
       slug: slugify(apiUser.name, apiUser.id),
-      // The local Creator type still carries separate bioEn/bioAr (shared
-      // with the old mock data system) — mirrored from the one real bio
-      // value on both, since there's only a single field on the wire now.
-      // Every real-API call site treats bioEn as "the" bio and ignores bioAr.
+ 
       bioEn: profile?.bio ?? "",
       bioAr: profile?.bio ?? "",
       coverAccent: DEFAULT_ACCENT,
@@ -94,20 +77,7 @@ export function mapApiUserToLocal(apiUser: ApiUser): AnyUser {
   return { ...base, role: "student" };
 }
 
-// GET /categories only returns id + a single already-localized name (the
-// `lang` header picks which language comes back), not the bilingual
-// nameEn/nameAr pair the rest of the app's local Category type expects, and
-// no slug either. mapApiCategoryToLocal() duplicates the one name into both
-// slots (the component then just displays the string matching the current
-// locale, same string either way) and uses the numeric id (stringified) as
-// the slug too, since nothing here needs a real pretty-URL slug — it's only
-// ever used as an opaque filter key in a <select>/<button>.
-//
-// Note: local mock Community/Course records still carry categoryId values
-// from the old local categories.json (e.g. "cat-1"), which will never match
-// a real category's id ("1", "2", ...). Filtering local mock communities by
-// a real category won't find matches until communities/courses are connected
-// too — same transitional gap as auth (see lib/api-types.ts's user mapping).
+
 export interface ApiCategory {
   id: number;
   name: string;
@@ -126,11 +96,7 @@ export function mapApiCategoryToLocal(apiCategory: ApiCategory): Category {
   };
 }
 
-// GET /creators, /creators/top, and the summary rows inside /creators/details/{id}
-// all share this shape — a single, undifferentiated `bio` (not bioEn/bioAr),
-// no slug (routes use the numeric id directly, e.g. /creators/8), and no
-// verified/balance/etc — those only exist on the authenticated creator's own
-// profile (ApiUser.creator_profile), not on public creator listings.
+
 export interface ApiCreatorSummary {
   id: number;
   name: string;
@@ -193,11 +159,7 @@ export function mapApiCreatorDetails(c: ApiCreatorDetails): CreatorDetails {
   };
 }
 
-// GET /communities (list, supports ?category_id=) and GET /communities/details/{id}
-// share this base shape — a flat creator ref (id/name/photo, no bio here),
-// `category_name` already localized (single string, same pattern as
-// /categories), and pricing pre-computed server-side (`final_price` already
-// has any `discount_percentage` applied — don't recompute it client-side).
+
 export interface ApiCommunityCreatorRef {
   id: number;
   name: string;
@@ -213,9 +175,7 @@ export interface ApiCommunitySummary {
   subscription_price: number;
   discount_percentage: number;
   final_price: number;
-  // How long a subscription stays active once purchased — set by the
-  // creator (see EditCommunityView/NewCommunityView's `subscriptionDurationDays`
-  // field) and echoed back on every community summary, confirmed live.
+ 
   subscription_duration_days: number;
   category_name: string;
   creator: ApiCommunityCreatorRef;
@@ -223,9 +183,9 @@ export interface ApiCommunitySummary {
   rating_avg: number | null;
   courses_count: number;
   subscriptions_count: number;
-  // Only present on GET /communities/my-subscriptions items (confirmed live)
-  // — the actual window this particular subscription is valid for, not
-  // present at all on the public /communities list or /communities/details.
+ 
+  is_favorite?: boolean;
+
   subscription_start_at?: string;
   subscription_end_at?: string;
 }
@@ -248,6 +208,7 @@ export interface CommunitySummary {
   subscriptionsCount: number;
   subscriptionStartAt?: string;
   subscriptionEndAt?: string;
+  isFavorite?: boolean;
   accent: AccentKey;
 }
 
@@ -274,6 +235,7 @@ export function mapApiCommunitySummary(c: ApiCommunitySummary): CommunitySummary
     subscriptionsCount: c.subscriptions_count,
     subscriptionStartAt: c.subscription_start_at ?? undefined,
     subscriptionEndAt: c.subscription_end_at ?? undefined,
+    isFavorite: c.is_favorite !== undefined ? Boolean(c.is_favorite) : undefined,
     accent: accentForId(c.id)
   };
 }
@@ -301,6 +263,7 @@ export interface ApiCourseSummary {
   students_count?: number;
   creator?: { id: number; name: string; profile_image?: string | null } | null;
   community?: { community_id?: number; id?: number; name: string } | null;
+  is_favorite?: boolean;
 }
 
 export interface CourseSummary {
@@ -317,6 +280,7 @@ export interface CourseSummary {
   creator?: { id: string; name: string; profileImage?: string };
   communityId?: string;
   communityName?: string;
+  isFavorite?: boolean;
   accent: AccentKey;
 }
 
@@ -337,6 +301,7 @@ export function mapApiCourseSummary(c: ApiCourseSummary): CourseSummary {
       : undefined,
     communityId: c.community ? String(c.community.community_id ?? c.community.id ?? "") : undefined,
     communityName: c.community?.name,
+    isFavorite: c.is_favorite !== undefined ? Boolean(c.is_favorite) : undefined,
     accent: accentForId(c.id)
   };
 }
@@ -381,14 +346,12 @@ export interface CommunityReview {
 
 export interface ApiCommunityDetails extends ApiCommunitySummary {
   // Confirmed live on GET /communities/details/{id} — always present, but
-  // only ever true when the request actually carried the student's Bearer
-  // token. The Server Component pages that call getCommunityDetails() fetch
-  // without auth (no token available during SSR), so this always reads false
-  // there — RealCommunitySubscribeCard still relies on the client-side
-  // cached membership set (isSubscribed()) for the real answer, gated on
-  // myAccessLoaded to avoid a flicker. Kept on the type mainly so it's
-  // available wherever this gets fetched client-side with a token.
-  is_subscribed: boolean;
+  // only true when the request carried the student's Bearer token. SSR
+  // fetches (getCommunityDetails in api-content.ts) run without auth, so
+  // this reads false there; client components refetch with auth via
+  // useCommunitySubscription().
+  // Live API sometimes sends 0/1 instead of strict booleans — Boolean() in mapper.
+  is_subscribed: boolean | number;
   reviews: ApiCommunityReview[];
   courses: ApiCommunityCourse[];
 }
@@ -402,7 +365,7 @@ export interface CommunityDetails extends CommunitySummary {
 export function mapApiCommunityDetails(c: ApiCommunityDetails): CommunityDetails {
   return {
     ...mapApiCommunitySummary(c),
-    isSubscribed: c.is_subscribed,
+    isSubscribed: Boolean(c.is_subscribed),
     reviews: c.reviews.map((r) => ({
       id: String(r.id),
       rating: r.rate,
@@ -472,6 +435,11 @@ export interface ApiCourseDetails {
   reviews_count: number | null;
   rating_avg: number | null;
   created_at: string;
+  // True only when GET /courses/details/{id} is called with Bearer auth.
+  // Some backends expose is_enrolled, others is_subscribed — mapper accepts both.
+  is_enrolled?: boolean;
+  is_subscribed?: boolean;
+  is_favorite?: boolean;
   community: ApiCourseCommunityRef;
   creator: ApiCourseCreatorRef;
   lessons: ApiCourseLesson[];
@@ -504,6 +472,8 @@ export interface CourseDetails {
   image?: string;
   introVideo?: string;
   isFree: boolean;
+  isEnrolled: boolean;
+  isFavorite?: boolean;
   status: string;
   lessonsCount: number;
   studentsCount: number;
@@ -527,6 +497,8 @@ export function mapApiCourseDetails(c: ApiCourseDetails): CourseDetails {
     image: c.image ?? undefined,
     introVideo: c.intro_video ?? undefined,
     isFree: Boolean(c.is_free),
+    isEnrolled: Boolean(c.is_enrolled ?? c.is_subscribed ?? false),
+    isFavorite: c.is_favorite !== undefined ? Boolean(c.is_favorite) : undefined,
     status: c.status,
     lessonsCount: c.lessons_count,
     studentsCount: c.students_count,
@@ -734,6 +706,7 @@ export interface ApiCreatorCommunity {
   subscription_price: number;
   discount_percentage: number;
   final_price: number;
+  subscription_duration_days?: number;
   category: { id: number | string; name: string };
 }
 
@@ -747,6 +720,7 @@ export interface CreatorCommunity {
   subscriptionPrice: number;
   discountPercentage: number;
   finalPrice: number;
+  subscriptionDurationDays?: number;
   categoryId: string;
   categoryName: string;
 }
@@ -762,6 +736,7 @@ export function mapApiCreatorCommunity(c: ApiCreatorCommunity): CreatorCommunity
     subscriptionPrice: c.subscription_price,
     discountPercentage: c.discount_percentage,
     finalPrice: c.final_price,
+    subscriptionDurationDays: c.subscription_duration_days,
     categoryId: String(c.category.id),
     categoryName: c.category.name
   };
@@ -794,6 +769,8 @@ export interface ApiCreatorCourseUpdate {
   is_free: boolean | number;
   status: string;
   created_at: string;
+  category?: { id: number | string; name: string } | null;
+  category_id?: number | string | null;
 }
 
 export interface CreatorCourseUpdateResult {
@@ -808,6 +785,8 @@ export interface CreatorCourseUpdateResult {
   isFree: boolean;
   status: string;
   createdAt: string;
+  categoryId?: string;
+  categoryName?: string;
 }
 
 export function mapApiCreatorCourseUpdate(c: ApiCreatorCourseUpdate): CreatorCourseUpdateResult {
@@ -822,7 +801,9 @@ export function mapApiCreatorCourseUpdate(c: ApiCreatorCourseUpdate): CreatorCou
     introVideo: c.intro_video ?? undefined,
     isFree: Boolean(c.is_free),
     status: c.status,
-    createdAt: c.created_at
+    createdAt: c.created_at,
+    categoryId: c.category ? String(c.category.id) : c.category_id != null ? String(c.category_id) : undefined,
+    categoryName: c.category?.name
   };
 }
 
@@ -1065,7 +1046,43 @@ export interface ApiPostMedia {
   id?: number;
   url?: string;
   file_path?: string;
+  media_path?: string;
+  media_name?: string;
+  media_type?: string;
+  media_size?: string;
   type?: string;
+}
+
+export type PostMediaItem = {
+  url: string;
+  name?: string;
+  mimeType?: string;
+  size?: string;
+};
+
+export function resolvePostMediaUrl(m: ApiPostMedia): string {
+  return (m.url ?? m.media_path ?? m.file_path ?? "").trim();
+}
+
+export function postMediaKind(item: PostMediaItem): "image" | "video" | "file" {
+  const mime = item.mimeType?.toLowerCase() ?? "";
+  if (mime.startsWith("image/")) return "image";
+  if (mime.startsWith("video/")) return "video";
+  const url = item.url.toLowerCase();
+  if (/\.(jpg|jpeg|png|gif|webp|avif|bmp|svg)(\?.*)?$/i.test(url)) return "image";
+  if (/\.(mp4|mov|webm|m4v|avi)(\?.*)?$/i.test(url)) return "video";
+  return "file";
+}
+
+export function mapApiPostMedia(m: ApiPostMedia): PostMediaItem | null {
+  const url = resolvePostMediaUrl(m);
+  if (!url) return null;
+  return {
+    url,
+    name: m.media_name,
+    mimeType: m.media_type ?? m.type,
+    size: m.media_size,
+  };
 }
 
 export interface FeedUserRef {
@@ -1090,6 +1107,9 @@ export interface ApiFeedPost {
   created_at: string;
   user: ApiFeedUserRef;
   media: ApiPostMedia[];
+  // GET /communities/{id}/posts embeds up to two latest top-level comments
+  // per item — full thread still lives on GET /posts/{id}/comments.
+  comments?: ApiFeedCommentListItem[];
 }
 
 export interface FeedPost {
@@ -1103,7 +1123,8 @@ export interface FeedPost {
   myReaction: ReactionType | null;
   createdAt: string;
   user: FeedUserRef;
-  media: { url: string }[];
+  media: PostMediaItem[];
+  comments: FeedComment[];
 }
 
 export function mapApiFeedPost(p: ApiFeedPost): FeedPost {
@@ -1121,9 +1142,8 @@ export function mapApiFeedPost(p: ApiFeedPost): FeedPost {
     myReaction: p.my_reaction,
     createdAt: p.created_at,
     user: mapApiFeedUserRef(p.user),
-    media: (p.media ?? [])
-      .map((m) => ({ url: m.url ?? m.file_path ?? "" }))
-      .filter((m) => m.url)
+    media: (p.media ?? []).map(mapApiPostMedia).filter((m): m is PostMediaItem => m !== null),
+    comments: (p.comments ?? []).map(mapApiFeedComment),
   };
 }
 
@@ -1136,6 +1156,7 @@ export interface ApiFeedCommentListItem {
   created_at: string;
   replies_count: number | null;
   user: ApiFeedUserRef;
+  replies?: ApiFeedCommentListItem[];
 }
 
 export interface FeedComment {
@@ -1150,11 +1171,13 @@ export interface FeedComment {
 export function mapApiFeedComment(c: ApiFeedCommentListItem): FeedComment {
   return {
     id: String(c.id),
-    content: c.content,
-    isOwner: c.is_owner,
-    createdAt: c.created_at,
+    content: c.content ?? "",
+    isOwner: Boolean(c.is_owner),
+    createdAt: c.created_at ?? "",
     repliesCount: c.replies_count ?? 0,
-    user: mapApiFeedUserRef(c.user)
+    user: c.user
+      ? mapApiFeedUserRef(c.user)
+      : { id: "0", name: "—", profileImage: undefined },
   };
 }
 
@@ -1203,7 +1226,8 @@ export interface ApiCreatorDashboard {
   paid_subscribers: number;
   course_students: number;
   total_students: number;
-  total_balance: number;
+  total_balance?: number;
+  total_withdrawn?: number;
   current_balance: number;
   pending_balance: number;
 }
@@ -1217,7 +1241,7 @@ export interface CreatorDashboardSummary {
   paidSubscribers: number;
   courseStudents: number;
   totalStudents: number;
-  totalBalance: number;
+  totalWithdrawn: number;
   currentBalance: number;
   pendingBalance: number;
 }
@@ -1232,7 +1256,7 @@ export function mapApiCreatorDashboard(d: ApiCreatorDashboard): CreatorDashboard
     paidSubscribers: d.paid_subscribers,
     courseStudents: d.course_students,
     totalStudents: d.total_students,
-    totalBalance: d.total_balance,
+    totalWithdrawn: d.total_withdrawn ?? d.total_balance ?? 0,
     currentBalance: d.current_balance,
     pendingBalance: d.pending_balance
   };
@@ -1331,9 +1355,9 @@ export function mapApiCreatorWithdrawal(w: ApiCreatorWithdrawal): CreatorWithdra
   return {
     id: String(w.id),
     amount: Number(w.amount),
-    payoutMethod: w.payout_method.toLowerCase() as PayoutMethod,
+  payoutMethod: String(w.payout_method ?? "").toLowerCase() as PayoutMethod,
     payoutAccountNumber: w.payout_account_number,
-    status: w.status.toLowerCase(),
+   status: String(w.status ?? "").toLowerCase(),
     hasProof: w.has_proof,
     requestedAt: w.requested_at,
     approvedAt: w.approved_at,
@@ -1446,6 +1470,34 @@ export function mapApiSettings(s: ApiSettings): PlatformSettings {
   };
 }
 
+/** Keep SSR / prior branding when a stale client cache omits optional fields. */
+export function mergePlatformSettings(
+  base: PlatformSettings | null | undefined,
+  incoming: PlatformSettings
+): PlatformSettings {
+  if (!base) return incoming;
+  return {
+    ...incoming,
+    siteName: incoming.siteName ?? base.siteName,
+    siteLogo: incoming.siteLogo ?? base.siteLogo,
+    siteFavicon: incoming.siteFavicon ?? base.siteFavicon,
+    descriptionEn: incoming.descriptionEn ?? base.descriptionEn,
+    descriptionAr: incoming.descriptionAr ?? base.descriptionAr,
+    contactEmail: incoming.contactEmail ?? base.contactEmail,
+    contactPhone: incoming.contactPhone ?? base.contactPhone,
+    contactAddress: incoming.contactAddress ?? base.contactAddress,
+    facebookUrl: incoming.facebookUrl ?? base.facebookUrl,
+    instagramUrl: incoming.instagramUrl ?? base.instagramUrl,
+    twitterUrl: incoming.twitterUrl ?? base.twitterUrl,
+    youtubeUrl: incoming.youtubeUrl ?? base.youtubeUrl,
+    linkedinUrl: incoming.linkedinUrl ?? base.linkedinUrl,
+    tiktokUrl: incoming.tiktokUrl ?? base.tiktokUrl,
+    whatsappNumber: incoming.whatsappNumber ?? base.whatsappNumber,
+    lastUpdated: incoming.lastUpdated ?? base.lastUpdated,
+    currency: incoming.currency || base.currency
+  };
+}
+
 // ---- Payments ----
 
 // POST /communities/{id}/subscribe and POST /courses/{id}/enroll share this
@@ -1483,7 +1535,7 @@ export function mapApiPaymentSession(p: ApiPaymentSession): PaymentSession {
 
 // ---- Notifications ----
 
-export type NotificationType = "new_course_in_community" | "new_lesson_in_course";
+export type NotificationType = string;
 
 export interface ApiNotificationData {
   course_id?: number;
@@ -1499,6 +1551,7 @@ export interface ApiNotification {
   type: NotificationType;
   message?: string | null;
   title?: string | null;
+  icon?: string | null;
   data: ApiNotificationData;
   read_at: string | null;
   created_at: string;
@@ -1508,6 +1561,7 @@ export interface AppNotification {
   id: string;
   type: NotificationType;
   message: string | null;
+  icon?: string;
   courseId?: string;
   communityId?: string;
   lessonId?: string;
@@ -1520,6 +1574,7 @@ export function mapApiNotification(n: ApiNotification): AppNotification {
     id: String(n.id),
     type: n.type,
     message: n.message ?? n.title ?? null,
+    icon: n.icon ?? undefined,
     courseId: n.data?.course_id != null ? String(n.data.course_id) : undefined,
     communityId: n.data?.community_id != null ? String(n.data.community_id) : undefined,
     lessonId: n.data?.lesson_id != null ? String(n.data.lesson_id) : undefined,

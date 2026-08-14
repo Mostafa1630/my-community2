@@ -12,9 +12,6 @@ import Pagination from "./Pagination";
 import EmptyState from "./EmptyState";
 import PageLoader from "./PageLoader";
 
-// GET /courses/my-courses — the student's own individually-purchased
-// standalone courses (via POST /courses/{id}/enroll), separate from
-// whatever comes bundled with a community subscription.
 export default function MyCoursesView({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const { hydrated, role, getMyEnrolledCourses } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -41,7 +38,7 @@ export default function MyCoursesView({ locale, dict }: { locale: Locale; dict: 
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [hydrated, role, locale, page]);
 
   if (!hydrated || loading) return <PageLoader />;

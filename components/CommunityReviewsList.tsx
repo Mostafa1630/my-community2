@@ -9,39 +9,38 @@ import { initials } from "@/lib/accents";
 
 const PAGE_SIZE = 5;
 
-// Same progressive-reveal pattern as the category filter's "More" button —
-// show 5, then 5 more per click, instead of the full list (or a paginated
-// fetch, which isn't possible here anyway since these reviews come
-// embedded in GET /communities/details/{id}, not their own endpoint).
 export default function CommunityReviewsList({
   reviews,
-  dict
+  dict,
+  embedded = false
 }: {
   reviews: CommunityReview[];
   locale: Locale;
   dict: Dictionary;
+  embedded?: boolean;
 }) {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   return (
-    <div className="mt-4 space-y-3">
+    <div className={embedded ? "space-y-3" : "mt-4 space-y-3"}>
       {reviews.slice(0, visibleCount).map((review) => (
-        <div key={review.id} className="flex gap-3 rounded-xl border border-line bg-surface p-4">
-          <span className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-ink/10">
-            {review.user.profileImage ? (
-              <img src={review.user.profileImage} alt="" className="h-full w-full object-cover" />
-            ) : (
-              <span className="flex h-full w-full items-center justify-center text-xs font-bold text-ink/65">
-                {initials(review.user.name)}
-              </span>
-            )}
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-sm font-semibold text-ink">{review.user.name}</p>
-              <span className="shrink-0 text-[11px] text-ink/65">{review.createdAt}</span>
-            </div>
-            <div className="mt-0.5 flex gap-0.5" dir="ltr">
+        <div
+          key={review.id}
+          className={`flex gap-3 p-4 ${
+            embedded ? "rounded-xl bg-paper/70" : "rounded-xl border border-line bg-surface"
+          }`}
+        >
+          <div className="flex shrink-0 flex-col items-center gap-1.5">
+            <span className="h-9 w-9 overflow-hidden rounded-full bg-ink/10">
+              {review.user.profileImage ? (
+                <img src={review.user.profileImage} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <span className="flex h-full w-full items-center justify-center text-xs font-bold text-ink/65">
+                  {initials(review.user.name)}
+                </span>
+              )}
+            </span>
+            <div className="flex gap-0.5 ps-[7ch]" dir="ltr">
               {[1, 2, 3, 4, 5].map((n) => (
                 <Star
                   key={n}
@@ -49,6 +48,12 @@ export default function CommunityReviewsList({
                   className={n <= review.rating ? "fill-accent-400 text-accent-400" : "text-ink/20"}
                 />
               ))}
+            </div>
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm font-semibold text-ink">{review.user.name}</p>
+              <span className="shrink-0 text-[11px] text-ink/65">{review.createdAt}</span>
             </div>
             {review.comment && <p className="mt-1.5 text-sm leading-6 text-ink/70">{review.comment}</p>}
           </div>

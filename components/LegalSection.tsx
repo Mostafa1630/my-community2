@@ -7,12 +7,7 @@ export type LegalItem = {
   answer: string;
 };
 
-// Shared visual system for the Terms & Privacy home-page sections: a gradient
-// hero with a wave edge and a floating "last updated" badge, then a two-column
-// body — content cards on one side, a sticky table-of-contents on the other.
-// The TOC sits first in source order (same convention as DashboardSidebar),
-// so it lands on the reading-start side in both directions rather than
-// needing a manual rtl: override.
+
 export default function LegalSection({
   id,
   locale,

@@ -8,18 +8,11 @@ import { useAuth } from "@/lib/auth-context";
 import DashboardPageHeader from "./DashboardPageHeader";
 import EmptyState from "./EmptyState";
 import PageLoader from "./PageLoader";
+import ProfileInfoField from "./ProfileInfoField";
 
-// Read-only display of the student's own profile — same list/display+edit
-// split as My Community and the creator profile: this page just shows the
-// data, an "Edit" button in the header takes you to the actual form
-// (StudentProfileView, mounted at /profile/edit), and saving there
-// navigates back here.
 export default function StudentProfileDisplayView({ locale, dict }: { locale: Locale; dict: Dictionary }) {
   const { user, role, hydrated } = useAuth();
 
-  // Same reasoning as the review form / subscribe card fixes — deciding
-  // "not a student" off `role` before the real session is confirmed showed
-  // a genuinely logged-in student an empty/wrong page on load.
   if (!hydrated) return <PageLoader />;
 
   if (role !== "student" || !user) {
@@ -52,28 +45,15 @@ export default function StudentProfileDisplayView({ locale, dict }: { locale: Lo
           <h2 className="text-xl font-bold tracking-tight text-ink">{user.name}</h2>
         </div>
 
-        <div className="grid gap-4 px-6 pb-6 sm:grid-cols-3 sm:px-8 sm:pb-8">
-          <div className="rounded-xl border border-line bg-paper p-4 sm:p-5">
-            <p className="mb-2 text-xs font-medium tracking-wide text-ink/55">{dict.common.name}</p>
-            <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
-              <User size={13} className="shrink-0 text-primary-600" />
-              {user.name}
-            </p>
-          </div>
-          <div className="rounded-xl border border-line bg-paper p-4 sm:p-5">
-            <p className="mb-2 text-xs font-medium tracking-wide text-ink/55">{dict.common.email}</p>
-            <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
-              <Mail size={13} className="shrink-0 text-primary-600" />
-              <span className="break-all">{user.email}</span>
-            </p>
-          </div>
-          <div className="rounded-xl border border-line bg-paper p-4 sm:p-5">
-            <p className="mb-2 text-xs font-medium tracking-wide text-ink/55">{dict.common.phoneNumber}</p>
-            <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
-              <Phone size={13} className="shrink-0 text-primary-600" />
-              {user.phoneNumber || "—"}
-            </p>
-          </div>
+        <div className="grid gap-3 px-6 pb-6 sm:grid-cols-3 sm:px-8 sm:pb-8">
+          <ProfileInfoField label={dict.common.name} value={user.name} icon={User} />
+          <ProfileInfoField label={dict.common.email} value={user.email} icon={Mail} dir="ltr" />
+          <ProfileInfoField
+            label={dict.common.phoneNumber}
+            value={user.phoneNumber || ""}
+            icon={Phone}
+            dir="ltr"
+          />
         </div>
       </div>
     </div>

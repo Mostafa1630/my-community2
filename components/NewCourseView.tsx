@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, ImagePlus, Loader2 } from "lucide-react";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import type { Category } from "@/lib/types";
@@ -22,19 +22,9 @@ const API_FIELD_MAP: Record<string, string> = {
 };
 import FormField, { fieldInputClass } from "./FormField";
 import PageLoader from "./PageLoader";
+import ImageCropper from "./ImageCropper";
 
-// POST /creators/courses (round 12) — previously this page just showed a
-// "not connected" notice since only update/delete existed (round 10).
-// category_id is genuinely required here, unlike the edit form where it's
-// left as an unresolvable "leave unchanged" placeholder — on create there's
-// no existing course to protect, so the creator just picks one fresh.
-//
-// Live-testing (round 13) found a real backend crash, not a validation
-// error: POST /creators/courses returns a bare 500 "An error occurred" if
-// the authenticated creator has no community yet (confirmed by creating one
-// for the same account and retrying — same request then succeeds). Rather
-// than let a creator hit that opaque 500, this checks getMyCommunity() up
-// front and blocks the form with a link to /creator/community instead.
+
 export default function NewCourseView({
   locale,
   dict,
@@ -46,6 +36,7 @@ export default function NewCourseView({
 }) {
   const router = useRouter();
   const { user, getMyCommunity, createCourse } = useAuth();
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const [checkingCommunity, setCheckingCommunity] = useState(true);
   const [hasCommunity, setHasCommunity] = useState(true);
@@ -53,11 +44,13 @@ export default function NewCourseView({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState(categories[0]?.id ?? "");
-  const [price, setPrice] = useState(0);
-  const [discountPercentage, setDiscountPercentage] = useState(0);
+  const [price, setPrice] = useState("");
+  const [discountPercentage, setDiscountPercentage] = useState("10");
   const [introVideoUrl, setIntroVideoUrl] = useState("");
   const [isFree, setIsFree] = useState(false);
   const [image, setImage] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [cropSourceFile, setCropSourceFile] = useState<File | null>(null);
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -78,7 +71,7 @@ export default function NewCourseView({
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+ 
   }, [user?.id, locale]);
 
   if (!user || user.role !== "creator") return null;
@@ -105,6 +98,13 @@ export default function NewCourseView({
     );
   }
 
+  function handleCropConfirm(blob: Blob) {
+    const file = new File([blob], "course.jpg", { type: "image/jpeg" });
+    setImage(file);
+    setImagePreviewUrl(URL.createObjectURL(blob));
+    setCropSourceFile(null);
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -119,8 +119,8 @@ export default function NewCourseView({
       title,
       categoryId,
       isFree,
-      price,
-      discountPercentage,
+      price: price ? Number(price) : 0,
+      discountPercentage: Number(discountPercentage) || 0,
       introVideoUrl
     });
     if (!parsed.success) {
@@ -137,8 +137,8 @@ export default function NewCourseView({
           title,
           description: description.trim() || undefined,
           image: image ?? undefined,
-          price: isFree ? undefined : price,
-          discountPercentage: isFree ? undefined : discountPercentage,
+          price: isFree ? undefined : Number(price),
+          discountPercentage: isFree ? undefined : Number(discountPercentage) || 0,
           introVideoUrl: introVideoUrl || undefined,
           isFree
         },
@@ -193,12 +193,34 @@ export default function NewCourseView({
 
       <label className="block">
         <span className="mb-1.5 block text-xs font-medium text-ink/65">{dict.creatorDash.fieldCourseImage}</span>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => setImage(e.target.files?.[0] ?? null)}
-          className="w-full text-sm text-ink/70"
-        />
+        <div className="relative mb-3 flex h-44 w-full items-center justify-center overflow-hidden rounded-xl border border-dashed border-line bg-paper sm:h-56">
+          {imagePreviewUrl ? (
+            <img src={imagePreviewUrl} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <ImagePlus size={28} className="text-ink/30" />
+          )}
+          <button
+            type="button"
+            onClick={() => imageInputRef.current?.click()}
+            className="absolute end-3 top-3 rounded-full bg-ink/60 px-3.5 py-2 text-xs font-semibold text-white backdrop-blur hover:bg-ink/75"
+          >
+            {dict.common.changeCover}
+          </button>
+          <span className="absolute bottom-2 left-2 rounded-md bg-ink/60 px-2 py-1 text-[11px] font-medium text-white backdrop-blur">
+            1200 × 400
+          </span>
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0] ?? null;
+              if (file) setCropSourceFile(file);
+              e.target.value = "";
+            }}
+          />
+        </div>
       </label>
 
       <label className="flex items-center gap-2 text-sm text-ink/70">
@@ -217,7 +239,8 @@ export default function NewCourseView({
             <input
               type="number"
               value={price}
-              onChange={(e) => setPrice(Number(e.target.value) || 0)}
+              onChange={(e) => setPrice(e.target.value)}
+              placeholder=""
               className={fieldInputClass(!!fieldErrors.price)}
             />
           </FormField>
@@ -225,7 +248,8 @@ export default function NewCourseView({
             <input
               type="number"
               value={discountPercentage}
-              onChange={(e) => setDiscountPercentage(Number(e.target.value) || 0)}
+              onChange={(e) => setDiscountPercentage(e.target.value)}
+              placeholder="10"
               className={fieldInputClass(!!fieldErrors.discountPercentage)}
             />
           </FormField>
@@ -265,6 +289,18 @@ export default function NewCourseView({
           {dict.creatorDash.courseCreateButton}
         </button>
       </div>
+
+      {cropSourceFile && (
+        <ImageCropper
+          file={cropSourceFile}
+          aspect={3}
+          shape="rect"
+          outputSize={{ width: 1200, height: 400 }}
+          dict={dict}
+          onConfirm={handleCropConfirm}
+          onCancel={() => setCropSourceFile(null)}
+        />
+      )}
     </form>
   );
 }

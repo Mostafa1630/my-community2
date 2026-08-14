@@ -7,19 +7,23 @@ import { AlertCircle, CheckCircle2, Loader2, Star } from "lucide-react";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
 import { useAuth } from "@/lib/auth-context";
+import { useCommunitySubscription } from "@/lib/use-details-access";
 import { ApiError } from "@/lib/api-client";
 
 export default function CommunityReviewForm({
   communityId,
   locale,
-  dict
+  dict,
+  embedded = false
 }: {
   communityId: string;
   locale: Locale;
   dict: Dictionary;
+  embedded?: boolean;
 }) {
   const router = useRouter();
-  const { role, user, hydrated, isSubscribed, myAccessLoaded, createReview } = useAuth();
+  const { role, user, hydrated, createReview } = useAuth();
+  const { subscribed, resolved: subscriptionResolved } = useCommunitySubscription(communityId, locale);
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState("");
@@ -27,20 +31,18 @@ export default function CommunityReviewForm({
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
 
-  // Same bug class as the old RoleGuard flash: deciding "not a student" off
-  // `role` before the real session is confirmed showed a logged-in student
-  // a "please log in" link instead of the review form. Rendering nothing
-  // until hydrated (and, for a student, until membership is loaded too — see
-  // myAccessLoaded) is a safer default than guessing either way.
-  if (!hydrated || (role === "student" && !myAccessLoaded)) return null;
+  
+  if (!hydrated || (role === "student" && !subscriptionResolved)) return null;
+
+  const wrapperClass = embedded
+    ? "mt-6 border-t border-line pt-6"
+    : "mt-4 rounded-xl border border-line bg-surface p-4";
 
   if (role !== "student") {
-    // Signed in as something else (creator/admin) is a different situation
-    // from not being signed in at all — a login link makes no sense for an
-    // account that's already authenticated, just the wrong kind.
+ 
     if (user) {
       return (
-        <p className="mt-4 flex items-center gap-1.5 text-sm font-medium text-ink/65">
+        <p className={`${wrapperClass} flex items-center gap-1.5 text-sm font-medium text-ink/65`}>
           <AlertCircle size={15} className="shrink-0 text-accent-600" />
           {dict.communityDetails.mustBeStudentToReview}
         </p>
@@ -49,21 +51,18 @@ export default function CommunityReviewForm({
     return (
       <Link
         href={`/${locale}/login`}
-        className="mt-4 inline-block text-sm font-medium text-primary-700 link-underline"
+        className={`${wrapperClass} inline-block text-sm font-medium text-primary-700 link-underline`}
       >
         {dict.communityDetails.loginToReview}
       </Link>
     );
   }
 
-  // Reviewing a community you're not subscribed to isn't something the
-  // product wants shown at all (not even a hint) — the rating form is a
-  // member-only feature, not just a member-only action.
-  if (!isSubscribed(communityId)) return null;
+  if (!subscribed) return null;
 
   if (submitted) {
     return (
-      <p className="mt-4 flex items-center gap-1.5 text-sm font-medium text-success">
+      <p className={`${wrapperClass} flex items-center gap-1.5 text-sm font-medium text-success`}>
         <CheckCircle2 size={15} />
         {dict.communityDetails.reviewSubmitted}
       </p>
@@ -83,9 +82,7 @@ export default function CommunityReviewForm({
       router.refresh();
     } catch (err) {
       if (err instanceof ApiError) {
-        // Laravel's top-level `message` for a validation failure is usually a
-        // generic "The given data was invalid." — the actual reason lives in
-        // the per-field `errors` object, so that takes priority when present.
+
         const fieldMessage = Object.values(err.fieldErrors).flat()[0];
         setError(fieldMessage || err.message);
       } else {
@@ -97,7 +94,7 @@ export default function CommunityReviewForm({
   }
 
   return (
-    <div className="mt-4 rounded-xl border border-line bg-surface p-4">
+    <div className={wrapperClass}>
       <p className="mb-2 text-sm font-semibold text-ink">{dict.communityDetails.ratingLabel}</p>
       <div className="flex gap-1" dir="ltr">
         {[1, 2, 3, 4, 5].map((value) => (
