@@ -8,7 +8,11 @@ import type { Dictionary } from "@/lib/i18n/getDictionary";
 import type { Category } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api-client";
-import { communityFormSchema, collectIssues, apiFieldErrors } from "@/lib/validation/creatorForms";
+import {
+  communityFormSchema,
+  collectIssues,
+  apiFieldErrors,
+} from "@/lib/validation/creatorForms";
 
 const API_FIELD_MAP: Record<string, string> = {
   category_id: "categoryId",
@@ -17,20 +21,21 @@ const API_FIELD_MAP: Record<string, string> = {
   type: "type",
   subscription_price: "subscriptionPrice",
   discount_percentage: "discountPercentage",
-  subscription_duration_days: "subscriptionDurationDays",
-  cover_image: "coverImage"
+  subscription_duration: "subscriptionDurationDays",
+  cover_image: "coverImage",
 };
 import DashboardPageHeader from "./DashboardPageHeader";
 import FormField, { fieldInputClass } from "./FormField";
 import EmptyState from "./EmptyState";
 import PageLoader from "./PageLoader";
 import ImageCropper from "./ImageCropper";
+import { applyCreatorCategoryPrefill } from "@/lib/categoryMatch";
 
 export default function EditCommunityView({
   communityId,
   locale,
   dict,
-  categories
+  categories,
 }: {
   communityId: string;
   locale: Locale;
@@ -55,7 +60,9 @@ export default function EditCommunityView({
   const [durationDays, setDurationDays] = useState("");
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
-  const [currentCoverImage, setCurrentCoverImage] = useState<string | undefined>(undefined);
+  const [currentCoverImage, setCurrentCoverImage] = useState<
+    string | undefined
+  >(undefined);
   const [cropSourceFile, setCropSourceFile] = useState<File | null>(null);
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -81,9 +88,15 @@ export default function EditCommunityView({
       setDescription(community.description);
       setType(community.type);
       setIsFree(community.isFree);
-      setSubscriptionPrice(community.subscriptionPrice ? String(community.subscriptionPrice) : "");
+      setSubscriptionPrice(
+        community.subscriptionPrice ? String(community.subscriptionPrice) : "",
+      );
       setDiscountPercentage(String(community.discountPercentage || 10));
-      setDurationDays(community.subscriptionDurationDays ? String(community.subscriptionDurationDays) : "");
+      setDurationDays(
+        community.subscriptionDurationDays
+          ? String(community.subscriptionDurationDays)
+          : "",
+      );
       setCurrentCoverImage(community.coverImage);
       if (categories.some((c) => c.id === community.categoryId)) {
         setCategoryId(community.categoryId);
@@ -96,7 +109,6 @@ export default function EditCommunityView({
     return () => {
       cancelled = true;
     };
- 
   }, [user?.id, locale, communityId]);
 
   if (!user || user.role !== "creator") return null;
@@ -119,7 +131,9 @@ export default function EditCommunityView({
     setError("");
 
     if (!categoryId) {
-      setFieldErrors({ categoryId: dict.creatorDash.communityCategoryUnresolved });
+      setFieldErrors({
+        categoryId: dict.creatorDash.communityCategoryUnresolved,
+      });
       setCategoryUnresolved(true);
       return;
     }
@@ -127,7 +141,7 @@ export default function EditCommunityView({
     const schema = communityFormSchema({
       required: dict.changePassword.requiredError,
       positive: dict.validation.positiveNumber,
-      percentRange: dict.validation.percentRange
+      percentRange: dict.validation.percentRange,
     });
     const parsed = schema.safeParse({
       name,
@@ -137,7 +151,7 @@ export default function EditCommunityView({
       isFree,
       subscriptionPrice: subscriptionPrice ? Number(subscriptionPrice) : 0,
       discountPercentage: Number(discountPercentage) || 0,
-      subscriptionDurationDays: durationDays ? Number(durationDays) : undefined
+      subscriptionDurationDays: durationDays ? Number(durationDays) : undefined,
     });
     if (!parsed.success) {
       setFieldErrors(collectIssues(parsed.error.issues));
@@ -156,16 +170,23 @@ export default function EditCommunityView({
           type,
           isFree,
           subscriptionPrice: isFree ? undefined : Number(subscriptionPrice),
-          discountPercentage: isFree ? undefined : Number(discountPercentage) || 0,
-          subscriptionDurationDays: durationDays ? Number(durationDays) : undefined
+          discountPercentage: isFree
+            ? undefined
+            : Number(discountPercentage) || 0,
+          subscriptionDurationDays: durationDays
+            ? Number(durationDays)
+            : undefined,
         },
         communityId,
-        locale
+        locale,
       );
       router.push(`/${locale}/creator/community`);
     } catch (err) {
       if (err instanceof ApiError) {
-        setFieldErrors((prev) => ({ ...prev, ...apiFieldErrors(err.fieldErrors, API_FIELD_MAP) }));
+        setFieldErrors((prev) => ({
+          ...prev,
+          ...apiFieldErrors(err.fieldErrors, API_FIELD_MAP),
+        }));
         setError(err.message);
       } else {
         setError(dict.creatorDash.communityError);
@@ -176,10 +197,19 @@ export default function EditCommunityView({
 
   return (
     <div className="w-full">
-      <DashboardPageHeader title={dict.creatorDash.communityEditTitle} subtitle={dict.creatorDash.myCommunitySubtitle} />
+      <DashboardPageHeader
+        title={dict.creatorDash.communityEditTitle}
+        subtitle={dict.creatorDash.myCommunitySubtitle}
+      />
 
-      <form onSubmit={submit} className="space-y-6 rounded-2xl border border-line bg-surface p-6 shadow-card sm:p-8">
-        <FormField label={dict.creatorDash.fieldCommunityName} error={fieldErrors.name}>
+      <form
+        onSubmit={submit}
+        className="space-y-6 rounded-2xl border border-line bg-surface p-6 shadow-card sm:p-8"
+      >
+        <FormField
+          label={dict.creatorDash.fieldCommunityName}
+          error={fieldErrors.name}
+        >
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -187,7 +217,10 @@ export default function EditCommunityView({
           />
         </FormField>
 
-        <FormField label={dict.creatorDash.fieldCommunityDesc} error={fieldErrors.description}>
+        <FormField
+          label={dict.creatorDash.fieldCommunityDesc}
+          error={fieldErrors.description}
+        >
           <textarea
             rows={3}
             value={description}
@@ -197,7 +230,9 @@ export default function EditCommunityView({
         </FormField>
 
         <label className="block">
-          <span className="mb-2 block text-xs font-semibold tracking-wide text-ink/70">{dict.creatorDash.fieldCommunityCategory}</span>
+          <span className="mb-2 block text-xs font-semibold tracking-wide text-ink/70">
+            {dict.creatorDash.fieldCommunityCategory}
+          </span>
           <select
             value={categoryId}
             onChange={(e) => {
@@ -205,7 +240,9 @@ export default function EditCommunityView({
               setCategoryUnresolved(false);
               setFieldErrors((prev) => ({ ...prev, categoryId: "" }));
             }}
-            className={fieldInputClass(!!fieldErrors.categoryId || categoryUnresolved)}
+            className={fieldInputClass(
+              !!fieldErrors.categoryId || categoryUnresolved,
+            )}
           >
             <option value="" disabled>
               {dict.creatorDash.communityCategoryPlaceholder}
@@ -219,16 +256,23 @@ export default function EditCommunityView({
           {(fieldErrors.categoryId || categoryUnresolved) && (
             <p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-danger">
               <AlertCircle size={13} />
-              {fieldErrors.categoryId || dict.creatorDash.communityCategoryUnresolved}
+              {fieldErrors.categoryId ||
+                dict.creatorDash.communityCategoryUnresolved}
             </p>
           )}
         </label>
 
         <label className="block">
-          <span className="mb-2 block text-xs font-semibold tracking-wide text-ink/70">{dict.creatorDash.fieldCommunityCoverImage}</span>
+          <span className="mb-2 block text-xs font-semibold tracking-wide text-ink/70">
+            {dict.creatorDash.fieldCommunityCoverImage}
+          </span>
           <div className="relative mb-3 flex h-44 w-full items-center justify-center overflow-hidden rounded-xl border border-dashed border-line bg-paper sm:h-56">
             {coverPreviewUrl || currentCoverImage ? (
-              <img src={coverPreviewUrl ?? currentCoverImage} alt="" className="h-full w-full object-cover" />
+              <img
+                src={coverPreviewUrl ?? currentCoverImage}
+                alt=""
+                className="h-full w-full object-cover"
+              />
             ) : (
               <ImagePlus size={28} className="text-ink/30" />
             )}
@@ -258,13 +302,17 @@ export default function EditCommunityView({
 
         <div className="grid gap-5 sm:grid-cols-2">
           <div>
-            <label className="mb-2 block text-xs font-semibold tracking-wide text-ink/70">{dict.creatorDash.fieldCommunityType}</label>
+            <label className="mb-2 block text-xs font-semibold tracking-wide text-ink/70">
+              {dict.creatorDash.fieldCommunityType}
+            </label>
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={() => setType("public")}
                 className={`flex-1 rounded-full border px-3 py-2 text-xs font-medium ${
-                  type === "public" ? "border-primary-500 bg-primary-50 text-primary-700" : "border-line text-ink/65"
+                  type === "public"
+                    ? "border-primary-500 bg-primary-50 text-primary-700"
+                    : "border-line text-ink/65"
                 }`}
               >
                 {dict.creatorDash.communityTypePublic}
@@ -273,7 +321,9 @@ export default function EditCommunityView({
                 type="button"
                 onClick={() => setType("private")}
                 className={`flex-1 rounded-full border px-3 py-2 text-xs font-medium ${
-                  type === "private" ? "border-primary-500 bg-primary-50 text-primary-700" : "border-line text-ink/65"
+                  type === "private"
+                    ? "border-primary-500 bg-primary-50 text-primary-700"
+                    : "border-line text-ink/65"
                 }`}
               >
                 {dict.creatorDash.communityTypePrivate}
@@ -283,7 +333,11 @@ export default function EditCommunityView({
           <FormField
             label={dict.creatorDash.fieldCommunityDuration}
             error={fieldErrors.subscriptionDurationDays}
-            hint={!fieldErrors.subscriptionDurationDays ? dict.creatorDash.communityDurationHint : undefined}
+            hint={
+              !fieldErrors.subscriptionDurationDays
+                ? dict.creatorDash.communityDurationHint
+                : undefined
+            }
           >
             <input
               type="number"
@@ -291,7 +345,9 @@ export default function EditCommunityView({
               value={durationDays}
               onChange={(e) => setDurationDays(e.target.value)}
               placeholder="30"
-              className={fieldInputClass(!!fieldErrors.subscriptionDurationDays)}
+              className={fieldInputClass(
+                !!fieldErrors.subscriptionDurationDays,
+              )}
             />
           </FormField>
         </div>
@@ -308,7 +364,10 @@ export default function EditCommunityView({
 
         {!isFree && (
           <div className="grid gap-5 sm:grid-cols-2">
-            <FormField label={dict.creatorDash.fieldCommunitySubscriptionPrice} error={fieldErrors.subscriptionPrice}>
+            <FormField
+              label={dict.creatorDash.fieldCommunitySubscriptionPrice}
+              error={fieldErrors.subscriptionPrice}
+            >
               <input
                 type="number"
                 value={subscriptionPrice}
@@ -317,7 +376,10 @@ export default function EditCommunityView({
                 className={fieldInputClass(!!fieldErrors.subscriptionPrice)}
               />
             </FormField>
-            <FormField label={dict.creatorDash.fieldCommunityDiscount} error={fieldErrors.discountPercentage}>
+            <FormField
+              label={dict.creatorDash.fieldCommunityDiscount}
+              error={fieldErrors.discountPercentage}
+            >
               <input
                 type="number"
                 value={discountPercentage}

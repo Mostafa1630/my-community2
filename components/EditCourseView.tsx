@@ -23,6 +23,7 @@ import EmptyState from "./EmptyState";
 import FormField, { fieldInputClass } from "./FormField";
 import PageLoader from "./PageLoader";
 import ImageCropper from "./ImageCropper";
+import { applyCreatorCategoryPrefill } from "@/lib/categoryMatch";
 
 export default function EditCourseView({
   courseId,

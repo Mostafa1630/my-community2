@@ -209,6 +209,7 @@ interface AuthContextValue {
   ) => Promise<CreatorCommunity>;
   getMyCommunity: (locale: Locale) => Promise<CreatorCommunity | null>;
   getMyCommunities: (locale: Locale) => Promise<CreatorCommunity[]>;
+  getCommunityByCreator: (communityId: string, locale: Locale) => Promise<CreatorCommunity | null>;
   getMyCourses: (locale: Locale) => Promise<CreatorCourseUpdateResult[]>;
   getCourseByCreator: (
     courseId: string,
@@ -1060,6 +1061,34 @@ export function AuthProvider({
       },
     );
     return res.data.map(mapApiCreatorCommunity);
+  }, []);
+
+  const getCommunityByCreator = useCallback(async (communityId: string, requestLocale: Locale) => {
+    try {
+      const res = await apiFetch<{ data: ApiCreatorCommunity }>(
+        `/creators/communities/${communityId}`,
+        {
+          method: "GET",
+          locale: requestLocale,
+        },
+      );
+      return mapApiCreatorCommunity(res.data);
+    } catch {
+      try {
+        const res = await apiFetch<{ data: ApiCreatorCommunity[] }>(
+          "/creators/communities",
+          {
+            method: "GET",
+            locale: requestLocale,
+          },
+        );
+        return (
+          res.data.map(mapApiCreatorCommunity).find((community) => community.id === communityId) ?? null
+        );
+      } catch {
+        return null;
+      }
+    }
   }, []);
 
   // GET /creators/courses — replaces the getCreatorDetails+per-course
@@ -2115,6 +2144,7 @@ export function AuthProvider({
     saveCommunity,
     getMyCommunity,
     getMyCommunities,
+    getCommunityByCreator,
     getMyCourses,
     getCourseByCreator,
     createCourse,

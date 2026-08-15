@@ -1,7 +1,6 @@
 import type { AnyUser, AccentKey, Category } from "./types";
 
 export interface ApiCreatorProfile {
-
   bio: string | null;
   cover_image: string | null;
   balance: string;
@@ -21,7 +20,6 @@ export interface ApiUser {
   creator_profile: ApiCreatorProfile | null;
 }
 
-
 export interface ApiAuthResult {
   id: number;
   name: string;
@@ -31,17 +29,28 @@ export interface ApiAuthResult {
 }
 
 const DEFAULT_ACCENT: AccentKey = "teal";
-const ACCENTS: AccentKey[] = ["teal", "gold", "clay", "ink", "moss", "plum", "sand", "rust"];
+const ACCENTS: AccentKey[] = [
+  "teal",
+  "gold",
+  "clay",
+  "ink",
+  "moss",
+  "plum",
+  "sand",
+  "rust",
+];
 
 function slugify(name: string, id: number) {
-  return `${name.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}-${id}`;
+  return `${name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "")}-${id}`;
 }
-
 
 function accentForId(id: number): AccentKey {
   return ACCENTS[id % ACCENTS.length];
 }
-
 
 export function mapApiUserToLocal(apiUser: ApiUser): AnyUser {
   const base = {
@@ -49,11 +58,13 @@ export function mapApiUserToLocal(apiUser: ApiUser): AnyUser {
     name: apiUser.name,
     email: apiUser.email,
     avatarAccent: DEFAULT_ACCENT,
-    status: (apiUser.status === "suspended" ? "suspended" : "active") as "active" | "suspended",
+    status: (apiUser.status === "suspended" ? "suspended" : "active") as
+      | "active"
+      | "suspended",
     phoneNumber: apiUser.phone_number ?? undefined,
     profileImage: apiUser.profile_image ?? undefined,
     preferredLanguage: "en" as const,
-    createdAt: apiUser.created_at
+    createdAt: apiUser.created_at,
   };
 
   if (apiUser.type === "creator") {
@@ -62,7 +73,7 @@ export function mapApiUserToLocal(apiUser: ApiUser): AnyUser {
       ...base,
       role: "creator",
       slug: slugify(apiUser.name, apiUser.id),
- 
+
       bioEn: profile?.bio ?? "",
       bioAr: profile?.bio ?? "",
       coverAccent: DEFAULT_ACCENT,
@@ -70,13 +81,12 @@ export function mapApiUserToLocal(apiUser: ApiUser): AnyUser {
       verified: false,
       balance: profile ? Number(profile.balance) : 0,
       totalSales: profile?.total_sales ?? 0,
-      commissionRate: 20
+      commissionRate: 20,
     };
   }
 
   return { ...base, role: "student" };
 }
-
 
 export interface ApiCategory {
   id: number;
@@ -92,10 +102,9 @@ export function mapApiCategoryToLocal(apiCategory: ApiCategory): Category {
     icon: "",
     image: undefined,
     status: "active",
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
   };
 }
-
 
 export interface ApiCreatorSummary {
   id: number;
@@ -121,7 +130,7 @@ export function mapApiCreatorSummary(c: ApiCreatorSummary): CreatorSummary {
     bio: c.bio ?? "",
     profileImage: c.profile_image ?? undefined,
     coverImage: c.cover_image ?? undefined,
-    accent: accentForId(c.id)
+    accent: accentForId(c.id),
   };
 }
 
@@ -141,24 +150,35 @@ export interface ApiCreatorDetails extends ApiCreatorSummary {
 
 export interface CreatorDetails extends CreatorSummary {
   community: { id: string; name: string } | null;
-  courses: { id: string; title: string; description: string; image?: string; lessonsCount: number; createdAt: string }[];
+  courses: {
+    id: string;
+    title: string;
+    description: string;
+    image?: string;
+    lessonsCount: number;
+    createdAt: string;
+  }[];
 }
 
 export function mapApiCreatorDetails(c: ApiCreatorDetails): CreatorDetails {
   return {
     ...mapApiCreatorSummary(c),
-    community: c.community ? { id: String(c.community.community_id), name: c.community.community_name } : null,
+    community: c.community
+      ? {
+          id: String(c.community.community_id),
+          name: c.community.community_name,
+        }
+      : null,
     courses: c.courses.map((course) => ({
       id: String(course.id),
       title: course.title,
       description: course.description,
       image: course.image ?? undefined,
       lessonsCount: course.lessons_count,
-      createdAt: course.created_at
-    }))
+      createdAt: course.created_at,
+    })),
   };
 }
-
 
 export interface ApiCommunityCreatorRef {
   id: number;
@@ -175,15 +195,15 @@ export interface ApiCommunitySummary {
   subscription_price: number;
   discount_percentage: number;
   final_price: number;
- 
-  subscription_duration_days: number;
+
+  subscription_duration: number;
   category_name: string;
   creator: ApiCommunityCreatorRef;
   reviews_count: number | null;
   rating_avg: number | null;
   courses_count: number;
   subscriptions_count: number;
- 
+
   is_favorite?: boolean;
 
   subscription_start_at?: string;
@@ -212,7 +232,9 @@ export interface CommunitySummary {
   accent: AccentKey;
 }
 
-export function mapApiCommunitySummary(c: ApiCommunitySummary): CommunitySummary {
+export function mapApiCommunitySummary(
+  c: ApiCommunitySummary,
+): CommunitySummary {
   return {
     id: String(c.id),
     name: c.name,
@@ -222,12 +244,12 @@ export function mapApiCommunitySummary(c: ApiCommunitySummary): CommunitySummary
     subscriptionPrice: c.subscription_price,
     discountPercentage: c.discount_percentage,
     finalPrice: c.final_price,
-    subscriptionDurationDays: c.subscription_duration_days ?? 30,
+    subscriptionDurationDays: c.subscription_duration ?? 30,
     categoryName: c.category_name,
     creator: {
       id: String(c.creator.id),
       name: c.creator.name,
-      profileImage: c.creator.profile_image ?? undefined
+      profileImage: c.creator.profile_image ?? undefined,
     },
     reviewsCount: c.reviews_count ?? 0,
     ratingAvg: c.rating_avg ?? 0,
@@ -235,8 +257,9 @@ export function mapApiCommunitySummary(c: ApiCommunitySummary): CommunitySummary
     subscriptionsCount: c.subscriptions_count,
     subscriptionStartAt: c.subscription_start_at ?? undefined,
     subscriptionEndAt: c.subscription_end_at ?? undefined,
-    isFavorite: c.is_favorite !== undefined ? Boolean(c.is_favorite) : undefined,
-    accent: accentForId(c.id)
+    isFavorite:
+      c.is_favorite !== undefined ? Boolean(c.is_favorite) : undefined,
+    accent: accentForId(c.id),
   };
 }
 
@@ -297,12 +320,19 @@ export function mapApiCourseSummary(c: ApiCourseSummary): CourseSummary {
     lessonsCount: c.lessons_count ?? 0,
     studentsCount: c.students_count ?? 0,
     creator: c.creator
-      ? { id: String(c.creator.id), name: c.creator.name, profileImage: c.creator.profile_image ?? undefined }
+      ? {
+          id: String(c.creator.id),
+          name: c.creator.name,
+          profileImage: c.creator.profile_image ?? undefined,
+        }
       : undefined,
-    communityId: c.community ? String(c.community.community_id ?? c.community.id ?? "") : undefined,
+    communityId: c.community
+      ? String(c.community.community_id ?? c.community.id ?? "")
+      : undefined,
     communityName: c.community?.name,
-    isFavorite: c.is_favorite !== undefined ? Boolean(c.is_favorite) : undefined,
-    accent: accentForId(c.id)
+    isFavorite:
+      c.is_favorite !== undefined ? Boolean(c.is_favorite) : undefined,
+    accent: accentForId(c.id),
   };
 }
 
@@ -359,10 +389,19 @@ export interface ApiCommunityDetails extends ApiCommunitySummary {
 export interface CommunityDetails extends CommunitySummary {
   isSubscribed: boolean;
   reviews: CommunityReview[];
-  courses: { id: string; title: string; description: string; image?: string; lessonsCount: number; createdAt: string }[];
+  courses: {
+    id: string;
+    title: string;
+    description: string;
+    image?: string;
+    lessonsCount: number;
+    createdAt: string;
+  }[];
 }
 
-export function mapApiCommunityDetails(c: ApiCommunityDetails): CommunityDetails {
+export function mapApiCommunityDetails(
+  c: ApiCommunityDetails,
+): CommunityDetails {
   return {
     ...mapApiCommunitySummary(c),
     isSubscribed: Boolean(c.is_subscribed),
@@ -371,7 +410,10 @@ export function mapApiCommunityDetails(c: ApiCommunityDetails): CommunityDetails
       rating: r.rate,
       comment: r.comment ?? "",
       createdAt: r.created_at,
-      user: { name: r.user.name, profileImage: r.user.profile_image ?? undefined }
+      user: {
+        name: r.user.name,
+        profileImage: r.user.profile_image ?? undefined,
+      },
     })),
     courses: c.courses.map((course) => ({
       id: String(course.id),
@@ -379,8 +421,8 @@ export function mapApiCommunityDetails(c: ApiCommunityDetails): CommunityDetails
       description: course.description,
       image: course.image ?? undefined,
       lessonsCount: course.lessons_count,
-      createdAt: course.created_at
-    }))
+      createdAt: course.created_at,
+    })),
   };
 }
 
@@ -498,7 +540,8 @@ export function mapApiCourseDetails(c: ApiCourseDetails): CourseDetails {
     introVideo: c.intro_video ?? undefined,
     isFree: Boolean(c.is_free),
     isEnrolled: Boolean(c.is_enrolled ?? c.is_subscribed ?? false),
-    isFavorite: c.is_favorite !== undefined ? Boolean(c.is_favorite) : undefined,
+    isFavorite:
+      c.is_favorite !== undefined ? Boolean(c.is_favorite) : undefined,
     status: c.status,
     lessonsCount: c.lessons_count,
     studentsCount: c.students_count,
@@ -507,12 +550,12 @@ export function mapApiCourseDetails(c: ApiCourseDetails): CourseDetails {
     community: {
       id: String(c.community.community_id),
       name: c.community.name,
-      description: c.community.description
+      description: c.community.description,
     },
     creator: {
       id: String(c.creator.creator_id),
       name: c.creator.name,
-      profileImage: c.creator.profile_image ?? undefined
+      profileImage: c.creator.profile_image ?? undefined,
     },
     lessons: [...c.lessons]
       .sort((a, b) => a.order - b.order)
@@ -522,9 +565,9 @@ export function mapApiCourseDetails(c: ApiCourseDetails): CourseDetails {
         description: l.description,
         isFree: Boolean(l.is_free),
         order: l.order,
-        status: l.status
+        status: l.status,
       })),
-    accent: accentForId(c.id)
+    accent: accentForId(c.id),
   };
 }
 
@@ -577,8 +620,8 @@ export function mapApiLessonVideo(l: ApiLessonVideo): LessonVideo {
       path: a.media_path,
       name: a.media_name,
       type: a.media_type,
-      size: a.media_size
-    }))
+      size: a.media_size,
+    })),
   };
 }
 
@@ -663,14 +706,14 @@ export function mapApiFavoriteEntry(entry: ApiFavoriteEntry): FavoriteItem {
       creator: {
         id: String(c.creator.id),
         name: c.creator.name,
-        profileImage: c.creator.profile_image ?? undefined
+        profileImage: c.creator.profile_image ?? undefined,
       },
       isFree: c.is_free,
       finalPrice: c.final_price,
       discountPercentage: c.discount_percentage,
       ratingAvg: c.rating_avg ?? 0,
       reviewsCount: c.reviews_count ?? 0,
-      accent: accentForId(c.id)
+      accent: accentForId(c.id),
     };
   }
   const course = entry.item as ApiFavoriteCourseItem;
@@ -683,7 +726,7 @@ export function mapApiFavoriteEntry(entry: ApiFavoriteEntry): FavoriteItem {
     image: course.image ?? undefined,
     lessonsCount: course.lessons_count ?? 0,
     createdAt: course.created_at,
-    accent: accentForId(course.id)
+    accent: accentForId(course.id),
   };
 }
 
@@ -706,8 +749,25 @@ export interface ApiCreatorCommunity {
   subscription_price: number;
   discount_percentage: number;
   final_price: number;
-  subscription_duration_days?: number;
-  category: { id: number | string; name: string };
+  subscription_duration?: number;
+  category?: { id: number | string; name: string } | null;
+  category_id?: number | string | null;
+  category_name?: string | null;
+}
+
+export function resolveApiCategoryFields(input: {
+  category?: { id: number | string; name: string } | null;
+  category_id?: number | string | null;
+  category_name?: string | null;
+}): { categoryId: string; categoryName: string } {
+  const categoryId =
+    input.category?.id != null
+      ? String(input.category.id)
+      : input.category_id != null
+        ? String(input.category_id)
+        : "";
+  const categoryName = input.category?.name ?? input.category_name ?? "";
+  return { categoryId, categoryName };
 }
 
 export interface CreatorCommunity {
@@ -725,7 +785,10 @@ export interface CreatorCommunity {
   categoryName: string;
 }
 
-export function mapApiCreatorCommunity(c: ApiCreatorCommunity): CreatorCommunity {
+export function mapApiCreatorCommunity(
+  c: ApiCreatorCommunity,
+): CreatorCommunity {
+  const { categoryId, categoryName } = resolveApiCategoryFields(c);
   return {
     id: String(c.id),
     name: c.name,
@@ -736,9 +799,9 @@ export function mapApiCreatorCommunity(c: ApiCreatorCommunity): CreatorCommunity
     subscriptionPrice: c.subscription_price,
     discountPercentage: c.discount_percentage,
     finalPrice: c.final_price,
-    subscriptionDurationDays: c.subscription_duration_days,
-    categoryId: String(c.category.id),
-    categoryName: c.category.name
+    subscriptionDurationDays: c.subscription_duration ?? undefined,
+    categoryId,
+    categoryName,
   };
 }
 
@@ -771,6 +834,7 @@ export interface ApiCreatorCourseUpdate {
   created_at: string;
   category?: { id: number | string; name: string } | null;
   category_id?: number | string | null;
+  category_name?: string | null;
 }
 
 export interface CreatorCourseUpdateResult {
@@ -789,7 +853,10 @@ export interface CreatorCourseUpdateResult {
   categoryName?: string;
 }
 
-export function mapApiCreatorCourseUpdate(c: ApiCreatorCourseUpdate): CreatorCourseUpdateResult {
+export function mapApiCreatorCourseUpdate(
+  c: ApiCreatorCourseUpdate,
+): CreatorCourseUpdateResult {
+  const { categoryId, categoryName } = resolveApiCategoryFields(c);
   return {
     id: String(c.id),
     title: c.title,
@@ -802,8 +869,8 @@ export function mapApiCreatorCourseUpdate(c: ApiCreatorCourseUpdate): CreatorCou
     isFree: Boolean(c.is_free),
     status: c.status,
     createdAt: c.created_at,
-    categoryId: c.category ? String(c.category.id) : c.category_id != null ? String(c.category_id) : undefined,
-    categoryName: c.category?.name
+    categoryId: categoryId || undefined,
+    categoryName: categoryName || undefined,
   };
 }
 
@@ -854,7 +921,9 @@ export interface CreatorLessonUpdateResult {
   attachments: LessonAttachment[];
 }
 
-export function mapApiCreatorLessonUpdate(l: ApiCreatorLessonUpdate): CreatorLessonUpdateResult {
+export function mapApiCreatorLessonUpdate(
+  l: ApiCreatorLessonUpdate,
+): CreatorLessonUpdateResult {
   return {
     id: String(l.id),
     title: l.title,
@@ -867,8 +936,8 @@ export function mapApiCreatorLessonUpdate(l: ApiCreatorLessonUpdate): CreatorLes
       path: a.media_path,
       name: a.media_name,
       type: a.media_type,
-      size: a.media_size
-    }))
+      size: a.media_size,
+    })),
   };
 }
 
@@ -916,7 +985,7 @@ export function mapApiCreatorCoupon(c: ApiCreatorCoupon): CreatorCoupon {
     discountPercentage: c.discount_percentage,
     limitUses: c.limit_uses ?? undefined,
     expiredAt: c.expired_at ?? undefined,
-    createdAt: c.created_at
+    createdAt: c.created_at,
   };
 }
 
@@ -933,7 +1002,9 @@ export interface CreatorCouponsPage {
 // exact shape rather than guessing via a native Date parse, which isn't
 // reliable for this non-ISO, space-separated, 12-hour string.
 export function couponExpiryToInputValue(apiValue: string): string {
-  const match = apiValue.match(/^(\d{4})-(\d{2})-(\d{2}) (\d{1,2}):(\d{2}) (AM|PM)$/);
+  const match = apiValue.match(
+    /^(\d{4})-(\d{2})-(\d{2}) (\d{1,2}):(\d{2}) (AM|PM)$/,
+  );
   if (!match) return "";
   const [, y, mo, d, h, mi, meridiem] = match;
   let hour = Number(h) % 12;
@@ -997,11 +1068,11 @@ export function mapApiCreatorReview(r: ApiCreatorReview): CreatorReview {
     user: {
       id: String(r.user.id),
       name: r.user.name,
-      profileImage: r.user.profile_image ?? undefined
+      profileImage: r.user.profile_image ?? undefined,
     },
     type: r.type,
     reviewable: { id: String(r.reviewable.id), name: r.reviewable.name },
-    createdAt: r.created_at
+    createdAt: r.created_at,
   };
 }
 
@@ -1024,7 +1095,10 @@ export function mapApiAuthResultToLocal(result: ApiAuthResult): AnyUser {
     status: "active",
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-    creator_profile: result.type === "creator" ? { bio: null, cover_image: null, balance: "0", total_sales: 0 } : null
+    creator_profile:
+      result.type === "creator"
+        ? { bio: null, cover_image: null, balance: "0", total_sales: 0 }
+        : null,
   });
 }
 
@@ -1069,7 +1143,8 @@ export function postMediaKind(item: PostMediaItem): "image" | "video" | "file" {
   if (mime.startsWith("image/")) return "image";
   if (mime.startsWith("video/")) return "video";
   const url = item.url.toLowerCase();
-  if (/\.(jpg|jpeg|png|gif|webp|avif|bmp|svg)(\?.*)?$/i.test(url)) return "image";
+  if (/\.(jpg|jpeg|png|gif|webp|avif|bmp|svg)(\?.*)?$/i.test(url))
+    return "image";
   if (/\.(mp4|mov|webm|m4v|avi)(\?.*)?$/i.test(url)) return "video";
   return "file";
 }
@@ -1092,7 +1167,11 @@ export interface FeedUserRef {
 }
 
 function mapApiFeedUserRef(u: ApiFeedUserRef): FeedUserRef {
-  return { id: String(u.id), name: u.name, profileImage: u.profile_image ?? undefined };
+  return {
+    id: String(u.id),
+    name: u.name,
+    profileImage: u.profile_image ?? undefined,
+  };
 }
 
 export interface ApiFeedPost {
@@ -1142,7 +1221,9 @@ export function mapApiFeedPost(p: ApiFeedPost): FeedPost {
     myReaction: p.my_reaction,
     createdAt: p.created_at,
     user: mapApiFeedUserRef(p.user),
-    media: (p.media ?? []).map(mapApiPostMedia).filter((m): m is PostMediaItem => m !== null),
+    media: (p.media ?? [])
+      .map(mapApiPostMedia)
+      .filter((m): m is PostMediaItem => m !== null),
     comments: (p.comments ?? []).map(mapApiFeedComment),
   };
 }
@@ -1211,7 +1292,7 @@ export function mapApiFeedReaction(r: ApiFeedReaction): FeedReaction {
     id: String(r.id),
     type: r.type,
     createdAt: r.created_at,
-    user: mapApiFeedUserRef(r.user)
+    user: mapApiFeedUserRef(r.user),
   };
 }
 
@@ -1246,7 +1327,9 @@ export interface CreatorDashboardSummary {
   pendingBalance: number;
 }
 
-export function mapApiCreatorDashboard(d: ApiCreatorDashboard): CreatorDashboardSummary {
+export function mapApiCreatorDashboard(
+  d: ApiCreatorDashboard,
+): CreatorDashboardSummary {
   return {
     publishedCourses: d.published_courses,
     freeCourses: d.free_courses,
@@ -1258,7 +1341,7 @@ export function mapApiCreatorDashboard(d: ApiCreatorDashboard): CreatorDashboard
     totalStudents: d.total_students,
     totalWithdrawn: d.total_withdrawn ?? d.total_balance ?? 0,
     currentBalance: d.current_balance,
-    pendingBalance: d.pending_balance
+    pendingBalance: d.pending_balance,
   };
 }
 
@@ -1278,13 +1361,15 @@ export interface CreatorEarningsSummary {
   pendingBalance: number;
 }
 
-export function mapApiCreatorEarningsSummary(e: ApiCreatorEarningsSummary): CreatorEarningsSummary {
+export function mapApiCreatorEarningsSummary(
+  e: ApiCreatorEarningsSummary,
+): CreatorEarningsSummary {
   return {
     totalSales: e.total_sales,
     platformCommission: e.platform_commission,
     netProfit: e.net_profit,
     currentBalance: e.current_balance,
-    pendingBalance: e.pending_balance
+    pendingBalance: e.pending_balance,
   };
 }
 
@@ -1313,7 +1398,7 @@ export function mapApiCreatorSale(s: ApiCreatorSale): CreatorSale {
     amount: s.amount,
     platformCommission: s.platform_commission,
     netProfit: s.net_profit,
-    createdAt: s.created_at
+    createdAt: s.created_at,
   };
 }
 
@@ -1321,7 +1406,11 @@ export function mapApiCreatorSale(s: ApiCreatorSale): CreatorSale {
 // sends); "vodafone_cash" is kept only because older withdrawal records
 // returned by GET /creators/withdraws can still carry that value — both
 // display as the same "Wallet" / "المحفظة" label.
-export type PayoutMethod = "wallet" | "vodafone_cash" | "instapay" | "bank_account";
+export type PayoutMethod =
+  | "wallet"
+  | "vodafone_cash"
+  | "instapay"
+  | "bank_account";
 
 export interface ApiCreatorWithdrawal {
   id: number;
@@ -1351,17 +1440,19 @@ export interface CreatorWithdrawal {
   createdAt: string;
 }
 
-export function mapApiCreatorWithdrawal(w: ApiCreatorWithdrawal): CreatorWithdrawal {
+export function mapApiCreatorWithdrawal(
+  w: ApiCreatorWithdrawal,
+): CreatorWithdrawal {
   return {
     id: String(w.id),
     amount: Number(w.amount),
-  payoutMethod: String(w.payout_method ?? "").toLowerCase() as PayoutMethod,
+    payoutMethod: String(w.payout_method ?? "").toLowerCase() as PayoutMethod,
     payoutAccountNumber: w.payout_account_number,
-   status: String(w.status ?? "").toLowerCase(),
+    status: String(w.status ?? "").toLowerCase(),
     hasProof: w.has_proof,
     requestedAt: w.requested_at,
     approvedAt: w.approved_at,
-    createdAt: w.created_at
+    createdAt: w.created_at,
   };
 }
 
@@ -1373,10 +1464,12 @@ export interface CreatorWithdrawalDetails extends CreatorWithdrawal {
   adminPaymentProof?: string;
 }
 
-export function mapApiCreatorWithdrawalDetails(w: ApiCreatorWithdrawalDetails): CreatorWithdrawalDetails {
+export function mapApiCreatorWithdrawalDetails(
+  w: ApiCreatorWithdrawalDetails,
+): CreatorWithdrawalDetails {
   return {
     ...mapApiCreatorWithdrawal(w),
-    adminPaymentProof: w.admin_payment_proof ?? undefined
+    adminPaymentProof: w.admin_payment_proof ?? undefined,
   };
 }
 
@@ -1392,8 +1485,14 @@ export interface CommunitySubscriber {
   profileImage?: string;
 }
 
-export function mapApiCommunitySubscriber(s: ApiCommunitySubscriber): CommunitySubscriber {
-  return { id: String(s.id), name: s.name, profileImage: s.profile_image ?? undefined };
+export function mapApiCommunitySubscriber(
+  s: ApiCommunitySubscriber,
+): CommunitySubscriber {
+  return {
+    id: String(s.id),
+    name: s.name,
+    profileImage: s.profile_image ?? undefined,
+  };
 }
 
 // ---- Public settings ----
@@ -1466,14 +1565,14 @@ export function mapApiSettings(s: ApiSettings): PlatformSettings {
     contactAddress: s.contact_address ?? undefined,
     descriptionEn: s.site_description_en ?? s.site_description ?? undefined,
     descriptionAr: s.site_description_ar ?? s.site_description ?? undefined,
-    lastUpdated: s.last_updated ?? undefined
+    lastUpdated: s.last_updated ?? undefined,
   };
 }
 
 /** Keep SSR / prior branding when a stale client cache omits optional fields. */
 export function mergePlatformSettings(
   base: PlatformSettings | null | undefined,
-  incoming: PlatformSettings
+  incoming: PlatformSettings,
 ): PlatformSettings {
   if (!base) return incoming;
   return {
@@ -1494,7 +1593,7 @@ export function mergePlatformSettings(
     tiktokUrl: incoming.tiktokUrl ?? base.tiktokUrl,
     whatsappNumber: incoming.whatsappNumber ?? base.whatsappNumber,
     lastUpdated: incoming.lastUpdated ?? base.lastUpdated,
-    currency: incoming.currency || base.currency
+    currency: incoming.currency || base.currency,
   };
 }
 
@@ -1529,7 +1628,7 @@ export function mapApiPaymentSession(p: ApiPaymentSession): PaymentSession {
     orderId: p.order_id,
     amount: p.amount,
     currency: p.currency,
-    paymentUrl: p.payment_url
+    paymentUrl: p.payment_url,
   };
 }
 
@@ -1576,9 +1675,10 @@ export function mapApiNotification(n: ApiNotification): AppNotification {
     message: n.message ?? n.title ?? null,
     icon: n.icon ?? undefined,
     courseId: n.data?.course_id != null ? String(n.data.course_id) : undefined,
-    communityId: n.data?.community_id != null ? String(n.data.community_id) : undefined,
+    communityId:
+      n.data?.community_id != null ? String(n.data.community_id) : undefined,
     lessonId: n.data?.lesson_id != null ? String(n.data.lesson_id) : undefined,
     read: n.read_at !== null,
-    createdAt: n.created_at
+    createdAt: n.created_at,
   };
 }

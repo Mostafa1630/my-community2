@@ -113,7 +113,9 @@ export default function RealCommunityCard({
           </span>
         </div>
 
-        {subscribed && community.subscriptionStartAt && community.subscriptionEndAt ? (
+        {subscribed &&
+        community.subscriptionStartAt &&
+        community.subscriptionEndAt ? (
           <div className="mt-5 border-t border-line pt-3.5">
             <SubscriptionCountdown
               startAt={community.subscriptionStartAt}
@@ -127,16 +129,24 @@ export default function RealCommunityCard({
               <span className="whitespace-nowrap font-mono text-sm font-black tracking-tight text-accent-700 sm:text-base">
                 {community.isFree
                   ? dict.communities.freeBadge
-                  : formatPrice(community.finalPrice, locale, settings?.currency)}
+                  : formatPrice(
+                      community.finalPrice,
+                      locale,
+                      settings?.currency,
+                    )}
               </span>
               {hasDiscount && (
                 <>
                   <span className="font-mono text-xs text-ink/55 line-through">
-                    {formatPrice(community.subscriptionPrice, locale, settings?.currency)}
+                    {formatPrice(
+                      community.subscriptionPrice,
+                      locale,
+                      settings?.currency,
+                    )}
                   </span>
-                  <span className="rounded-full bg-danger/10 px-1.5 py-0.5 text-[10px] font-bold text-danger">
+                  {/* <span className="rounded-full bg-danger/10 px-1.5 py-0.5 text-[10px] font-bold text-danger">
                     -{community.discountPercentage}%
-                  </span>
+                  </span> */}
                 </>
               )}
             </div>

@@ -9,7 +9,11 @@ import type { Dictionary } from "@/lib/i18n/getDictionary";
 import type { Category } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api-client";
-import { courseCreateFormSchema, collectIssues, apiFieldErrors } from "@/lib/validation/creatorForms";
+import {
+  courseCreateFormSchema,
+  collectIssues,
+  apiFieldErrors,
+} from "@/lib/validation/creatorForms";
 
 const API_FIELD_MAP: Record<string, string> = {
   category_id: "categoryId",
@@ -18,17 +22,16 @@ const API_FIELD_MAP: Record<string, string> = {
   price: "price",
   discount_percentage: "discountPercentage",
   intro_video_url: "introVideoUrl",
-  image: "image"
+  image: "image",
 };
 import FormField, { fieldInputClass } from "./FormField";
 import PageLoader from "./PageLoader";
 import ImageCropper from "./ImageCropper";
 
-
 export default function NewCourseView({
   locale,
   dict,
-  categories
+  categories,
 }: {
   locale: Locale;
   dict: Dictionary;
@@ -45,7 +48,7 @@ export default function NewCourseView({
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState(categories[0]?.id ?? "");
   const [price, setPrice] = useState("");
-  const [discountPercentage, setDiscountPercentage] = useState("10");
+  const [discountPercentage, setDiscountPercentage] = useState("");
   const [introVideoUrl, setIntroVideoUrl] = useState("");
   const [isFree, setIsFree] = useState(false);
   const [image, setImage] = useState<File | null>(null);
@@ -71,7 +74,6 @@ export default function NewCourseView({
     return () => {
       cancelled = true;
     };
- 
   }, [user?.id, locale]);
 
   if (!user || user.role !== "creator") return null;
@@ -83,7 +85,9 @@ export default function NewCourseView({
   if (!hasCommunity) {
     return (
       <div className="w-full rounded-2xl border border-line bg-surface p-6 shadow-card">
-        <h1 className="text-xl font-bold text-ink">{dict.creatorDash.addCourseTitle}</h1>
+        <h1 className="text-xl font-bold text-ink">
+          {dict.creatorDash.addCourseTitle}
+        </h1>
         <p className="mt-4 flex items-start gap-2 rounded-xl bg-accent-50 px-3.5 py-3 text-sm text-accent-800">
           <AlertCircle size={16} className="mt-0.5 shrink-0" />
           {dict.creatorDash.courseNeedsCommunityFirst}
@@ -113,7 +117,7 @@ export default function NewCourseView({
       required: dict.changePassword.requiredError,
       positive: dict.validation.positiveNumber,
       percentRange: dict.validation.percentRange,
-      invalidUrl: dict.validation.invalidUrl
+      invalidUrl: dict.validation.invalidUrl,
     });
     const parsed = schema.safeParse({
       title,
@@ -121,7 +125,7 @@ export default function NewCourseView({
       isFree,
       price: price ? Number(price) : 0,
       discountPercentage: Number(discountPercentage) || 0,
-      introVideoUrl
+      introVideoUrl,
     });
     if (!parsed.success) {
       setFieldErrors(collectIssues(parsed.error.issues));
@@ -138,16 +142,21 @@ export default function NewCourseView({
           description: description.trim() || undefined,
           image: image ?? undefined,
           price: isFree ? undefined : Number(price),
-          discountPercentage: isFree ? undefined : Number(discountPercentage) || 0,
+          discountPercentage: isFree
+            ? undefined
+            : Number(discountPercentage) || 0,
           introVideoUrl: introVideoUrl || undefined,
-          isFree
+          isFree,
         },
-        locale
+        locale,
       );
       router.push(`/${locale}/creator/courses/${created.id}/edit`);
     } catch (err) {
       if (err instanceof ApiError) {
-        setFieldErrors((prev) => ({ ...prev, ...apiFieldErrors(err.fieldErrors, API_FIELD_MAP) }));
+        setFieldErrors((prev) => ({
+          ...prev,
+          ...apiFieldErrors(err.fieldErrors, API_FIELD_MAP),
+        }));
         setError(err.message);
       } else {
         setError(dict.creatorDash.courseError);
@@ -157,8 +166,13 @@ export default function NewCourseView({
   }
 
   return (
-    <form onSubmit={submit} className="w-full space-y-5 rounded-2xl border border-line bg-surface p-6 shadow-card">
-      <h1 className="text-xl font-bold text-ink">{dict.creatorDash.addCourseTitle}</h1>
+    <form
+      onSubmit={submit}
+      className="w-full space-y-5 rounded-2xl border border-line bg-surface p-6 shadow-card"
+    >
+      <h1 className="text-xl font-bold text-ink">
+        {dict.creatorDash.addCourseTitle}
+      </h1>
 
       <FormField label={dict.creatorDash.fieldTitle} error={fieldErrors.title}>
         <input
@@ -177,7 +191,10 @@ export default function NewCourseView({
         />
       </FormField>
 
-      <FormField label={dict.creatorDash.fieldCategory} error={fieldErrors.categoryId}>
+      <FormField
+        label={dict.creatorDash.fieldCategory}
+        error={fieldErrors.categoryId}
+      >
         <select
           value={categoryId}
           onChange={(e) => setCategoryId(e.target.value)}
@@ -192,10 +209,16 @@ export default function NewCourseView({
       </FormField>
 
       <label className="block">
-        <span className="mb-1.5 block text-xs font-medium text-ink/65">{dict.creatorDash.fieldCourseImage}</span>
+        <span className="mb-1.5 block text-xs font-medium text-ink/65">
+          {dict.creatorDash.fieldCourseImage}
+        </span>
         <div className="relative mb-3 flex h-44 w-full items-center justify-center overflow-hidden rounded-xl border border-dashed border-line bg-paper sm:h-56">
           {imagePreviewUrl ? (
-            <img src={imagePreviewUrl} alt="" className="h-full w-full object-cover" />
+            <img
+              src={imagePreviewUrl}
+              alt=""
+              className="h-full w-full object-cover"
+            />
           ) : (
             <ImagePlus size={28} className="text-ink/30" />
           )}
@@ -235,7 +258,10 @@ export default function NewCourseView({
 
       {!isFree && (
         <div className="grid gap-4 sm:grid-cols-2">
-          <FormField label={dict.creatorDash.fieldPrice} error={fieldErrors.price}>
+          <FormField
+            label={dict.creatorDash.fieldPrice}
+            error={fieldErrors.price}
+          >
             <input
               type="number"
               value={price}
@@ -244,19 +270,25 @@ export default function NewCourseView({
               className={fieldInputClass(!!fieldErrors.price)}
             />
           </FormField>
-          <FormField label={dict.creatorDash.fieldCourseDiscount} error={fieldErrors.discountPercentage}>
+          <FormField
+            label={dict.creatorDash.fieldCourseDiscount}
+            error={fieldErrors.discountPercentage}
+          >
             <input
               type="number"
               value={discountPercentage}
               onChange={(e) => setDiscountPercentage(e.target.value)}
-              placeholder="10"
+              placeholder=""
               className={fieldInputClass(!!fieldErrors.discountPercentage)}
             />
           </FormField>
         </div>
       )}
 
-      <FormField label={dict.creatorDash.fieldIntroUrl} error={fieldErrors.introVideoUrl}>
+      <FormField
+        label={dict.creatorDash.fieldIntroUrl}
+        error={fieldErrors.introVideoUrl}
+      >
         <input
           dir="ltr"
           value={introVideoUrl}
