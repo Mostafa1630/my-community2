@@ -9,7 +9,13 @@ import { useAuth } from "@/lib/auth-context";
 import DashboardPageHeader from "./DashboardPageHeader";
 import ProfileInfoField from "./ProfileInfoField";
 
-export default function CreatorProfileDisplayView({ locale, dict }: { locale: Locale; dict: Dictionary }) {
+export default function CreatorProfileDisplayView({
+  locale,
+  dict,
+}: {
+  locale: Locale;
+  dict: Dictionary;
+}) {
   const { user } = useAuth();
   const [coverFailed, setCoverFailed] = useState(false);
 
@@ -55,23 +61,35 @@ export default function CreatorProfileDisplayView({ locale, dict }: { locale: Lo
           </div>
         </div>
 
-        <div className="p-6 sm:p-8">
-          <h2 className="mb-6 text-2xl font-bold tracking-tight text-ink">{user.name}</h2>
+        <div className=" sm:pt-0 sm:pb-8 sm:pl-8 sm:pr-8">
+          <h2 className="mb-6 text-2xl font-bold tracking-tight text-ink">
+            {user.name}
+          </h2>
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <ProfileInfoField label={dict.common.name} value={user.name} icon={User} />
-            <ProfileInfoField label={dict.common.email} value={user.email} icon={Mail} dir="ltr" />
+            <ProfileInfoField
+              label={dict.common.name}
+              value={user.name}
+              icon={User}
+            />
+            <ProfileInfoField
+              label={dict.common.email}
+              value={user.email}
+              icon={Mail}
+            />
             <ProfileInfoField
               label={dict.common.phoneNumber}
               value={user.phoneNumber || ""}
               icon={Phone}
-              dir="ltr"
+              dir="rtl"
             />
           </div>
 
           {user.bioEn && (
             <div className="mt-3 rounded-lg border border-line bg-paper px-3 py-2.5">
-              <p className="mb-1 text-[11px] font-medium text-ink/55">{dict.creatorDash.fieldBio}</p>
+              <p className="mb-1 text-[11px] font-medium text-ink/55">
+                {dict.creatorDash.fieldBio}
+              </p>
               <p className="text-sm leading-6 text-ink/80">{user.bioEn}</p>
             </div>
           )}

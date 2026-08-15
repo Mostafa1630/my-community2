@@ -4,7 +4,11 @@ import { useEffect, useState } from "react";
 import { AlertCircle, Landmark, Loader2, Plus, Trash2 } from "lucide-react";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/getDictionary";
-import type { CreatorWithdrawal, CreatorWithdrawalDetails, PayoutMethod } from "@/lib/api-types";
+import type {
+  CreatorWithdrawal,
+  CreatorWithdrawalDetails,
+  PayoutMethod,
+} from "@/lib/api-types";
 import { useAuth } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api-client";
 import { formatPrice } from "@/lib/format";
@@ -16,20 +20,43 @@ import Pagination from "./Pagination";
 import DashboardPageHeader from "./DashboardPageHeader";
 import Modal from "./motion/Modal";
 
-
 const methodLabel = (dict: Dictionary, method: string) => {
-  if (method === "wallet" || method === "vodafone_cash") return dict.creatorDash.payoutWallet;
+  if (method === "wallet" || method === "vodafone_cash")
+    return dict.creatorDash.payoutWallet;
   if (method === "bank_account") return dict.creatorDash.payoutBankAccount;
   return dict.creatorDash.payoutInstapay;
 };
 
-const statusTone = (status: string) => (status === "approved" ? "success" : status === "rejected" ? "danger" : "pending");
+const statusTone = (status: string) =>
+  status === "approved"
+    ? "success"
+    : status === "rejected"
+      ? "danger"
+      : "pending";
 
 const statusLabel = (dict: Dictionary, status: string) =>
-  status === "approved" ? dict.common.approved : status === "rejected" ? dict.common.rejected : dict.common.pending;
+  status === "approved"
+    ? dict.common.approved
+    : status === "rejected"
+      ? dict.common.rejected
+      : dict.common.pending;
 
-export default function CreatorWithdrawalsView({ locale, dict }: { locale: Locale; dict: Dictionary }) {
-  const { user, getWithdrawBalance, getWithdrawals, createWithdrawal, getWithdrawalDetails, deleteWithdrawal, settings } = useAuth();
+export default function CreatorWithdrawalsView({
+  locale,
+  dict,
+}: {
+  locale: Locale;
+  dict: Dictionary;
+}) {
+  const {
+    user,
+    getWithdrawBalance,
+    getWithdrawals,
+    createWithdrawal,
+    getWithdrawalDetails,
+    deleteWithdrawal,
+    settings,
+  } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [balance, setBalance] = useState(0);
@@ -57,7 +84,10 @@ export default function CreatorWithdrawalsView({ locale, dict }: { locale: Local
       return;
     }
     setLoading(true);
-    const [balanceRes, listRes] = await Promise.all([getWithdrawBalance(locale), getWithdrawals(locale, page)]);
+    const [balanceRes, listRes] = await Promise.all([
+      getWithdrawBalance(locale),
+      getWithdrawals(locale, page),
+    ]);
     setBalance(balanceRes);
     setRows(listRes.items);
     setLastPage(listRes.lastPage);
@@ -66,7 +96,6 @@ export default function CreatorWithdrawalsView({ locale, dict }: { locale: Local
 
   useEffect(() => {
     load();
-
   }, [user?.id, locale, page]);
 
   if (!user || user.role !== "creator") return null;
@@ -77,7 +106,14 @@ export default function CreatorWithdrawalsView({ locale, dict }: { locale: Local
     setCreating(true);
     setCreateError("");
     try {
-      await createWithdrawal({ amount: value, payoutMethod, payoutAccountNumber: payoutAccountNumber.trim() }, locale);
+      await createWithdrawal(
+        {
+          amount: value,
+          payoutMethod,
+          payoutAccountNumber: payoutAccountNumber.trim(),
+        },
+        locale,
+      );
       setAmount("");
       setPayoutAccountNumber("");
       setPayoutMethod("wallet");
@@ -136,8 +172,12 @@ export default function CreatorWithdrawalsView({ locale, dict }: { locale: Local
       ) : (
         <>
           <div className="mb-6 rounded-2xl border border-line bg-surface p-5 shadow-card">
-            <p className="text-xs font-medium tracking-wide text-ink/55">{dict.creatorDash.withdrawAvailableBalance}</p>
-            <p className="mt-1.5 font-mono text-2xl font-bold text-ink">{formatPrice(balance, locale, settings?.currency)}</p>
+            <p className="text-xs font-medium tracking-wide text-ink/55">
+              {dict.creatorDash.withdrawAvailableBalance}
+            </p>
+            <p className="mt-1.5 font-mono text-2xl font-bold text-ink">
+              {formatPrice(balance, locale, settings?.currency)}
+            </p>
           </div>
 
           {rows.length === 0 ? (
@@ -147,19 +187,23 @@ export default function CreatorWithdrawalsView({ locale, dict }: { locale: Local
               <Table>
                 <Thead>
                   <Th>{dict.common.amount}</Th>
-                  <Th>{dict.creatorDash.fieldPayoutMethod}</Th>
+                  {/* <Th>{dict.creatorDash.fieldPayoutMethod}</Th> */}
                   <Th>{dict.common.date}</Th>
                   <Th>{dict.common.status}</Th>
-                  <Th />
+                  <Th> {dict.common.actions}</Th>
                 </Thead>
                 <tbody>
                   {rows.map((w) => (
                     <Tr key={w.id}>
-                      <Td className="font-mono">{formatPrice(w.amount, locale, settings?.currency)}</Td>
-                      <Td>{methodLabel(dict, w.payoutMethod)}</Td>
-                      <Td>{w.createdAt}</Td>
+                      <Td className="font-mono">
+                        {formatPrice(w.amount, locale, settings?.currency)}
+                      </Td>
+                      {/* <Td>{methodLabel(dict, w.payoutMethod)}</Td> */}
+                      <Td>{w.requestedAt}</Td>
                       <Td>
-                        <Badge tone={statusTone(w.status)}>{statusLabel(dict, w.status)}</Badge>
+                        <Badge tone={statusTone(w.status)}>
+                          {statusLabel(dict, w.status)}
+                        </Badge>
                       </Td>
                       <Td>
                         <div className="flex items-center gap-3">
@@ -186,7 +230,12 @@ export default function CreatorWithdrawalsView({ locale, dict }: { locale: Local
                   ))}
                 </tbody>
               </Table>
-              <Pagination page={page} totalPages={lastPage} onChange={setPage} dict={dict} />
+              <Pagination
+                page={page}
+                totalPages={lastPage}
+                onChange={setPage}
+                dict={dict}
+              />
             </>
           )}
         </>
@@ -194,9 +243,12 @@ export default function CreatorWithdrawalsView({ locale, dict }: { locale: Local
 
       {/* Create request */}
       <Modal open={createOpen} onClose={() => setCreateOpen(false)}>
-        <h3 className="text-base font-bold text-ink">{dict.creatorDash.newWithdrawal}</h3>
+        <h3 className="text-base font-bold text-ink">
+          {dict.creatorDash.newWithdrawal}
+        </h3>
         <p className="mt-2 text-xs text-ink/65">
-          {dict.creatorDash.withdrawAvailableBalance}: {formatPrice(balance, locale, settings?.currency)}
+          {dict.creatorDash.withdrawAvailableBalance}:{" "}
+          {formatPrice(balance, locale, settings?.currency)}
         </p>
         <label className="mb-1.5 mt-4 block text-xs font-semibold tracking-wide text-ink/70">
           {dict.creatorDash.withdrawAmountLabel}
@@ -208,7 +260,9 @@ export default function CreatorWithdrawalsView({ locale, dict }: { locale: Local
           placeholder=""
           className="w-full rounded-xl border border-line bg-paper px-3.5 py-2.5 text-sm outline-none focus:border-primary-400"
         />
-        <label className="mb-1.5 mt-4 block text-xs font-semibold tracking-wide text-ink/70">{dict.creatorDash.fieldPayoutMethod}</label>
+        <label className="mb-1.5 mt-4 block text-xs font-semibold tracking-wide text-ink/70">
+          {dict.creatorDash.fieldPayoutMethod}
+        </label>
         <div className="flex gap-2">
           {(["wallet", "instapay", "bank_account"] as const).map((method) => (
             <button
@@ -216,14 +270,18 @@ export default function CreatorWithdrawalsView({ locale, dict }: { locale: Local
               type="button"
               onClick={() => setPayoutMethod(method)}
               className={`flex-1 rounded-full border px-3 py-2 text-xs font-medium ${
-                payoutMethod === method ? "border-primary-500 bg-primary-50 text-primary-700" : "border-line text-ink/65"
+                payoutMethod === method
+                  ? "border-primary-500 bg-primary-50 text-primary-700"
+                  : "border-line text-ink/65"
               }`}
             >
               {methodLabel(dict, method)}
             </button>
           ))}
         </div>
-        <label className="mb-1.5 mt-4 block text-xs font-semibold tracking-wide text-ink/70">{dict.creatorDash.fieldPayoutAccount}</label>
+        <label className="mb-1.5 mt-4 block text-xs font-semibold tracking-wide text-ink/70">
+          {dict.creatorDash.fieldPayoutAccount}
+        </label>
         <input
           value={payoutAccountNumber}
           onChange={(e) => setPayoutAccountNumber(e.target.value)}
@@ -255,7 +313,9 @@ export default function CreatorWithdrawalsView({ locale, dict }: { locale: Local
 
       {/* Details */}
       <Modal open={detailsFor !== null} onClose={() => setDetailsFor(null)}>
-        <h3 className="text-base font-bold text-ink">{dict.creatorDash.withdrawDetailsTitle}</h3>
+        <h3 className="text-base font-bold text-ink">
+          {dict.creatorDash.withdrawDetailsTitle}
+        </h3>
         {detailsLoading ? (
           <div className="flex justify-center py-8">
             <Loader2 size={22} className="animate-spin text-primary-500" />
@@ -264,35 +324,57 @@ export default function CreatorWithdrawalsView({ locale, dict }: { locale: Local
           <div className="mt-4 space-y-3 text-sm">
             <div className="flex items-center justify-between">
               <span className="text-ink/55">{dict.common.amount}</span>
-              <span className="font-mono font-semibold text-ink">{formatPrice(details.amount, locale, settings?.currency)}</span>
+              <span className="font-mono font-semibold text-ink">
+                {formatPrice(details.amount, locale, settings?.currency)}
+              </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-ink/55">{dict.creatorDash.fieldPayoutMethod}</span>
-              <span className="font-medium text-ink">{methodLabel(dict, details.payoutMethod)}</span>
+              <span className="text-ink/55">
+                {dict.creatorDash.fieldPayoutMethod}
+              </span>
+              <span className="font-medium text-ink">
+                {methodLabel(dict, details.payoutMethod)}
+              </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-ink/55">{dict.creatorDash.fieldPayoutAccount}</span>
-              <span dir="ltr" className="font-mono font-medium text-ink">{details.payoutAccountNumber}</span>
+              <span className="text-ink/55">
+                {dict.creatorDash.fieldPayoutAccount}
+              </span>
+              <span dir="ltr" className="font-mono font-medium text-ink">
+                {details.payoutAccountNumber}
+              </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-ink/55">{dict.common.status}</span>
-              <Badge tone={statusTone(details.status)}>{statusLabel(dict, details.status)}</Badge>
+              <Badge tone={statusTone(details.status)}>
+                {statusLabel(dict, details.status)}
+              </Badge>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-ink/55">{dict.creatorDash.withdrawRequestedAt}</span>
+              <span className="text-ink/55">
+                {dict.creatorDash.withdrawRequestedAt}
+              </span>
               <span className="text-ink">{details.requestedAt}</span>
             </div>
             {details.approvedAt && (
               <div className="flex items-center justify-between">
-                <span className="text-ink/55">{dict.creatorDash.withdrawApprovedAt}</span>
+                <span className="text-ink/55">
+                  {dict.creatorDash.withdrawApprovedAt}
+                </span>
                 <span className="text-ink">{details.approvedAt}</span>
               </div>
             )}
             {(details.adminPaymentProof || details.hasProof) && (
               <div>
-                <p className="mb-1.5 text-ink/55">{dict.creatorDash.withdrawProof}</p>
+                <p className="mb-1.5 text-ink/55">
+                  {dict.creatorDash.withdrawProof}
+                </p>
                 {details.adminPaymentProof ? (
-                  <a href={details.adminPaymentProof} target="_blank" rel="noopener noreferrer">
+                  <a
+                    href={details.adminPaymentProof}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     <img
                       src={details.adminPaymentProof}
                       alt=""
@@ -317,8 +399,13 @@ export default function CreatorWithdrawalsView({ locale, dict }: { locale: Local
       </Modal>
 
       {/* Delete confirm */}
-      <Modal open={confirmDeleteId !== null} onClose={() => setConfirmDeleteId(null)}>
-        <h3 className="text-base font-bold text-ink">{dict.creatorDash.withdrawDeleteConfirm}</h3>
+      <Modal
+        open={confirmDeleteId !== null}
+        onClose={() => setConfirmDeleteId(null)}
+      >
+        <h3 className="text-base font-bold text-ink">
+          {dict.creatorDash.withdrawDeleteConfirm}
+        </h3>
         <div className="mt-6 flex gap-2">
           <button
             onClick={() => setConfirmDeleteId(null)}

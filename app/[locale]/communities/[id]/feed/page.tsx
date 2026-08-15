@@ -6,11 +6,9 @@ import { getCommunityDetails } from "@/lib/api-content";
 import CommunityFeedHeader from "@/components/CommunityFeedHeader";
 import RealCommunityFeedView from "@/components/RealCommunityFeedView";
 
-export async function generateMetadata(
-  props: {
-    params: Promise<{ locale: string; id: string }>;
-  }
-): Promise<Metadata> {
+export async function generateMetadata(props: {
+  params: Promise<{ locale: string; id: string }>;
+}): Promise<Metadata> {
   const params = await props.params;
   const locale: Locale = isLocale(params.locale) ? params.locale : "ar";
   const community = await getCommunityDetails(params.id, locale);
@@ -18,7 +16,9 @@ export async function generateMetadata(
   return { title: community.name, robots: { index: false } };
 }
 
-export default async function CommunityFeedPage(props: { params: Promise<{ locale: string; id: string }> }) {
+export default async function CommunityFeedPage(props: {
+  params: Promise<{ locale: string; id: string }>;
+}) {
   const params = await props.params;
   const locale: Locale = isLocale(params.locale) ? params.locale : "ar";
   const dict = getDictionary(locale);
@@ -37,7 +37,7 @@ export default async function CommunityFeedPage(props: { params: Promise<{ local
           />
         </div>
       </div>
-      <div className="container-page py-6 sm:py-8">
+      <div className="container-page py-6  sm:py-8">
         <RealCommunityFeedView
           communityId={community.id}
           creatorId={community.creator.id}
